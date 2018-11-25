@@ -1,7 +1,7 @@
 export const UPDATE_LOCATION = 'UPDATE_LOCATION';
 
 export const updateLocation = (location) => async (dispatch, getState) => {
-    const path = window.decodeURIComponent(location.pathname);
+    const path = decodeURIComponent(location.pathname);
     const page = path;
     dispatch({
         type: UPDATE_LOCATION,

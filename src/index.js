@@ -1,2 +1,2 @@
-export {store} from "./store";
+export {SambalApp} from "./app";
 export {updateLocation} from "./actions/app";
