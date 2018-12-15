@@ -1,6 +1,6 @@
 {
     "name": "sambal",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Core library for Sambal, a static site generator built with web components",
     "main": "dist/index.cjs.js",
     "module": "dist/index.esm.js",
@@ -22,7 +22,7 @@
         "node": ">=8.0.0"
     },
     "scripts": {
-        "start": "browser-sync start --server",
+        "start": "polymer serve --port 8081",
         "build": "rollup -c"
     },
     "dependencies": {
@@ -34,7 +34,7 @@
     },
     "devDependencies": {
         "@babel/core": "7.1.5",
-        "browser-sync": "2.26.3",
+        "polymer-cli": "1.9.2",
         "babel-preset-minify": "0.4.3",
         "rollup": "0.67.0",
         "rollup-plugin-babel": "4.0.3",

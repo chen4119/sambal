@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <base href="/">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+    <title>Sambal</title>
+    <meta name="description" content="Sambal webcomponents">
+</head>
+<body>
+    <my-test></my-test>
+    <script>
+        // HACK(keanulee): The Redux package assumes `process` exists - mock it here before
+        // the module is loaded.
+        window.process = {
+          env: {
+            NODE_ENV: 'production'
+          }
+        };
+    </script>
+    <script src="node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script type="module" src="src/test.js"></script>
+
+
+</body>
+</html>
