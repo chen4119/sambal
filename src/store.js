@@ -6,7 +6,7 @@ import {
 } from 'redux';
 import thunk from 'redux-thunk';
 import { lazyReducerEnhancer } from 'pwa-helpers/lazy-reducer-enhancer.js';
-import app from './reducers/app.js';
+import sambal from './reducers/sambal.js';
 
 export const store = createStore(
     (state, action) => state,
@@ -14,5 +14,5 @@ export const store = createStore(
 );
 
 store.addReducers({
-    app
+    sambal
 });

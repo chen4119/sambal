@@ -1,35 +1,39 @@
 import {LitElement} from '@polymer/lit-element';
-import {connect} from 'pwa-helpers/connect-mixin.js';
 import {installRouter} from 'pwa-helpers/router.js';
 import {installMediaQueryWatcher} from 'pwa-helpers/media-query.js';
 import {store} from './store.js';
-import {updateLocation} from './actions/app.js';
+import {updateLocation, updateScreenSize} from './actions/sambal.js';
 
-export class SambalApp extends connect(store)(LitElement) {
+export class SambalApp extends LitElement {
 
-    constructor(smallScreenWidth = 767) {
+    constructor(routes, smallScreenWidth = 767) {
         super();
+        this.routeMap = new Map();
+        for (let i = 0; i < routes.length; i++) {
+            this.routeMap.set(routes[i].path, routes[i]);
+        }
         this.smallScreenWidth = smallScreenWidth;
     }
 
     firstUpdated() {
-        installRouter((location) => store.dispatch(updateLocation(location)));
-        installMediaQueryWatcher(`(max-width: ${this.smallScreenWidth}px)`, (matches) => this.isSmallScreen = matches);
+        installRouter((location) => {
+            const path = decodeURIComponent(location.pathname);
+            store.dispatch(updateLocation(path));
+            if (this.routeMap.has(path)) {
+                const route = this.routeMap.get(path);
+                if (route.dispatch) {
+                    store.dispatch(route.dispatch);
+                }
+            }
+        });
+        installMediaQueryWatcher(`(max-width: ${this.smallScreenWidth}px)`, (matches) => store.dispatch(updateScreenSize(matches)));
 
         // Custom elements polyfill safe way to indicate an element has been upgraded.
         this.removeAttribute('unresolved');
     }
 
-    static get properties() { 
-        return {
-            page: {type: String},
-            isSmallScreen: {type: Boolean}
-        }
+    getRoute(path) {
+        return this.routeMap.get(path);
     }
 
-    stateChanged(state) {
-        if (this.page !== state.app.page) {
-            this.page = state.app.page;
-        }
-    }
 }
