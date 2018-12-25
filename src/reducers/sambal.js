@@ -1,12 +1,14 @@
 import {
     UPDATE_LOCATION,
-    UPDATE_SCREEN_SIZE
+    UPDATE_SCREEN_SIZE,
+    RECEIVE_LAZY_RESOURCES
 } from '../actions/sambal.js';
 
 const INIT_SAMBAL_STATE = {
     path: '/',
-    isSmallScreen: false
-}
+    isSmallScreen: false,
+    lazyResourcesLoaded: false
+};
 
 const sambal = (state = INIT_SAMBAL_STATE, action) => {
     switch (action.type) {
@@ -15,14 +17,19 @@ const sambal = (state = INIT_SAMBAL_STATE, action) => {
                 ...state,
                 path: action.path
             };
-            case UPDATE_SCREEN_SIZE:
+        case UPDATE_SCREEN_SIZE:
             return {
                 ...state,
                 isSmallScreen: action.isSmallScreen
             };
+        case RECEIVE_LAZY_RESOURCES:
+            return {
+              ...state,
+              lazyResourcesLoaded: true
+            };
         default:
             return state;
     }
-}
+};
   
 export default sambal;

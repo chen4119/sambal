@@ -9,12 +9,10 @@ import {SambalApp} from './app';
 const ROUTES = [
     {
         path: '/',
-        template: html`<h1>On Main page<h1>`
+        import: 'view-one'
     },
     {
-        path: '/test',
-        template: html`<h1>On Test page<h1>`,
-        dispatch: showSnackbar()
+        path: '/test'
     }
 ];
 
@@ -36,7 +34,6 @@ class Test extends connect(store)(SambalApp) {
     }
 
     stateChanged(state) {
-        console.log(state);
         if (this.path !== state.sambal.path) {
             this.path = state.sambal.path;
         }
@@ -46,8 +43,19 @@ class Test extends connect(store)(SambalApp) {
     }
 
     render() {
-        const route = this.getRoute(this.path);
-        return route.template;
+        return html`
+            <h1>Hello world</h1>
+            <switch-route path="/" @active="${() => {
+                import('./view-one.js')
+            }}">
+                <view-one></view-one>
+            </switch-route>
+            <switch-route path="/two" @active="${() => {
+                import('./view-two.js')
+            }}">
+                <view-two></view-two>
+            </switch-route>
+        `;
     }
     
 }
