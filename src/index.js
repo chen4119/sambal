@@ -1,3 +1,3 @@
-export {SambalApp} from "./app";
+import './switch-route';
 export {store} from "./store";
-export {receivedLazyResources} from "./actions/sambal";
+export {updateLocation, updateScreenSize, receivedLazyResources} from "./actions/sambal";

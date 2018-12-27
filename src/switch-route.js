@@ -9,10 +9,6 @@ export class Route extends connect(store)(LitElement) {
         this.isActive = false;
     }
 
-    shouldUpdate() {
-        return this.isActive;
-    }
-
     static get properties() { 
         return {
             path: {type: String},
@@ -20,7 +16,7 @@ export class Route extends connect(store)(LitElement) {
         }
     }
 
-    async stateChanged(state) {
+    stateChanged(state) {
         const currentPath = state.sambal.path;
         if (this.isActive && this.path !== currentPath) {
             this.isActive = false;
@@ -31,7 +27,10 @@ export class Route extends connect(store)(LitElement) {
     }
 
     render() {
-        return html`<slot></slot>`;
+        if (this.isActive) {
+            return html`<slot></slot>`;
+        }
+        return html``;
     }
 }
 
