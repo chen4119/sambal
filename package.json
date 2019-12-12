@@ -1,9 +1,9 @@
 {
     "name": "sambal",
     "version": "0.0.6",
-    "description": "Activitystream file system",
-    "main": "dist/index.cjs.js",
-    "module": "dist/index.esm.js",
+    "description": "Sambal indexer",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/chen4119/sambal"
@@ -11,19 +11,19 @@
     "author": "Wan Chun Chen",
     "license": "MIT",
     "keywords": [
-        "web components",
-        "redux",
-        "lit-html",
-        "litelement",
-        "customElements",
-        "static site generator"
+        "rxjs",
+        "reactive"
     ],
     "engines": {
         "node": ">=8.0.0"
     },
+    "files": [
+        "dist"
+    ],
     "scripts": {
-        "start": "ts-node src/index.ts",
-        "build": "rollup -c"
+        "start": "ts-node src/test.ts",
+        "build": "npm run clean && tsc",
+        "clean": "rimraf ./dist"
     },
     "dependencies": {
         "axios": "0.19.0",
