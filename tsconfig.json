@@ -1,0 +1,28 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "outDir": "./dist",
+        // "allowJs": true,
+        "sourceMap": true,
+        "declaration": true,
+        // "declarationDir": "./dist",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "resolveJsonModule": true,
+        // "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "target": "es6",
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+        "lib": [
+            "es2018",
+            "dom"
+        ]
+    },
+    "include": [
+      "src/index.ts"
+    ]
+}
