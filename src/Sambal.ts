@@ -4,33 +4,86 @@ import {mergeMap, filter, map} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
 import url from "url";
+import {cloneDeep} from "lodash";
 import {CACHE_FOLDER} from "./Constants";
-import {loadContent, isNullOrUndefined} from "./Utils";
+import {loadContent, isNullOrUndefined, isNonEmptyString, isObjectLiteral} from "./Utils";
 import Collection from "./Collection";
 
 shelljs.config.silent = true;
 
-const OUTBOX = "outbox";
-const DEFAULT_OPTIONS = {
-    base: "http://localhost",
-    collections: [
-        {
-            name: OUTBOX,
-            sortBy: ["dateCreated"]
-        }
-    ]
+const DEFAULT_COLLECTION = {
+    name: "main",
+    sortBy: [{field: "dateCreated", order: "desc"}]
 };
+const DEFAULT_BASE = "http://localhost";
 
 class Sambal {
     private options;
     private collectionMap = new Map<string, Collection>();
     constructor(private contentRoot: string, private userOptions: any = {}) {
         this.options = {
-            base: this.userOptions.base ? this.userOptions.base : DEFAULT_OPTIONS.base,
-            collections: Array.isArray(this.userOptions.collections) ? 
-            [...DEFAULT_OPTIONS.collections, ...this.userOptions.collections] : 
-            DEFAULT_OPTIONS.collections
+            base: this.userOptions.base ? this.userOptions.base : DEFAULT_BASE,
+            collections: [DEFAULT_COLLECTION]
         };
+        if (this.userOptions.collections) {
+            const updatedCollections = [];
+            const allIndex = cloneDeep(DEFAULT_COLLECTION);
+            updatedCollections.push(allIndex);
+            for (const collection of this.userOptions.collections) {
+                if (collection.name === allIndex.name) {
+                    allIndex.sortBy = this.deepCopySortBy(collection.sortBy);
+                } else if (isNonEmptyString(collection.name)) {
+                    updatedCollections.push({
+                        name: collection.name,
+                        sortBy: this.deepCopySortBy(collection.sortBy),
+                        groupBy: this.deepCopyGroupBy(collection.groupBy)
+                    });
+                } else {
+                    console.log(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
+                }
+            }
+            this.options.collections = updatedCollections;
+        }
+    }
+
+    private deepCopyGroupBy(groupBy) {
+        if (isNonEmptyString(groupBy)) {
+            return [groupBy];    
+        } else if (Array.isArray(groupBy)) {
+            const validatedGroupBy = [];
+            for (const field of groupBy) {
+                if (isNonEmptyString(field)) {
+                    validatedGroupBy.push(field);
+                } else {
+                    console.error(`Group by fields need to be a non-empty string: ${field}`);
+                }
+            }
+            return validatedGroupBy;
+        }
+        return null;
+    }
+
+    private deepCopySortBy(sortBy) {
+        if (isObjectLiteral(sortBy) && this.validateSortByField(sortBy)) {
+            return [sortBy];
+        } else if (Array.isArray(sortBy)) {
+            const validatedSortBy = [];
+            for (const field of sortBy) {
+                if (this.validateSortByField(field)) {
+                    validatedSortBy.push(cloneDeep(field));
+                }
+            }
+            return validatedSortBy;
+        }
+        return null;
+    }
+
+    private validateSortByField(sortBy) {
+        if (typeof(sortBy.field) === "string" && sortBy.order === "desc" || sortBy.order === "asc") {
+            return true;
+        }
+        console.error(`Invalid sortBy: ${JSON.stringify(sortBy)}`);
+        return false;
     }
 
     async indexContent() {
@@ -47,17 +100,25 @@ class Sambal {
         }
     }
 
-    collection(name: string, partitionKey?: string): Observable<any> {
+    collectionIds(name: string, partitionKey?: string): Observable<any> {
         let collectionPath = name;
         if (partitionKey) {
             collectionPath = `${name}/${partitionKey}`;
         }
         const collection = new Collection(CACHE_FOLDER, collectionPath);
         const sourceObs = collection.observe();
-        return sourceObs
+        return sourceObs;
+    }
+
+    collection(name: string, partitionKey?: string): Observable<any> {
+        return this.collectionIds(name, partitionKey)
         .pipe(map(uri => path.normalize(`${this.contentRoot}/${url.parse(uri).pathname}`)))
         .pipe(filter(filePath => shelljs.test("-e", filePath)))
         .pipe(mergeMap(async filePath => await loadContent(filePath)));
+    }
+
+    getPartitions(collectionName: string) {
+
     }
 
     private async indexFile(src: string) {
@@ -76,7 +137,7 @@ class Sambal {
         }
     }
 
-    private addToCollection(content: any, collectionPath: string, sortBy?: string | string[]) {
+    private addToCollection(content: any, collectionPath: string, sortBy?) {
         let collection: Collection;
         if (this.collectionMap.has(collectionPath)) {
             collection = this.collectionMap.get(collectionPath);
@@ -84,7 +145,7 @@ class Sambal {
             collection = new Collection(CACHE_FOLDER, collectionPath, sortBy);
             this.collectionMap.set(collectionPath, collection);
         }
-        collection.add(content);
+        collection.upsert(content);
     }
 
     private addToPartitionedCollection(content: any, collectionDef: any) {
@@ -96,14 +157,9 @@ class Sambal {
         }
     }
 
-    private getPartitionKeys(content: any, groupBy: string | string[]) {
-        if (typeof(groupBy) === "string") {
-            return this.stringifyKey(content[groupBy]);
-        } else if (Array.isArray(groupBy)) {
-            const values = groupBy.map(key => this.stringifyKey(content[key]));
-            return this.iteratePartitionKeys(values);
-        }
-        return [];
+    private getPartitionKeys(content: any, groupBy: string[]) {
+        const values = groupBy.map(key => this.stringifyKey(content[key]));
+        return this.iteratePartitionKeys(values);
     }
 
     private iteratePartitionKeys(values) {

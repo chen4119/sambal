@@ -44,8 +44,16 @@ export function isObjectLiteral(obj: any) {
     return obj !== null && typeof(obj) === "object" && Object.getPrototypeOf(obj) === Object.prototype;
 }
 
+export function isDate(obj: any) {
+    return typeof(obj) === "object" && Object.getPrototypeOf(obj) === Date.prototype;
+}
+
 export function isNullOrUndefined(val: any) {
     return typeof(val) === "undefined" || val === null;
+}
+
+export function isNonEmptyString(val: any) {
+    return typeof(val) === "string" && val.length > 0;
 }
 
 export function readFile(src: string): Promise<string> {
