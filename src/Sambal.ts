@@ -163,6 +163,7 @@ class Sambal {
             }
             return null;
         });
+        hydratedJson.id = `${this.options.base}/${path.relative(this.contentRoot, filePath)}`;
         return hydratedJson;
     }
 
@@ -191,7 +192,6 @@ class Sambal {
 
     private async indexFile(src: string) {
         const content = await this.loadAndHydrate(src);
-        content.id = `${this.options.base}/${path.relative(this.contentRoot, src)}`;
         this.iterateCollection(content);
     }
 

@@ -9,6 +9,6 @@ const collections = [
     }
 ]
 const sambal = new Sambal("content", {collections: collections});
-sambal.indexContent();
+// sambal.indexContent();
 // sambal.collectionPartitions("tags").subscribe(d => console.log(d));
-// sambal.collectionIds("tags", "javascript").subscribe(d => console.log(d));
+sambal.collection("tags", "javascript").subscribe(d => console.log(d));
