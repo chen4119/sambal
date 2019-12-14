@@ -101,8 +101,12 @@ class Collection {
         this.isIndexLoaded = true;
     }
 
+    static getRoot(cacheFolder: string) {
+        return `${cacheFolder}/collections`;
+    }
+
     private getIndexFilePath(): string {
-        return path.normalize(`${this.cacheRoot}/${this.collectionPath}/${INDEX_FILE}`);
+        return path.normalize(`${Collection.getRoot(this.cacheRoot)}/${this.collectionPath}/${INDEX_FILE}`);
     }
 
 }

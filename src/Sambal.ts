@@ -7,8 +7,18 @@ import url from "url";
 import fs from "fs";
 import {cloneDeep, isEqual} from "lodash";
 import {CACHE_FOLDER, ASC, DESC} from "./Constants";
-import {loadContent, writeFile, isNullOrUndefined, isNonEmptyString, isObjectLiteral, safeParseJson, queryData} from "./Utils";
+import {
+    loadContent,
+    writeFile,
+    isNullOrUndefined,
+    isNonEmptyString,
+    isObjectLiteral,
+    safeParseJson,
+    queryData,
+    isSupportedFile
+} from "./Utils";
 import Collection from "./Collection";
+import {hydrateJsonLd} from "sambal-jsonld";
 
 shelljs.config.silent = true;
 
@@ -121,7 +131,7 @@ class Sambal {
         return this.collectionIds(name, partitionKey)
         .pipe(map(uri => this.uriToFilePath(uri)))
         .pipe(filter(filePath => shelljs.test("-e", filePath)))
-        .pipe(mergeMap(async filePath => await loadContent(filePath)));
+        .pipe(mergeMap(async filePath => await this.loadAndHydrate(filePath)));
     }
 
     collectionPartitions(collectionName: string): Observable<any> {
@@ -129,7 +139,7 @@ class Sambal {
             return empty();
         }
         return new Observable(subscriber => {
-            const dirs = shelljs.ls("-d", `${CACHE_FOLDER}/${collectionName}/*`);
+            const dirs = shelljs.ls("-d", `${Collection.getRoot(CACHE_FOLDER)}/${collectionName}/*`);
             for (const dir of dirs) {
                 subscriber.next(decodeURIComponent(path.basename(dir)));
             }
@@ -140,9 +150,20 @@ class Sambal {
     async getData(uri: string) {
         const filePath = this.uriToFilePath(uri);
         if (shelljs.test("-e", filePath)) {
-            return await loadContent(filePath);
+            return await this.loadAndHydrate(filePath);
         }
         return null;
+    }
+
+    private async loadAndHydrate(filePath: string) {
+        const content = await loadContent(filePath);
+        const hydratedJson = await hydrateJsonLd(content, async (url) => {
+            if (isSupportedFile(url)) {
+                return await loadContent(url);
+            }
+            return null;
+        });
+        return hydratedJson;
     }
 
     private async writeConfig() {
@@ -169,7 +190,7 @@ class Sambal {
     }
 
     private async indexFile(src: string) {
-        const content = await loadContent(src);
+        const content = await this.loadAndHydrate(src);
         content.id = `${this.options.base}/${path.relative(this.contentRoot, src)}`;
         this.iterateCollection(content);
     }
