@@ -1,24 +1,27 @@
 
-import {Observable} from "rxjs";
+import {Observable, empty} from "rxjs";
 import {mergeMap, filter, map} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
 import url from "url";
-import {cloneDeep} from "lodash";
-import {CACHE_FOLDER} from "./Constants";
-import {loadContent, isNullOrUndefined, isNonEmptyString, isObjectLiteral} from "./Utils";
+import fs from "fs";
+import {cloneDeep, isEqual} from "lodash";
+import {CACHE_FOLDER, ASC, DESC} from "./Constants";
+import {loadContent, writeFile, isNullOrUndefined, isNonEmptyString, isObjectLiteral, safeParseJson, queryData} from "./Utils";
 import Collection from "./Collection";
 
 shelljs.config.silent = true;
 
+const CONFIG_FILE = "config.json";
 const DEFAULT_COLLECTION = {
     name: "main",
-    sortBy: [{field: "dateCreated", order: "desc"}]
+    sortBy: [{field: "dateCreated", order: DESC}]
 };
 const DEFAULT_BASE = "http://localhost";
 
 class Sambal {
     private options;
+    private didConfigChanged: boolean = false;
     private collectionMap = new Map<string, Collection>();
     constructor(private contentRoot: string, private userOptions: any = {}) {
         this.options = {
@@ -44,6 +47,7 @@ class Sambal {
             }
             this.options.collections = updatedCollections;
         }
+        this.didConfigChanged = !this.ensureConfigIsSame();
     }
 
     private deepCopyGroupBy(groupBy) {
@@ -79,7 +83,7 @@ class Sambal {
     }
 
     private validateSortByField(sortBy) {
-        if (typeof(sortBy.field) === "string" && sortBy.order === "desc" || sortBy.order === "asc") {
+        if (typeof(sortBy.field) === "string" && sortBy.order === DESC || sortBy.order === ASC) {
             return true;
         }
         console.error(`Invalid sortBy: ${JSON.stringify(sortBy)}`);
@@ -87,10 +91,12 @@ class Sambal {
     }
 
     async indexContent() {
+        shelljs.rm("-rf", CACHE_FOLDER);
         const files = shelljs.ls("-R", [
             `${this.contentRoot}/**/*.md`, 
             `${this.contentRoot}/**/*.yml`, 
-            `${this.contentRoot}/**/*.yaml`
+            `${this.contentRoot}/**/*.yaml`,
+            `${this.contentRoot}/**/*.json`
         ]);
         for (const file of files) {
             await this.indexFile(file);
@@ -98,13 +104,14 @@ class Sambal {
         for (const collection of this.collectionMap.values()) {
             await collection.flush();
         }
+        await this.writeConfig();
     }
 
     collectionIds(name: string, partitionKey?: string): Observable<any> {
-        let collectionPath = name;
-        if (partitionKey) {
-            collectionPath = `${name}/${partitionKey}`;
+        if (this.didConfigChanged) {
+            return empty();
         }
+        const collectionPath = this.getCollectionPath(name, partitionKey);
         const collection = new Collection(CACHE_FOLDER, collectionPath);
         const sourceObs = collection.observe();
         return sourceObs;
@@ -112,13 +119,53 @@ class Sambal {
 
     collection(name: string, partitionKey?: string): Observable<any> {
         return this.collectionIds(name, partitionKey)
-        .pipe(map(uri => path.normalize(`${this.contentRoot}/${url.parse(uri).pathname}`)))
+        .pipe(map(uri => this.uriToFilePath(uri)))
         .pipe(filter(filePath => shelljs.test("-e", filePath)))
         .pipe(mergeMap(async filePath => await loadContent(filePath)));
     }
 
-    getPartitions(collectionName: string) {
+    collectionPartitions(collectionName: string): Observable<any> {
+        if (this.didConfigChanged) {
+            return empty();
+        }
+        return new Observable(subscriber => {
+            const dirs = shelljs.ls("-d", `${CACHE_FOLDER}/${collectionName}/*`);
+            for (const dir of dirs) {
+                subscriber.next(decodeURIComponent(path.basename(dir)));
+            }
+            subscriber.complete();
+        });
+    }
 
+    async getData(uri: string) {
+        const filePath = this.uriToFilePath(uri);
+        if (shelljs.test("-e", filePath)) {
+            return await loadContent(filePath);
+        }
+        return null;
+    }
+
+    private async writeConfig() {
+        const configPath = `${CACHE_FOLDER}/${CONFIG_FILE}`;
+        shelljs.mkdir("-p", path.dirname(configPath));
+        await writeFile(configPath, JSON.stringify(this.options));
+    }
+
+    private ensureConfigIsSame() {
+        const configPath = `${CACHE_FOLDER}/${CONFIG_FILE}`;
+        if (shelljs.test("-e", configPath)) {
+            const config = safeParseJson(fs.readFileSync(configPath, "utf-8"));
+            const isSame = isEqual(config, this.options);
+            if (!isSame) {
+                console.error("Sambal config changed.  Need to re-index content first");
+            }
+            return isSame;
+        }
+        return false;
+    }
+
+    private uriToFilePath(uri: string) {
+        return path.normalize(`${this.contentRoot}/${url.parse(uri).pathname}`);
     }
 
     private async indexFile(src: string) {
@@ -132,7 +179,7 @@ class Sambal {
             if (collection.groupBy) {
                 this.addToPartitionedCollection(content, collection);
             } else {
-                this.addToCollection(content, collection.name, collection.sortBy);
+                this.addToCollection(content, this.getCollectionPath(collection.name), collection.sortBy);
             }
         }
     }
@@ -152,24 +199,35 @@ class Sambal {
         const partitionKeys = this.getPartitionKeys(content, collectionDef.groupBy);
         for (const key of partitionKeys) {
             if (key) {
-                this.addToCollection(content, `${collectionDef.name}/${key}`, collectionDef.sortBy);
+                this.addToCollection(content, this.getCollectionPath(collectionDef.name, key), collectionDef.sortBy);
             }
         }
     }
 
-    private getPartitionKeys(content: any, groupBy: string[]) {
-        const values = groupBy.map(key => this.stringifyKey(content[key]));
-        return this.iteratePartitionKeys(values);
+    private getCollectionPath(collectionName: string, partitionKey?: string) {
+        let collectionPath = collectionName;
+        if (partitionKey) {
+            collectionPath = encodeURI(`${collectionName}/${partitionKey}`);
+        }
+        return collectionPath;
     }
 
-    private iteratePartitionKeys(values) {
+    private getPartitionKeys(content: any, groupBy: string[]) {
+        const keys = groupBy.map(field => {
+            const key = queryData(content, field);
+            return this.stringifyKey(key);
+        });
+        return this.iteratePartitionKeys(keys);
+    }
+
+    private iteratePartitionKeys(keys) {
         const allKeys = [];
-        const indexes = values.map(d => 0);
+        const indexes = keys.map(d => 0);
         while (true) {
             const keySegments = [];
-            for (let i = 0; i < values.length; i++) {
+            for (let i = 0; i < keys.length; i++) {
                 const index = indexes[i];
-                const value = values[i];
+                const value = keys[i];
                 if (Array.isArray(value)) {
                     keySegments.push(this.stringifyKey(value[index]));
                     indexes[i]++;
@@ -179,9 +237,9 @@ class Sambal {
             }
             allKeys.push(keySegments.join("-"));
             let isDone = true;
-            for (let i = 0; i < values.length; i++) {
+            for (let i = 0; i < keys.length; i++) {
                 const index = indexes[i];
-                const value = values[i];
+                const value = keys[i];
                 if (Array.isArray(value) && index < value.length) {
                     isDone = false;
                     break;
@@ -198,7 +256,7 @@ class Sambal {
         if (Array.isArray(value)) {
             return value.map(v => this.stringifyKey(v));
         }
-        return isNullOrUndefined(value) ? "" : encodeURIComponent(String(value));
+        return isNullOrUndefined(value) ? "" : String(value);
     }
 
 }

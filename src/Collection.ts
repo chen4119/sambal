@@ -1,5 +1,5 @@
 import {Observable, Subscriber} from "rxjs";
-import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate} from "./Utils";
+import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData} from "./Utils";
 import path from "path";
 import shelljs from "shelljs";
 import {ASC, DESC} from "./Constants";
@@ -20,7 +20,7 @@ class Collection {
         const meta = {id: data.id};
         if (this.sortBy) {
             for (const def of this.sortBy) {
-                meta[def.field] = data[def.field];
+                meta[def.field] = queryData(data, def.field);
             }
         }
         this.contentMap.set(data.id, meta);
@@ -58,8 +58,8 @@ class Collection {
             values.sort((a, b) => {
                 for (let i = 0; i < this.sortBy.length; i++) {
                     const def = this.sortBy[i];
-                    const aValue = a[def.field];
-                    const bValue = b[def.field];
+                    const aValue = queryData(a, def.field);
+                    const bValue = queryData(b, def.field);
                     
                     let compareVal = this.compare(aValue, bValue, def.order);
                     if (compareVal !== 0 || i === this.sortBy.length - 1) {
