@@ -13,17 +13,20 @@ class Collection {
         
     }
 
-    async upsert(data) {
+    async upsert(content) {
         if (!this.isIndexLoaded) {
             await this.loadIndex();
         }
-        const meta = {id: data.id};
+        const meta = {};
         if (this.sortBy) {
             for (const def of this.sortBy) {
-                meta[def.field] = queryData(data, def.field);
+                meta[def.field] = queryData(content.data, def.field);
             }
         }
-        this.contentMap.set(data.id, meta);
+        this.contentMap.set(content.path, {
+            path: content.path,
+            meta: meta
+        });
     }
 
     observe(): Observable<string>  {
@@ -36,8 +39,8 @@ class Collection {
         if (!this.isIndexLoaded) {
             await this.loadIndex();
         }
-        for (const id of this.contentMap.keys()) {
-            subscriber.next(id);
+        for (const path of this.contentMap.keys()) {
+            subscriber.next(path);
         }
         subscriber.complete();
     }
@@ -58,8 +61,8 @@ class Collection {
             values.sort((a, b) => {
                 for (let i = 0; i < this.sortBy.length; i++) {
                     const def = this.sortBy[i];
-                    const aValue = queryData(a, def.field);
-                    const bValue = queryData(b, def.field);
+                    const aValue = queryData(a.meta, def.field);
+                    const bValue = queryData(b.meta, def.field);
                     
                     let compareVal = this.compare(aValue, bValue, def.order);
                     if (compareVal !== 0 || i === this.sortBy.length - 1) {
@@ -94,7 +97,7 @@ class Collection {
             const metas = safeParseJson(await readFile(indexFile));
             if (metas) {
                 for (const meta of metas) {
-                    this.contentMap.set(meta.id, meta);
+                    this.contentMap.set(meta.path, meta);
                 }
             }
         }

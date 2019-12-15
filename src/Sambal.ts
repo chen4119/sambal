@@ -27,7 +27,6 @@ const DEFAULT_COLLECTION = {
     name: "main",
     sortBy: [{field: "dateCreated", order: DESC}]
 };
-const DEFAULT_BASE = "http://localhost";
 
 class Sambal {
     private options;
@@ -35,7 +34,6 @@ class Sambal {
     private collectionMap = new Map<string, Collection>();
     constructor(private contentRoot: string, private userOptions: any = {}) {
         this.options = {
-            base: this.userOptions.base ? this.userOptions.base : DEFAULT_BASE,
             collections: [DEFAULT_COLLECTION]
         };
         if (this.userOptions.collections) {
@@ -129,7 +127,6 @@ class Sambal {
 
     collection(name: string, partitionKey?: string): Observable<any> {
         return this.collectionIds(name, partitionKey)
-        .pipe(map(uri => this.uriToFilePath(uri)))
         .pipe(filter(filePath => shelljs.test("-e", filePath)))
         .pipe(mergeMap(async filePath => await this.loadAndHydrate(filePath)));
     }
@@ -147,8 +144,7 @@ class Sambal {
         });
     }
 
-    async getData(uri: string) {
-        const filePath = this.uriToFilePath(uri);
+    async getData(filePath: string) {
         if (shelljs.test("-e", filePath)) {
             return await this.loadAndHydrate(filePath);
         }
@@ -163,8 +159,10 @@ class Sambal {
             }
             return null;
         });
-        hydratedJson.id = `${this.options.base}/${path.relative(this.contentRoot, filePath)}`;
-        return hydratedJson;
+        return {
+            path: filePath,
+            data: hydratedJson
+        };
     }
 
     private async writeConfig() {
@@ -184,10 +182,6 @@ class Sambal {
             return isSame;
         }
         return false;
-    }
-
-    private uriToFilePath(uri: string) {
-        return path.normalize(`${this.contentRoot}/${url.parse(uri).pathname}`);
     }
 
     private async indexFile(src: string) {
@@ -217,7 +211,7 @@ class Sambal {
     }
 
     private addToPartitionedCollection(content: any, collectionDef: any) {
-        const partitionKeys = this.getPartitionKeys(content, collectionDef.groupBy);
+        const partitionKeys = this.getPartitionKeys(content.data, collectionDef.groupBy);
         for (const key of partitionKeys) {
             if (key) {
                 this.addToCollection(content, this.getCollectionPath(collectionDef.name, key), collectionDef.sortBy);
@@ -233,9 +227,9 @@ class Sambal {
         return collectionPath;
     }
 
-    private getPartitionKeys(content: any, groupBy: string[]) {
+    private getPartitionKeys(data: any, groupBy: string[]) {
         const keys = groupBy.map(field => {
-            const key = queryData(content, field);
+            const key = queryData(data, field);
             return this.stringifyKey(key);
         });
         return this.iteratePartitionKeys(keys);
