@@ -6,7 +6,7 @@ import path from "path";
 import url from "url";
 import fs from "fs";
 import {cloneDeep, isEqual} from "lodash";
-import {CACHE_FOLDER, ASC, DESC} from "./Constants";
+import {CACHE_FOLDER, ASC, DESC} from "./constants";
 import {
     loadContent,
     writeFile,
@@ -16,7 +16,7 @@ import {
     safeParseJson,
     queryData,
     isSupportedFile
-} from "./Utils";
+} from "./utils";
 import Collection from "./Collection";
 import {hydrateJsonLd} from "sambal-jsonld";
 

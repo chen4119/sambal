@@ -1,8 +1,8 @@
 import {Observable, Subscriber} from "rxjs";
-import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData} from "./Utils";
+import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData} from "./utils";
 import path from "path";
 import shelljs from "shelljs";
-import {ASC, DESC} from "./Constants";
+import {ASC, DESC} from "./constants";
 
 const INDEX_FILE = "index.json";
 
