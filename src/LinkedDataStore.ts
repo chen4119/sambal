@@ -1,9 +1,8 @@
 
-import {Observable, empty} from "rxjs";
-import {mergeMap, filter, map} from "rxjs/operators";
+import {Observable, Subscriber, empty, pipe, from, of} from "rxjs";
+import {mergeMap, filter} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
-import url from "url";
 import fs from "fs";
 import {cloneDeep, isEqual} from "lodash";
 import {CACHE_FOLDER, ASC, DESC} from "./constants";
@@ -28,11 +27,11 @@ const DEFAULT_COLLECTION = {
     sortBy: [{field: "dateCreated", order: DESC}]
 };
 
-class Sambal {
+class LinkedDataStore {
     private options;
     private didConfigChanged: boolean = false;
     private collectionMap = new Map<string, Collection>();
-    constructor(private contentRoot: string, private userOptions: any = {}) {
+    constructor(private obs$: Observable<any>, private userOptions: any = {}) {
         this.options = {
             collections: [DEFAULT_COLLECTION]
         };
@@ -99,27 +98,56 @@ class Sambal {
     }
 
     async indexContent() {
-        shelljs.rm("-rf", CACHE_FOLDER);
-        const files = shelljs.ls("-R", [
-            `${this.contentRoot}/**/*.md`, 
-            `${this.contentRoot}/**/*.yml`, 
-            `${this.contentRoot}/**/*.yaml`,
-            `${this.contentRoot}/**/*.json`
-        ]);
-        for (const file of files) {
-            await this.indexFile(file);
-        }
-        for (const collection of this.collectionMap.values()) {
-            await collection.flush();
-        }
-        await this.writeConfig();
+        return new Promise((resolve, reject) => {
+            shelljs.rm("-rf", CACHE_FOLDER);
+            this.obs$
+            .pipe(mergeMap(fieldValue => Array.isArray(fieldValue) ? from(fieldValue) : of(fieldValue)))
+            .pipe(LinkedDataStore.loadData())
+            .subscribe({
+                next: (d: any) => this.iterateCollection(d),
+                complete: async () => {
+                    for (const collection of this.collectionMap.values()) {
+                        await collection.flush();
+                    }
+                    await this.writeConfig();
+                    resolve();
+                },
+                error: (err) => {
+                    reject(err);
+                }
+            });
+        });
     }
+
+    private static loadData() {
+        return pipe(
+            mergeMap((d: any) => {
+                if (typeof(d) === "string") {
+                    const files = shelljs.ls("-R", d);
+                    return new Observable(subscriber => {
+                        LinkedDataStore.loadLocalFiles(files, subscriber);
+                    });
+                }
+                return of(d);
+            })
+        );
+    }
+
+    private static async loadLocalFiles(files, subscriber: Subscriber<any>) {
+        for (const file of files) {
+            const content = await LinkedDataStore.loadAndHydrate(file);
+            subscriber.next(content);
+        }
+        subscriber.complete();
+    }
+
+
 
     collectionIds(name: string, partitionKey?: string): Observable<any> {
         if (this.didConfigChanged) {
             return empty();
         }
-        const collectionPath = this.getCollectionPath(name, partitionKey);
+        const collectionPath = LinkedDataStore.getCollectionPath(name, partitionKey);
         const collection = new Collection(CACHE_FOLDER, collectionPath);
         const sourceObs = collection.observe();
         return sourceObs;
@@ -128,7 +156,7 @@ class Sambal {
     collection(name: string, partitionKey?: string): Observable<any> {
         return this.collectionIds(name, partitionKey)
         .pipe(filter(filePath => shelljs.test("-e", filePath)))
-        .pipe(mergeMap(async filePath => await this.loadAndHydrate(filePath)));
+        .pipe(mergeMap(async filePath => await LinkedDataStore.loadAndHydrate(filePath)));
     }
 
     collectionPartitions(collectionName: string): Observable<any> {
@@ -146,12 +174,12 @@ class Sambal {
 
     async getData(filePath: string) {
         if (shelljs.test("-e", filePath)) {
-            return await this.loadAndHydrate(filePath);
+            return await LinkedDataStore.loadAndHydrate(filePath);
         }
         return null;
     }
 
-    private async loadAndHydrate(filePath: string) {
+    static async loadAndHydrate(filePath: string) {
         const content = await loadContent(filePath);
         const hydratedJson = await hydrateJsonLd(content, async (url) => {
             if (isSupportedFile(url)) {
@@ -183,17 +211,12 @@ class Sambal {
         return false;
     }
 
-    private async indexFile(src: string) {
-        const content = await this.loadAndHydrate(src);
-        this.iterateCollection(content);
-    }
-
     private iterateCollection(content: any) {
         for (const collection of this.options.collections) {
             if (collection.groupBy) {
                 this.addToPartitionedCollection(content, collection);
             } else {
-                this.addToCollection(content, this.getCollectionPath(collection.name), collection.sortBy);
+                this.addToCollection(content, LinkedDataStore.getCollectionPath(collection.name), collection.sortBy);
             }
         }
     }
@@ -210,15 +233,15 @@ class Sambal {
     }
 
     private addToPartitionedCollection(content: any, collectionDef: any) {
-        const partitionKeys = this.getPartitionKeys(content.data, collectionDef.groupBy);
+        const partitionKeys = LinkedDataStore.getPartitionKeys(content.data, collectionDef.groupBy);
         for (const key of partitionKeys) {
             if (key) {
-                this.addToCollection(content, this.getCollectionPath(collectionDef.name, key), collectionDef.sortBy);
+                this.addToCollection(content, LinkedDataStore.getCollectionPath(collectionDef.name, key), collectionDef.sortBy);
             }
         }
     }
 
-    private getCollectionPath(collectionName: string, partitionKey?: string) {
+    private static getCollectionPath(collectionName: string, partitionKey?: string) {
         let collectionPath = collectionName;
         if (partitionKey) {
             collectionPath = encodeURI(`${collectionName}/${partitionKey}`);
@@ -226,15 +249,15 @@ class Sambal {
         return collectionPath;
     }
 
-    private getPartitionKeys(data: any, groupBy: string[]) {
+    private static getPartitionKeys(data: any, groupBy: string[]) {
         const keys = groupBy.map(field => {
             const key = queryData(data, field);
-            return this.stringifyKey(key);
+            return LinkedDataStore.stringifyKey(key);
         });
-        return this.iteratePartitionKeys(keys);
+        return LinkedDataStore.iteratePartitionKeys(keys);
     }
 
-    private iteratePartitionKeys(keys) {
+    private static iteratePartitionKeys(keys) {
         const allKeys = [];
         const indexes = keys.map(d => 0);
         while (true) {
@@ -243,10 +266,10 @@ class Sambal {
                 const index = indexes[i];
                 const value = keys[i];
                 if (Array.isArray(value)) {
-                    keySegments.push(this.stringifyKey(value[index]));
+                    keySegments.push(LinkedDataStore.stringifyKey(value[index]));
                     indexes[i]++;
                 } else {
-                    keySegments.push(this.stringifyKey(value));
+                    keySegments.push(LinkedDataStore.stringifyKey(value));
                 }
             }
             allKeys.push(keySegments.join("-"));
@@ -266,13 +289,13 @@ class Sambal {
         return allKeys;
     }
 
-    private stringifyKey(value: any) {
+    private static stringifyKey(value: any) {
         if (Array.isArray(value)) {
-            return value.map(v => this.stringifyKey(v));
+            return value.map(v => LinkedDataStore.stringifyKey(v));
         }
         return isNullOrUndefined(value) ? "" : String(value);
     }
 
 }
 
-export default Sambal;
+export default LinkedDataStore;

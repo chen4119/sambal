@@ -51,7 +51,6 @@ class Collection {
             const values = [...this.contentMap.values()];
             this.sort(values);
             const output = this.getIndexFilePath();
-            shelljs.mkdir("-p", path.dirname(output));
             await writeFile(output, JSON.stringify(values));
         }
     }
