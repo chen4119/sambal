@@ -1,6 +1,7 @@
 import {Observable} from "rxjs";
 import {mergeMap} from "rxjs/operators";
 import {OUTPUT_FOLDER} from "./constants";
+import {writeFile} from "./utils";
 import path from "path";
 
 class Packager {
@@ -9,15 +10,27 @@ class Packager {
         
     }
 
-    build() {
-        this.obs$
-        .pipe(mergeMap(async (d: {path: string, data: any, html: CheerioStatic}) => {
+    async deliver() {
+        return new Promise((resolve, reject) => {
+            this.obs$
+            .pipe(mergeMap(async (d: {path: string, data: any, html: CheerioStatic}) => {
                 if (d.html) {
                     await this.parseHtml(d.html);
                 }
-                return d;
-            })
-        );
+                return {path: d.path, html: d.html.html()};
+            })).pipe(mergeMap(async (d: {path: string, html: string}) => {
+                const basename = path.basename(d.path, path.extname(d.path));
+                return await this.write(`${OUTPUT_FOLDER}/${path.dirname(d.path)}/${basename}`, d.html);
+            })).subscribe({
+                next: (output: string) => console.log(`Wrote ${output}`),
+                complete: async () => {
+                    resolve();
+                },
+                error: (err) => {
+                    reject(err);
+                }
+            });
+        });
     }
 
     private async write(dest: string, content: string) {
@@ -26,7 +39,7 @@ class Packager {
         if (ext === '.html' || ext === '.htm') {
             output = path.normalize(`${dest}`);
         }
-        // await ensureDirectoryExistThenWriteFile(output, content);
+        await writeFile(output, content);
         return output;
     }
 

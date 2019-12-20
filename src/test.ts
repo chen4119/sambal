@@ -3,6 +3,7 @@ import {importCssModule} from "./cssModule";
 import {from} from "rxjs";
 import {template} from "./template";
 import {render} from "./operators/render";
+import Packager from "./Packager";
 
 const collections = [
     {
@@ -21,11 +22,17 @@ function renderPage({classes}) {
     `;
 }
 
-from([{
-    headline:'test'
+
+
+const obs = from([{
+    path: "foisf.md",
+    data: {headline:'test'}
 }])
-.pipe(render(renderPage, "content/test.css"))
-.subscribe(d => console.log(d.html.html()));
+.pipe(render(renderPage, "content/test.css"));
+
+const packager = new Packager(obs, null);
+packager.deliver();
+// .subscribe(d => console.log(d.html.html()));
 
 // const store = new LinkedDataStore(from(["content/*.md"]), {collections: collections});
 // importCssModule("./content/test.css");

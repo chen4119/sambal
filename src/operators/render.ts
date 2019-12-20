@@ -7,18 +7,21 @@ export function render(renderer: (props: any) => Promise<string>, withStyle?: st
     return pipe(
         mergeMap(async (content: any) => {
             let cssModule = null;
-            let html = "";
             if (withStyle) {
                 cssModule = await importCssModule(withStyle);
-                html = await renderer({...content.data, _path: content.path, classes: cssModule.json});
-            } else {
-                html = await renderer({...content.data, _path: content.path});
             }
+            const html = await renderer({...content.data, _path: content.path, classes: cssModule ? cssModule.json : null});;
             const $ = cheerio.load(html);
+            if (cssModule) {
+                $("head").append(`
+                    <style>
+                        ${cssModule.css}
+                    </style>
+                `);
+            }
             return {
                 ...content,
-                html: $,
-                css: cssModule ? cssModule.css : null
+                html: $
             };
         })
     );
