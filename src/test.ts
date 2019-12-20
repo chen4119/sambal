@@ -22,8 +22,6 @@ function renderPage({classes}) {
     `;
 }
 
-
-
 const obs = from([{
     path: "foisf.md",
     data: {headline:'test'}

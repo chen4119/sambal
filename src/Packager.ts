@@ -3,11 +3,23 @@ import {mergeMap} from "rxjs/operators";
 import {OUTPUT_FOLDER} from "./constants";
 import {writeFile} from "./utils";
 import path from "path";
+import prettier from "prettier";
+
+type BundleFunction = (srcFile: string, destFolder: string) => Promise<string>
+const DEFAULT_OPTIONS = {
+    prettyHtml: true,
+    bundle: async (srcFile: string, destFolder: string) => {
+        return srcFile;
+    }
+};
 
 class Packager {
     private bundledFileMap: Map<string, string> = new Map<string, string>(); // map a src file to dest file
-    constructor(private obs$: Observable<any>, private bundle: (srcFile: string, destFolder: string) => Promise<string>) {
-        
+    constructor(private obs$: Observable<any>, private options: {prettyHtml?: boolean, bundle?: BundleFunction} = {}) {
+        this.options = {
+            ...DEFAULT_OPTIONS,
+            ...options
+        };
     }
 
     async deliver() {
@@ -17,7 +29,11 @@ class Packager {
                 if (d.html) {
                     await this.parseHtml(d.html);
                 }
-                return {path: d.path, html: d.html.html()};
+                let html = d.html.html();
+                if (this.options.prettyHtml) {
+                    html = prettier.format(d.html.html(), {parser: "html"});
+                }
+                return {path: d.path, html: html};
             })).pipe(mergeMap(async (d: {path: string, html: string}) => {
                 const basename = path.basename(d.path, path.extname(d.path));
                 return await this.write(`${OUTPUT_FOLDER}/${path.dirname(d.path)}/${basename}`, d.html);
@@ -54,7 +70,7 @@ class Packager {
             }
         });
         for (const entry of entriesToBundle) {
-            const output = await this.bundle(entry, OUTPUT_FOLDER);
+            const output = await this.options.bundle(entry, OUTPUT_FOLDER);
             self.bundledFileMap.set(entry, output);
         }
         $(scriptSelector).each(function() {
