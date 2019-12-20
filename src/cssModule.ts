@@ -1,20 +1,28 @@
 import postcss from "postcss";
-import {readFile, writeFile} from "./utils";
+import {readFile} from "./utils";
 import path from "path";
-import {OUTPUT_FOLDER} from "./constants";
+
+const cssModuleCache = new Map<string, {json: object, css: string}>();
 
 export async function importCssModule(filePath: string) {
-    // console.log(process.cwd());
     return new Promise(async (resolve, reject) => {
+        const resolvedPath = path.resolve(filePath);
+        if (cssModuleCache.has(resolvedPath)) {
+            resolve(cssModuleCache.get(resolvedPath));
+            return;
+        }
         let cssJson = null;
-        const css = await readFile(path.resolve(filePath));
-        const output = path.join(OUTPUT_FOLDER, filePath);
+        const css = await readFile(resolvedPath);
         const result = await postcss([require('postcss-modules')({
             getJSON: function(cssFileName, json, outputFileName) {
                 cssJson = json;
             }
-        })]).process(css, {from: filePath, to: output});
-        await writeFile(output, result.css);
-        resolve(cssJson);
+        })]).process(css, {from: filePath});
+        const bundle = {
+            json: cssJson,
+            css: result.css
+        };
+        cssModuleCache.set(resolvedPath, bundle);
+        resolve(bundle);
     });
 }

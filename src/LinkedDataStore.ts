@@ -141,8 +141,6 @@ class LinkedDataStore {
         subscriber.complete();
     }
 
-
-
     collectionIds(name: string, partitionKey?: string): Observable<any> {
         if (this.didConfigChanged) {
             return empty();

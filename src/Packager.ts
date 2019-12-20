@@ -20,6 +20,16 @@ class Packager {
         );
     }
 
+    private async write(dest: string, content: string) {
+        const ext = path.extname(dest).toLowerCase();
+        let output = path.normalize(`${dest}/index.html`);
+        if (ext === '.html' || ext === '.htm') {
+            output = path.normalize(`${dest}`);
+        }
+        // await ensureDirectoryExistThenWriteFile(output, content);
+        return output;
+    }
+
     private async parseHtml($: CheerioStatic) {
         const scriptSelector = 'script[src]';
         const entriesToBundle = [];

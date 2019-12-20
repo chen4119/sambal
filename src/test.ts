@@ -1,5 +1,8 @@
-import Sambal from "./Sambal";
+import LinkedDataStore from "./LinkedDataStore";
 import {importCssModule} from "./cssModule";
+import {from} from "rxjs";
+import {template} from "./template";
+import {render} from "./operators/render";
 
 const collections = [
     {
@@ -8,9 +11,24 @@ const collections = [
         sortBy: {field: "dateCreated", order: "desc"},
         pageSize: 100
     }
-]
-const sambal = new Sambal("content", {collections: collections});
-importCssModule("./content/test.css");
-// sambal.indexContent();
-// sambal.collectionPartitions("tags").subscribe(d => console.log(d));
-// sambal.collection("tags", "javascript").subscribe(d => console.log(d));
+];
+
+function renderPage({classes}) {
+    return template`
+        <div class="${classes.article}">
+            <h1>dih</h1>
+        </div>
+    `;
+}
+
+from([{
+    headline:'test'
+}])
+.pipe(render(renderPage, "content/test.css"))
+.subscribe(d => console.log(d.html.html()));
+
+// const store = new LinkedDataStore(from(["content/*.md"]), {collections: collections});
+// importCssModule("./content/test.css");
+// store.indexContent();
+// store.collectionPartitions("tags").subscribe(d => console.log(d));
+// store.collection("tags", "javascript").subscribe(d => console.log(d));

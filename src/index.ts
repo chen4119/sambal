@@ -1,5 +1,10 @@
-import Sambal from "./Sambal";
+import LinkedDataStore from "./LinkedDataStore";
+import Packager from "./Packager";
 
-export {Sambal};
+export {LinkedDataStore};
+export {Packager};
 export {template} from "./template";
 export {render} from "./operators/render";
+export {aggregateBy} from "./operators/aggregateBy";
+export {paginate} from "./operators/paginate";
+export {toHtml} from "./operators/toHtml";
