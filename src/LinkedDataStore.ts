@@ -1,6 +1,6 @@
 
 import {Observable, Subscriber, empty, pipe, from, of} from "rxjs";
-import {mergeMap, filter} from "rxjs/operators";
+import {mergeMap, filter, mergeAll} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
 import fs from "fs";
@@ -14,28 +14,47 @@ import {
     isObjectLiteral,
     safeParseJson,
     queryData,
-    isSupportedFile
+    isSupportedFile,
+    getFullPath
 } from "./utils";
 import Collection from "./Collection";
 import {hydrateJsonLd} from "sambal-jsonld";
 
 shelljs.config.silent = true;
 
+type SortBy = {
+    field: string,
+    order: "desc" | "asc"
+};
+
+export type CollectionDef = {
+    name: string,
+    sortBy?: SortBy | SortBy[],
+    groupBy?: string | string[]
+};
+
+type StoreOptions = {
+    contentPath?: string | string[],
+    content$?: Observable<any>,
+    collections?: CollectionDef[],
+};
+
 const CONFIG_FILE = "config.json";
-const DEFAULT_COLLECTION = {
+const DEFAULT_COLLECTION: CollectionDef = {
     name: "main",
     sortBy: [{field: "dateCreated", order: DESC}]
 };
 
 class LinkedDataStore {
-    private options;
+    private options: StoreOptions;
     private didConfigChanged: boolean = false;
     private collectionMap = new Map<string, Collection>();
-    constructor(private obs$: Observable<any>, private userOptions: any = {}) {
+    constructor(private userOptions: StoreOptions = {}) {
         this.options = {
+            ...userOptions,
             collections: [DEFAULT_COLLECTION]
         };
-        if (this.userOptions.collections) {
+        if (this.userOptions.collections && this.userOptions.collections.length > 0) {
             const updatedCollections = [];
             const allIndex = cloneDeep(DEFAULT_COLLECTION);
             updatedCollections.push(allIndex);
@@ -54,7 +73,7 @@ class LinkedDataStore {
             }
             this.options.collections = updatedCollections;
         }
-        this.didConfigChanged = !this.ensureConfigIsSame();
+        // this.didConfigChanged = !this.ensureConfigIsSame();
     }
 
     private deepCopyGroupBy(groupBy) {
@@ -100,9 +119,7 @@ class LinkedDataStore {
     async indexContent() {
         return new Promise((resolve, reject) => {
             shelljs.rm("-rf", CACHE_FOLDER);
-            this.obs$
-            .pipe(mergeMap(fieldValue => Array.isArray(fieldValue) ? from(fieldValue) : of(fieldValue)))
-            .pipe(LinkedDataStore.loadData())
+            this.getSourceObservable()
             .pipe(this.iterateCollection())
             .subscribe({
                 next: (d: any) => console.log("Processed " + d.path),
@@ -110,7 +127,7 @@ class LinkedDataStore {
                     for (const collection of this.collectionMap.values()) {
                         await collection.flush();
                     }
-                    await this.writeConfig();
+                    // await this.writeConfig();
                     resolve();
                 },
                 error: (err) => {
@@ -120,24 +137,31 @@ class LinkedDataStore {
         });
     }
 
-    private static loadData() {
-        return pipe(
-            mergeMap((d: any) => {
-                if (typeof(d) === "string") {
-                    const files = shelljs.ls("-R", d);
-                    return new Observable(subscriber => {
-                        LinkedDataStore.loadLocalFiles(files, subscriber);
-                    });
-                }
-                return of(d);
-            })
-        );
+    private getSourceObservable(): Observable<any> {
+        const localContent$ = this.localData$();
+        const moreContent$ = this.options.content$ ? this.options.content$ : empty();
+        return from([localContent$, moreContent$]).pipe(mergeAll());
     }
 
-    private static async loadLocalFiles(files, subscriber: Subscriber<any>) {
+    private localData$() {
+        let localContent$: Observable<any> = empty();
+        if (this.options.contentPath) {
+            localContent$ = Array.isArray(this.options.contentPath) ? from(this.options.contentPath) : of(this.options.contentPath);
+        }
+        return localContent$.pipe(mergeMap((contentPath: any) => {
+            const files = shelljs.ls("-R", contentPath);
+            return new Observable(subscriber => {
+                this.loadLocalFiles(contentPath, files, subscriber);
+            });
+        }));
+    }
+
+    private async loadLocalFiles(contentPath: string, files: string[], subscriber: Subscriber<any>) {
         for (const file of files) {
-            const content = await LinkedDataStore.loadAndHydrate(file);
-            subscriber.next(content);
+            if (isSupportedFile(file)) {
+                const content = await this.load(contentPath, file);
+                subscriber.next(content);
+            }
         }
         subscriber.complete();
     }
@@ -154,8 +178,10 @@ class LinkedDataStore {
 
     collection(name: string, partitionKey?: string): Observable<any> {
         return this.collectionIds(name, partitionKey)
-        .pipe(filter(filePath => shelljs.test("-e", filePath)))
-        .pipe(mergeMap(async filePath => await LinkedDataStore.loadAndHydrate(filePath)));
+        .pipe(filter(meta => {
+            return shelljs.test("-e", getFullPath(meta.base, meta.path));
+        }))
+        .pipe(mergeMap(async meta => await this.load(meta.base, meta.path)));
     }
 
     collectionPartitions(collectionName: string): Observable<any> {
@@ -171,15 +197,9 @@ class LinkedDataStore {
         });
     }
 
-    async getData(filePath: string) {
-        if (shelljs.test("-e", filePath)) {
-            return await LinkedDataStore.loadAndHydrate(filePath);
-        }
-        return null;
-    }
-
-    static async loadAndHydrate(filePath: string) {
-        const content = await loadContent(filePath);
+    async load(base: string, filePath: string, isHydrate: boolean = true) {
+        const fullPath = getFullPath(base, filePath);
+        const content = await loadContent(fullPath);
         const hydratedJson = await hydrateJsonLd(content, async (url) => {
             if (isSupportedFile(url)) {
                 return await loadContent(url);
@@ -187,11 +207,13 @@ class LinkedDataStore {
             return null;
         });
         return {
+            base: base,
             path: filePath,
             data: hydratedJson
         };
     }
 
+    /*
     private async writeConfig() {
         const configPath = `${CACHE_FOLDER}/${CONFIG_FILE}`;
         await writeFile(configPath, JSON.stringify(this.options));
@@ -208,7 +230,7 @@ class LinkedDataStore {
             return isSame;
         }
         return false;
-    }
+    }*/
 
     private iterateCollection() {
         return pipe(

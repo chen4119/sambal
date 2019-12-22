@@ -1,16 +1,15 @@
-import LinkedDataStore from "./LinkedDataStore";
+import LinkedDataStore, {CollectionDef} from "./LinkedDataStore";
 import {importCssModule} from "./cssModule";
 import {from} from "rxjs";
 import {template} from "./template";
 import {render} from "./operators/render";
 import Packager from "./Packager";
 
-const collections = [
+const collections: CollectionDef[] = [
     {
         name: "tags",
         groupBy: ["keywords"],
-        sortBy: {field: "dateCreated", order: "desc"},
-        pageSize: 100
+        sortBy: {field: "dateCreated", order: "desc"}
     }
 ];
 
@@ -34,7 +33,7 @@ packager.deliver();*/
 
 // .subscribe(d => console.log(d.html.html()));
 
-const store = new LinkedDataStore(from(["content/*.md"]), {collections: collections});
+const store = new LinkedDataStore({contentPath: ["content"], collections: collections});
 // importCssModule("./content/test.css");
 store.indexContent();
 // store.collectionPartitions("tags").subscribe(d => console.log(d));

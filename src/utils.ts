@@ -87,7 +87,7 @@ export function isExternalSource(src: string) {
 }
 
 export function isSupportedFile(src: string) {
-    return isExternalSource(src) || (src.match(SUPPORTED_FILE_EXT_REGEX) && shelljs.test("-f", src));
+    return isExternalSource(src) || (src.match(SUPPORTED_FILE_EXT_REGEX));
 }
 
 export function safeParseJson(jsonStr: string) {
@@ -96,6 +96,10 @@ export function safeParseJson(jsonStr: string) {
     } catch (e) {
         return {};
     }
+}
+
+export function getFullPath(base: string, filePath: string) {
+    return path.join(base, filePath);
 }
 
 function getAxiosResponseContentType(response: AxiosResponse<any>): SUPPORTED_CONTENT_TYPE {

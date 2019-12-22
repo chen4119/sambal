@@ -1,5 +1,5 @@
 import {Observable, Subscriber} from "rxjs";
-import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData} from "./utils";
+import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData, getFullPath} from "./utils";
 import path from "path";
 import shelljs from "shelljs";
 import {ASC, DESC} from "./constants";
@@ -17,13 +17,15 @@ class Collection {
         if (!this.isIndexLoaded) {
             await this.loadIndex();
         }
+        const id = getFullPath(content.base, content.path);
         const meta = {};
         if (this.sortBy) {
             for (const def of this.sortBy) {
                 meta[def.field] = queryData(content.data, def.field);
             }
         }
-        this.contentMap.set(content.path, {
+        this.contentMap.set(id, {
+            base: content.base,
             path: content.path,
             meta: meta
         });
@@ -39,8 +41,8 @@ class Collection {
         if (!this.isIndexLoaded) {
             await this.loadIndex();
         }
-        for (const path of this.contentMap.keys()) {
-            subscriber.next(path);
+        for (const meta of this.contentMap.values()) {
+            subscriber.next(meta);
         }
         subscriber.complete();
     }
@@ -97,7 +99,8 @@ class Collection {
             const metas = safeParseJson(await readFile(indexFile));
             if (metas) {
                 for (const meta of metas) {
-                    this.contentMap.set(meta.path, meta);
+                    const id = getFullPath(meta.base, meta.path);
+                    this.contentMap.set(id, meta);
                 }
             }
         } else {
