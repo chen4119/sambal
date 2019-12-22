@@ -93,12 +93,15 @@ class Collection {
     private async loadIndex() {
         const indexFile = this.getIndexFilePath();
         if (shelljs.test("-e", indexFile)) {
+            console.log(`Loading index file ${indexFile}`);
             const metas = safeParseJson(await readFile(indexFile));
             if (metas) {
                 for (const meta of metas) {
                     this.contentMap.set(meta.path, meta);
                 }
             }
+        } else {
+            console.log(`${indexFile} not found`);
         }
         this.isIndexLoaded = true;
     }

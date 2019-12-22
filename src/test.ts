@@ -22,6 +22,7 @@ function renderPage({classes}) {
     `;
 }
 
+/*
 const obs = from([{
     path: "foisf.md",
     data: {headline:'test'}
@@ -29,11 +30,12 @@ const obs = from([{
 .pipe(render(renderPage, "content/test.css"));
 
 const packager = new Packager(obs, null);
-packager.deliver();
+packager.deliver();*/
+
 // .subscribe(d => console.log(d.html.html()));
 
-// const store = new LinkedDataStore(from(["content/*.md"]), {collections: collections});
+const store = new LinkedDataStore(from(["content/*.md"]), {collections: collections});
 // importCssModule("./content/test.css");
-// store.indexContent();
+store.indexContent();
 // store.collectionPartitions("tags").subscribe(d => console.log(d));
 // store.collection("tags", "javascript").subscribe(d => console.log(d));

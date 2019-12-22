@@ -71,6 +71,7 @@ export function readFile(src: string): Promise<string> {
 export function writeFile(output: string, content: string): Promise<void> {
     return new Promise((resolve, reject) => {
         shelljs.mkdir("-p", path.dirname(output));
+        console.log("Writing " + output);
         fs.writeFile(output, content, "utf-8", (err) => {
             if (err) {
                 reject(err);

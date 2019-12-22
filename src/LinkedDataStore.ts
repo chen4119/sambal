@@ -103,8 +103,9 @@ class LinkedDataStore {
             this.obs$
             .pipe(mergeMap(fieldValue => Array.isArray(fieldValue) ? from(fieldValue) : of(fieldValue)))
             .pipe(LinkedDataStore.loadData())
+            .pipe(this.iterateCollection())
             .subscribe({
-                next: (d: any) => this.iterateCollection(d),
+                next: (d: any) => console.log("Processed " + d.path),
                 complete: async () => {
                     for (const collection of this.collectionMap.values()) {
                         await collection.flush();
@@ -209,17 +210,22 @@ class LinkedDataStore {
         return false;
     }
 
-    private iterateCollection(content: any) {
-        for (const collection of this.options.collections) {
-            if (collection.groupBy) {
-                this.addToPartitionedCollection(content, collection);
-            } else {
-                this.addToCollection(content, LinkedDataStore.getCollectionPath(collection.name), collection.sortBy);
-            }
-        }
+    private iterateCollection() {
+        return pipe(
+            mergeMap(async (content: any) => {
+                for (const collection of this.options.collections) {
+                    if (collection.groupBy) {
+                        await this.addToPartitionedCollection(content, collection);
+                    } else {
+                        await this.addToCollection(content, LinkedDataStore.getCollectionPath(collection.name), collection.sortBy);
+                    }
+                }
+                return content;
+            })
+        );
     }
 
-    private addToCollection(content: any, collectionPath: string, sortBy?) {
+    private async addToCollection(content: any, collectionPath: string, sortBy?) {
         let collection: Collection;
         if (this.collectionMap.has(collectionPath)) {
             collection = this.collectionMap.get(collectionPath);
@@ -227,14 +233,14 @@ class LinkedDataStore {
             collection = new Collection(CACHE_FOLDER, collectionPath, sortBy);
             this.collectionMap.set(collectionPath, collection);
         }
-        collection.upsert(content);
+        await collection.upsert(content);
     }
 
-    private addToPartitionedCollection(content: any, collectionDef: any) {
+    private async addToPartitionedCollection(content: any, collectionDef: any) {
         const partitionKeys = LinkedDataStore.getPartitionKeys(content.data, collectionDef.groupBy);
         for (const key of partitionKeys) {
             if (key) {
-                this.addToCollection(content, LinkedDataStore.getCollectionPath(collectionDef.name, key), collectionDef.sortBy);
+                await this.addToCollection(content, LinkedDataStore.getCollectionPath(collectionDef.name, key), collectionDef.sortBy);
             }
         }
     }
