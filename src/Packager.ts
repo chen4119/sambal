@@ -5,16 +5,16 @@ import {writeFile, isExternalSource} from "./utils";
 import path from "path";
 import prettier from "prettier";
 
-type BundleFunction = (srcFile: string, destFolder: string) => Promise<string>
+type BundleFunction = (srcFile: string, destFolder: string, isModule: boolean) => Promise<string[]>;
 const DEFAULT_OPTIONS = {
     prettyHtml: true,
     bundle: async (srcFile: string, destFolder: string) => {
-        return path.join(OUTPUT_FOLDER, srcFile);
+        return [srcFile];
     }
 };
 
 class Packager {
-    private bundledFileMap: Map<string, Promise<string>> = new Map<string, Promise<string>>(); // map a src file to dest file
+    private bundledFileMap: Map<string, Promise<string[]>> = new Map<string, Promise<string[]>>(); // map a src file to dest file
     constructor(private obs$: Observable<any>, private options: {prettyHtml?: boolean, bundle?: BundleFunction} = {}) {
         this.options = {
             ...DEFAULT_OPTIONS,
@@ -50,7 +50,8 @@ class Packager {
                         const dests = await Promise.all(bundleJobs.map(d => d.promise));
                         for (let i = 0; i < bundleJobs.length; i++) {
                             const node = bundleJobs[i].node;
-                            node.attr("src", path.relative(OUTPUT_FOLDER, dests[i]));
+                            const assets = dests[i];
+                            this.addAssetsToDOM(assets, d.html, node);
                         }
                     }
                     html = d.html.html();
@@ -63,18 +64,26 @@ class Packager {
         );
     }
 
-    private getBundlePromises($: CheerioStatic): {node: Cheerio, promise: Promise<string>}[] {
+    private addAssetsToDOM(assets: string[], $: CheerioStatic, originalScriptNode: Cheerio) {
+        for (let i = 0; i < assets.length; i++) {
+            $(originalScriptNode.clone()).insertAfter(originalScriptNode).attr("src", assets[i]);
+        }
+        originalScriptNode.remove();
+    }
+
+    private getBundlePromises($: CheerioStatic): {node: Cheerio, promise: Promise<string[]>}[] {
         const scriptSelector = 'script[src]';
         const entriesToBundle = [];
         const self = this;
         $(scriptSelector).each(function() {
             //TODO: Normalize jsFile
             const jsFile = $(this).attr("src");
-            if (isExternalSource(jsFile)) {
+            const isModule = $(this).attr("type") === "module";
+            if (!jsFile || isExternalSource(jsFile)) {
                 return;
             }
             if (!self.bundledFileMap.has(jsFile)) {
-                const promise = self.options.bundle(jsFile, OUTPUT_FOLDER);
+                const promise = self.options.bundle(jsFile, OUTPUT_FOLDER, isModule);
                 self.bundledFileMap.set(jsFile, promise);
                 entriesToBundle.push({
                     node: $(this),
