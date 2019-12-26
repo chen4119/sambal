@@ -52,16 +52,14 @@ class LinkedDataStore {
     constructor(private userOptions: StoreOptions = {}) {
         this.options = {
             ...userOptions,
-            collections: [DEFAULT_COLLECTION]
+            collections: []
         };
         if (this.userOptions.collections && this.userOptions.collections.length > 0) {
             const updatedCollections = [];
-            const allIndex = cloneDeep(DEFAULT_COLLECTION);
-            updatedCollections.push(allIndex);
+            // const allIndex = cloneDeep(DEFAULT_COLLECTION);
+            // updatedCollections.push(allIndex);
             for (const collection of this.userOptions.collections) {
-                if (collection.name === allIndex.name) {
-                    allIndex.sortBy = this.deepCopySortBy(collection.sortBy);
-                } else if (isNonEmptyString(collection.name)) {
+                if (isNonEmptyString(collection.name)) {
                     updatedCollections.push({
                         name: collection.name,
                         sortBy: this.deepCopySortBy(collection.sortBy),
@@ -137,6 +135,10 @@ class LinkedDataStore {
         });
     }
 
+    content(): Observable<any> {
+        return this.getSourceObservable();
+    }
+
     private getSourceObservable(): Observable<any> {
         const localContent$ = this.localData$();
         const moreContent$ = this.options.content$ ? this.options.content$ : empty();
@@ -166,7 +168,7 @@ class LinkedDataStore {
         subscriber.complete();
     }
 
-    collectionIds(name: string, partitionKey?: string): Observable<any> {
+    private collectionIds(name: string, partitionKey?: string): Observable<any> {
         if (this.didConfigChanged) {
             return empty();
         }
