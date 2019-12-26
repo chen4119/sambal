@@ -35,41 +35,23 @@ function renderPage({css}) {
     `;
 }
 
-const subject = new Subject<any>();
 
-const obs1 = subject.pipe(map(d => ({...d, test: "hello"})));
-const obs2 = subject.pipe(map(d => ({...d, test: "hello2"})));
-
-
-from([obs1, obs2])
-.pipe(mergeAll())
+/*
+from([{
+    path: "foisf.md",
+    data: {headline:'test'}
+}])
+.pipe(render(renderPage, {type: "BlogPosting"}))
+.pipe(toHtml())
 .subscribe(d => console.log(d));
-
-const obs = new Observable((subscriber => {
-    console.log("subscribing");
-    subscriber.next({
-        path: "foisf.md",
-        data: {headline:'test'}
-    });
-    subscriber.complete();
-}))
-.pipe(tap(d => console.log("TAPPED!")))
-.subscribe(subject);
-// .pipe(multicast(() => new Subject<any>()));
-
-
-
-
-// .pipe(render(renderPage, {type: "BlogPosting"}));
-// .pipe(toHtml())
-// .subscribe(d => console.log(d));
+*/
 
 // const packager = new Packager(obs, null);
 // packager.deliver();
 
-// .subscribe(d => console.log(d.html.html()));
-
-// const store = new LinkedDataStore({contentPath: ["content"], collections: collections});
+const store = new LinkedDataStore({contentPath: ["content"], collections: collections});
+store.content().subscribe(d => console.log(d));
 // store.indexContent();
 // store.collectionPartitions("tags").subscribe(d => console.log(d));
 // store.collection("tags", "javascript").subscribe(d => console.log(d));
+store.start();

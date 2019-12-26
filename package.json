@@ -1,6 +1,6 @@
 {
     "name": "sambal",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "description": "Sambal indexer",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

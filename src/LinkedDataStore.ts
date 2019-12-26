@@ -1,6 +1,6 @@
 
-import {Observable, Subscriber, empty, pipe, from, of} from "rxjs";
-import {mergeMap, filter, mergeAll} from "rxjs/operators";
+import {Observable, Subscriber, empty, pipe, from, of, ConnectableObservable} from "rxjs";
+import {mergeMap, filter, mergeAll, publish} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
 import fs from "fs";
@@ -40,15 +40,17 @@ type StoreOptions = {
 };
 
 const CONFIG_FILE = "config.json";
+/*
 const DEFAULT_COLLECTION: CollectionDef = {
     name: "main",
     sortBy: [{field: "dateCreated", order: DESC}]
-};
+};*/
 
 class LinkedDataStore {
     private options: StoreOptions;
     private didConfigChanged: boolean = false;
     private collectionMap = new Map<string, Collection>();
+    private observablesToStart: ConnectableObservable<any>[] = [];
     constructor(private userOptions: StoreOptions = {}) {
         this.options = {
             ...userOptions,
@@ -136,7 +138,9 @@ class LinkedDataStore {
     }
 
     content(): Observable<any> {
-        return this.getSourceObservable();
+        const obs$: ConnectableObservable<any> = this.getSourceObservable().pipe(publish()) as ConnectableObservable<any>;
+        this.observablesToStart.push(obs$);
+        return obs$;
     }
 
     private getSourceObservable(): Observable<any> {
@@ -179,11 +183,14 @@ class LinkedDataStore {
     }
 
     collection(name: string, partitionKey?: string): Observable<any> {
-        return this.collectionIds(name, partitionKey)
+        const obs$ = this.collectionIds(name, partitionKey)
         .pipe(filter(meta => {
             return shelljs.test("-e", getFullPath(meta.base, meta.path));
         }))
-        .pipe(mergeMap(async meta => await this.load(meta.base, meta.path)));
+        .pipe(mergeMap(async meta => await this.load(meta.base, meta.path)))
+        .pipe(publish()) as ConnectableObservable<any>;
+        this.observablesToStart.push(obs$);
+        return obs$;
     }
 
     collectionPartitions(collectionName: string): Observable<any> {
@@ -197,6 +204,13 @@ class LinkedDataStore {
             }
             subscriber.complete();
         });
+    }
+
+    start() {
+        for (const obs$ of this.observablesToStart) {
+            obs$.connect();
+        }
+        this.observablesToStart = [];
     }
 
     async load(base: string, filePath: string, isHydrate: boolean = true) {
