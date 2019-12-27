@@ -37,6 +37,13 @@ class Collection {
         });
     }
 
+    async size() {
+        if (!this.isIndexLoaded) {
+            await this.loadIndex();
+        }
+        return this.contentMap.size;
+    }
+    
     async iterateIndex(subscriber: Subscriber<string>) {
         if (!this.isIndexLoaded) {
             await this.loadIndex();

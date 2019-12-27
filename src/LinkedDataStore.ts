@@ -176,8 +176,12 @@ class LinkedDataStore {
         if (this.didConfigChanged) {
             return empty();
         }
+        const def = this.getCollectionDef(name);
+        if (!def) {
+            return empty();
+        }
         const collectionPath = LinkedDataStore.getCollectionPath(name, partitionKey);
-        const collection = new Collection(CACHE_FOLDER, collectionPath);
+        const collection = this.getCollection(collectionPath, def.sortBy);
         const sourceObs = collection.observe();
         return sourceObs;
     }
@@ -193,6 +197,33 @@ class LinkedDataStore {
         return obs$;
     }
 
+    async stats(collectionName: string) {
+        const def = this.getCollectionDef(collectionName);
+        if (def) {
+            if (def.groupBy) {
+                const partitionKeys = LinkedDataStore.getCollectionPartitionKeys(collectionName);
+
+            } else {
+                const collectionPath = LinkedDataStore.getCollectionPath(name);
+                const collection = this.getCollection(collectionPath, def.sortBy);
+                const size = await collection.size();
+                return {
+                    size: size
+                };
+            }
+        }
+        throw new Error(`Collection ${collectionName} not found`);
+    }
+
+    private getCollectionDef(collectionName: string) {
+        return this.options.collections.find(c => c.name === collectionName);
+    }
+
+    private static getCollectionPartitionKeys(collectionName: string) {
+        return shelljs.ls("-d", `${Collection.getRoot(CACHE_FOLDER)}/${collectionName}/*`);
+    }
+
+    /*
     collectionPartitions(collectionName: string): Observable<any> {
         if (this.didConfigChanged) {
             return empty();
@@ -204,7 +235,7 @@ class LinkedDataStore {
             }
             subscriber.complete();
         });
-    }
+    }*/
 
     start() {
         for (const obs$ of this.observablesToStart) {
@@ -263,14 +294,17 @@ class LinkedDataStore {
         );
     }
 
-    private async addToCollection(content: any, collectionPath: string, sortBy?) {
-        let collection: Collection;
+    private getCollection(collectionPath: string, sortBy?): Collection {
         if (this.collectionMap.has(collectionPath)) {
-            collection = this.collectionMap.get(collectionPath);
-        } else {
-            collection = new Collection(CACHE_FOLDER, collectionPath, sortBy);
-            this.collectionMap.set(collectionPath, collection);
+            return this.collectionMap.get(collectionPath);
         }
+        const collection = new Collection(CACHE_FOLDER, collectionPath, sortBy);
+        this.collectionMap.set(collectionPath, collection);
+        return collection;
+    }
+
+    private async addToCollection(content: any, collectionPath: string, sortBy?) {
+        const collection: Collection = this.getCollection(collectionPath, sortBy);
         await collection.upsert(content);
     }
 
