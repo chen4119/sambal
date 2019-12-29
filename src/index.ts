@@ -1,6 +1,13 @@
 import LinkedDataStore from "./LinkedDataStore";
 import Packager from "./Packager";
 
+export {
+    toJsonLdGraph,
+    toSchemaOrgJsonLd,
+    graphToCondensedJsonLd,
+    hydrateJsonLd
+} from "sambal-jsonld";
+
 export {LinkedDataStore};
 export {Packager};
 export {template} from "./template";

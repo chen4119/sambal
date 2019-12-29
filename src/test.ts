@@ -1,4 +1,5 @@
-import LinkedDataStore, {CollectionDef} from "./LinkedDataStore";
+import LinkedDataStore from "./LinkedDataStore";
+import {CollectionDef} from "./constants";
 import {from, Subject, Observable} from "rxjs";
 import {map, mergeAll, tap, multicast} from "rxjs/operators";
 import {template} from "./template";
@@ -6,6 +7,8 @@ import {render} from "./operators/render";
 import {toHtml} from "./operators/toHtml";
 import Packager from "./Packager";
 import LocalCss from "./LocalCss";
+import {getUriPath} from "./utils";
+import path from "path";
 
 const collections: CollectionDef[] = [
     {
@@ -49,9 +52,16 @@ from([{
 // const packager = new Packager(obs, null);
 // packager.deliver();
 
-const store = new LinkedDataStore({contentPath: ["content"], collections: collections});
-store.content().subscribe(d => console.log(d));
+const store = new LinkedDataStore("https://chen4119.me", {contentPath: ["content"], collections: collections});
+// store.content().subscribe(d => console.log(d));
+/*
+(async () => {
+    const sizes = await store.stats("tags");
+    console.log(sizes.partitions);
+})();*/
 // store.indexContent();
-// store.collectionPartitions("tags").subscribe(d => console.log(d));
-// store.collection("tags", "javascript").subscribe(d => console.log(d));
-store.start();
+// store.collection("tags", {keywords: "javascript"}).subscribe(d => console.log(d));
+// store.start();
+
+// console.log(getUriPath(null, "https://chen4119.me/post1", {}));
+

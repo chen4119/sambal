@@ -1,7 +1,7 @@
 import {Observable, pipe} from "rxjs";
 import {mergeMap, filter} from "rxjs/operators";
-import {OUTPUT_FOLDER} from "./constants";
-import {writeFile, isExternalSource} from "./utils";
+import {OUTPUT_FOLDER, SambalData} from "./constants";
+import {writeFile, isExternalSource, getUriPath} from "./utils";
 import path from "path";
 import prettier from "prettier";
 
@@ -15,7 +15,7 @@ const DEFAULT_OPTIONS = {
 
 class Packager {
     private bundledFileMap: Map<string, Promise<string[]>> = new Map<string, Promise<string[]>>(); // map a src file to dest file
-    constructor(private obs$: Observable<any>, private options: {prettyHtml?: boolean, bundle?: BundleFunction} = {}) {
+    constructor(private obs$: Observable<SambalData>, private options: {prettyHtml?: boolean, bundle?: BundleFunction} = {}) {
         this.options = {
             ...DEFAULT_OPTIONS,
             ...options
@@ -41,25 +41,25 @@ class Packager {
     }
 
     private bundleJsFiles() {
-        return pipe(
-            mergeMap(async (d: {path: string, data: any, html: CheerioStatic}) => {
+        return pipe<Observable<SambalData>, Observable<{base: string, uri: string, data: any, html: string}>>(
+            mergeMap(async (data: SambalData) => {
                 let html = null;
-                if (d.html) {
-                    const bundleJobs = this.getBundlePromises(d.html);
+                if (data.html) {
+                    const bundleJobs = this.getBundlePromises(data.html);
                     if (bundleJobs.length > 0) {
                         const dests = await Promise.all(bundleJobs.map(d => d.promise));
                         for (let i = 0; i < bundleJobs.length; i++) {
                             const node = bundleJobs[i].node;
                             const assets = dests[i];
-                            this.addAssetsToDOM(assets, d.html, node);
+                            this.addAssetsToDOM(assets, data.html, node);
                         }
                     }
-                    html = d.html.html();
+                    html = data.html.html();
                     if (this.options.prettyHtml) {
                         html = prettier.format(html, {parser: "html"});
                     }
                 }
-                return {path: d.path, html: html};
+                return {base: data.base, uri: data.uri, data: data.data, html: html};
             })
         );
     }
@@ -100,19 +100,19 @@ class Packager {
     }
 
     private outputHtml() {
-        return pipe(
-            mergeMap(async (d: {path: string, html: string}) => {
-                const basename = path.basename(d.path, path.extname(d.path));
-                return await this.write(`${OUTPUT_FOLDER}/${path.dirname(d.path)}/${basename}`, d.html);
+        return pipe<Observable<{base: string, uri: string, data: any, html: string}>, Observable<string>>(
+            mergeMap(async (d) => {
+                const uriPath = getUriPath(d.base, d.uri, d.data);
+                return await this.write(path.join(OUTPUT_FOLDER, uriPath), d.html);
             })
         );
     }
 
     private async write(dest: string, content: string) {
         const ext = path.extname(dest).toLowerCase();
-        let output = path.normalize(`${dest}/index.html`);
-        if (ext === '.html' || ext === '.htm') {
-            output = path.normalize(`${dest}`);
+        let output = dest;
+        if (ext !== '.html' && ext !== '.htm') {
+            output = `${dest}/index.html`;
         }
         await writeFile(output, content);
         return output;

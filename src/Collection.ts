@@ -1,15 +1,15 @@
 import {Observable, Subscriber} from "rxjs";
-import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData, getFullPath} from "./utils";
+import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData} from "./utils";
 import path from "path";
 import shelljs from "shelljs";
-import {ASC, DESC} from "./constants";
+import {ASC, DESC, SortBy} from "./constants";
 
 const INDEX_FILE = "index.json";
 
 class Collection {
     private contentMap: Map<string, any> = new Map<string, any>();
     private isIndexLoaded: boolean = false;
-    constructor(private cacheRoot: string, private collectionPath: string, private sortBy?) {
+    constructor(private collectionPath: string, private sortBy?: SortBy[]) {
         
     }
 
@@ -17,16 +17,15 @@ class Collection {
         if (!this.isIndexLoaded) {
             await this.loadIndex();
         }
-        const id = getFullPath(content.base, content.path);
         const meta = {};
         if (this.sortBy) {
             for (const def of this.sortBy) {
                 meta[def.field] = queryData(content.data, def.field);
             }
         }
-        this.contentMap.set(id, {
+        this.contentMap.set(content.uri, {
             base: content.base,
-            path: content.path,
+            uri: content.uri,
             meta: meta
         });
     }
@@ -106,8 +105,7 @@ class Collection {
             const metas = safeParseJson(await readFile(indexFile));
             if (metas) {
                 for (const meta of metas) {
-                    const id = getFullPath(meta.base, meta.path);
-                    this.contentMap.set(id, meta);
+                    this.contentMap.set(meta.uri, meta);
                 }
             }
         } else {
@@ -116,12 +114,8 @@ class Collection {
         this.isIndexLoaded = true;
     }
 
-    static getRoot(cacheFolder: string) {
-        return `${cacheFolder}/collections`;
-    }
-
     private getIndexFilePath(): string {
-        return path.normalize(`${Collection.getRoot(this.cacheRoot)}/${this.collectionPath}/${INDEX_FILE}`);
+        return path.join(this.collectionPath, INDEX_FILE);
     }
 
 }

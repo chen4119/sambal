@@ -9,6 +9,7 @@ import matter from 'gray-matter';
 import marked from "marked";
 import axios, { AxiosResponse } from "axios";
 import shelljs from "shelljs";
+import url from "url";
 
 export function queryData(data: any, dataPath: string) {
     const fieldArray = dataPath.split('.');
@@ -56,6 +57,14 @@ export function isNonEmptyString(val: any) {
     return typeof(val) === "string" && val.length > 0;
 }
 
+export function getUriPath(base: string, uri: string, data: any) {
+    if (data.url || isExternalSource(uri)) {
+        return url.parse(uri).pathname;
+    }
+    const basename = path.basename(uri, path.extname(uri));
+    return `${path.relative(base, path.dirname(uri))}/${basename}`;
+}
+
 export function readFile(src: string): Promise<string> {
     return new Promise((resolve, reject) => {
         fs.readFile(src, "utf-8", (err, data) => {
@@ -71,7 +80,6 @@ export function readFile(src: string): Promise<string> {
 export function writeFile(output: string, content: string): Promise<void> {
     return new Promise((resolve, reject) => {
         shelljs.mkdir("-p", path.dirname(output));
-        console.log("Writing " + output);
         fs.writeFile(output, content, "utf-8", (err) => {
             if (err) {
                 reject(err);
@@ -96,10 +104,6 @@ export function safeParseJson(jsonStr: string) {
     } catch (e) {
         return {};
     }
-}
-
-export function getFullPath(base: string, filePath: string) {
-    return path.join(base, filePath);
 }
 
 function getAxiosResponseContentType(response: AxiosResponse<any>): SUPPORTED_CONTENT_TYPE {

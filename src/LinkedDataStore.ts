@@ -5,7 +5,7 @@ import shelljs from "shelljs";
 import path from "path";
 import fs from "fs";
 import {cloneDeep, isEqual} from "lodash";
-import {CACHE_FOLDER, ASC, DESC} from "./constants";
+import {CACHE_FOLDER, ASC, DESC, SortBy, CollectionDef, SambalData} from "./constants";
 import {
     loadContent,
     writeFile,
@@ -15,23 +15,14 @@ import {
     safeParseJson,
     queryData,
     isSupportedFile,
-    getFullPath
+    getUriPath,
+    readFile
 } from "./utils";
 import Collection from "./Collection";
 import {hydrateJsonLd} from "sambal-jsonld";
+import Partitions from "./Partitions";
 
 shelljs.config.silent = true;
-
-type SortBy = {
-    field: string,
-    order: "desc" | "asc"
-};
-
-export type CollectionDef = {
-    name: string,
-    sortBy?: SortBy | SortBy[],
-    groupBy?: string | string[]
-};
 
 type StoreOptions = {
     contentPath?: string | string[],
@@ -40,6 +31,7 @@ type StoreOptions = {
 };
 
 const CONFIG_FILE = "config.json";
+const COLLECTIONS_CACHE = `${CACHE_FOLDER}/collections`;
 /*
 const DEFAULT_COLLECTION: CollectionDef = {
     name: "main",
@@ -49,9 +41,10 @@ const DEFAULT_COLLECTION: CollectionDef = {
 class LinkedDataStore {
     private options: StoreOptions;
     private didConfigChanged: boolean = false;
-    private collectionMap = new Map<string, Collection>();
+    private collectionMap = new Map<string, Collection>(); // map collection path to Collection
+    private partitionMap = new Map<string, Partitions>(); // map collection name to partitions
     private observablesToStart: ConnectableObservable<any>[] = [];
-    constructor(private userOptions: StoreOptions = {}) {
+    constructor(private host: string, private userOptions: StoreOptions = {}) {
         this.options = {
             ...userOptions,
             collections: []
@@ -65,7 +58,7 @@ class LinkedDataStore {
                     updatedCollections.push({
                         name: collection.name,
                         sortBy: this.deepCopySortBy(collection.sortBy),
-                        groupBy: this.deepCopyGroupBy(collection.groupBy)
+                        groupBy: this.sortGroupBy(collection.groupBy)
                     });
                 } else {
                     console.log(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
@@ -76,7 +69,7 @@ class LinkedDataStore {
         // this.didConfigChanged = !this.ensureConfigIsSame();
     }
 
-    private deepCopyGroupBy(groupBy) {
+    private sortGroupBy(groupBy) {
         if (isNonEmptyString(groupBy)) {
             return [groupBy];    
         } else if (Array.isArray(groupBy)) {
@@ -88,6 +81,7 @@ class LinkedDataStore {
                     console.error(`Group by fields need to be a non-empty string: ${field}`);
                 }
             }
+            validatedGroupBy.sort();
             return validatedGroupBy;
         }
         return null;
@@ -119,13 +113,20 @@ class LinkedDataStore {
     async indexContent() {
         return new Promise((resolve, reject) => {
             shelljs.rm("-rf", CACHE_FOLDER);
+            if (this.options.collections.length === 0) {
+                console.log("No collections defined.  Indexing not required");
+                resolve();
+            }
             this.getSourceObservable()
             .pipe(this.iterateCollection())
             .subscribe({
-                next: (d: any) => console.log("Processed " + d.path),
+                next: (d: any) => console.log("Processed " + d.uri),
                 complete: async () => {
                     for (const collection of this.collectionMap.values()) {
                         await collection.flush();
+                    }
+                    for (const partitions of this.partitionMap.values()) {
+                        await partitions.flush();
                     }
                     // await this.writeConfig();
                     resolve();
@@ -165,14 +166,14 @@ class LinkedDataStore {
     private async loadLocalFiles(contentPath: string, files: string[], subscriber: Subscriber<any>) {
         for (const file of files) {
             if (isSupportedFile(file)) {
-                const content = await this.load(contentPath, file);
+                const content = await this.load(path.join(contentPath, file), {base: contentPath});
                 subscriber.next(content);
             }
         }
         subscriber.complete();
     }
 
-    private collectionIds(name: string, partitionKey?: string): Observable<any> {
+    private collectionMetas(name: string, partition?: object): Observable<any> {
         if (this.didConfigChanged) {
             return empty();
         }
@@ -180,18 +181,24 @@ class LinkedDataStore {
         if (!def) {
             return empty();
         }
-        const collectionPath = LinkedDataStore.getCollectionPath(name, partitionKey);
-        const collection = this.getCollection(collectionPath, def.sortBy);
+        let collectionPath;
+        if (partition) {
+            const partitions = this.getPartitions(def);
+            collectionPath = LinkedDataStore.getCollectionPath(name, partitions.getPartitionKey(partition));
+        } else {
+            collectionPath = LinkedDataStore.getCollectionPath(name);
+        }
+        const collection = this.getCollection(collectionPath, def.sortBy as SortBy[]);
         const sourceObs = collection.observe();
         return sourceObs;
     }
 
-    collection(name: string, partitionKey?: string): Observable<any> {
-        const obs$ = this.collectionIds(name, partitionKey)
+    collection(name: string, partition?: object): Observable<any> {
+        const obs$ = this.collectionMetas(name, partition)
         .pipe(filter(meta => {
-            return shelljs.test("-e", getFullPath(meta.base, meta.path));
+            return shelljs.test("-e", meta.uri);
         }))
-        .pipe(mergeMap(async meta => await this.load(meta.base, meta.path)))
+        .pipe(mergeMap(async meta => await this.load(meta.uri, {base: meta.base})))
         .pipe(publish()) as ConnectableObservable<any>;
         this.observablesToStart.push(obs$);
         return obs$;
@@ -201,16 +208,29 @@ class LinkedDataStore {
         const def = this.getCollectionDef(collectionName);
         if (def) {
             if (def.groupBy) {
-                const partitionKeys = LinkedDataStore.getCollectionPartitionKeys(collectionName);
-
-            } else {
-                const collectionPath = LinkedDataStore.getCollectionPath(name);
-                const collection = this.getCollection(collectionPath, def.sortBy);
-                const size = await collection.size();
+                const partitions = this.getPartitions(def);
+                const partitionList = await partitions.list();
+                const partitionSizes = [];
+                for (const partition of partitionList) {
+                    const partitionKey = partitions.getPartitionKey(partition.meta);
+                    const collectionPath = LinkedDataStore.getCollectionPath(collectionName, partitionKey);
+                    const collection = this.getCollection(collectionPath, def.sortBy as SortBy[]);
+                    const size = await collection.size();
+                    partitionSizes.push({
+                        partition: cloneDeep(partition.meta),
+                        size: size
+                    });
+                }
                 return {
-                    size: size
+                    partitions: partitionSizes
                 };
             }
+            const collectionPath = LinkedDataStore.getCollectionPath(collectionName);
+            const collection = this.getCollection(collectionPath, def.sortBy as SortBy[]);
+            const size = await collection.size();
+            return {
+                size: size
+            };
         }
         throw new Error(`Collection ${collectionName} not found`);
     }
@@ -219,24 +239,6 @@ class LinkedDataStore {
         return this.options.collections.find(c => c.name === collectionName);
     }
 
-    private static getCollectionPartitionKeys(collectionName: string) {
-        return shelljs.ls("-d", `${Collection.getRoot(CACHE_FOLDER)}/${collectionName}/*`);
-    }
-
-    /*
-    collectionPartitions(collectionName: string): Observable<any> {
-        if (this.didConfigChanged) {
-            return empty();
-        }
-        return new Observable(subscriber => {
-            const dirs = shelljs.ls("-d", `${Collection.getRoot(CACHE_FOLDER)}/${collectionName}/*`);
-            for (const dir of dirs) {
-                subscriber.next(decodeURIComponent(path.basename(dir)));
-            }
-            subscriber.complete();
-        });
-    }*/
-
     start() {
         for (const obs$ of this.observablesToStart) {
             obs$.connect();
@@ -244,18 +246,20 @@ class LinkedDataStore {
         this.observablesToStart = [];
     }
 
-    async load(base: string, filePath: string, isHydrate: boolean = true) {
-        const fullPath = getFullPath(base, filePath);
-        const content = await loadContent(fullPath);
+    async load(uri: string, options?: {base?: string}): Promise<SambalData> {
+        const content = await loadContent(uri);
         const hydratedJson = await hydrateJsonLd(content, async (url) => {
             if (isSupportedFile(url)) {
                 return await loadContent(url);
             }
             return null;
         });
+        if (!hydratedJson.url) {
+            hydratedJson.url = path.join(this.host, getUriPath(options.base, uri, hydratedJson));
+        }
         return {
-            base: base,
-            path: filePath,
+            base: options.base,
+            uri: uri,
             data: hydratedJson
         };
     }
@@ -286,7 +290,7 @@ class LinkedDataStore {
                     if (collection.groupBy) {
                         await this.addToPartitionedCollection(content, collection);
                     } else {
-                        await this.addToCollection(content, LinkedDataStore.getCollectionPath(collection.name), collection.sortBy);
+                        await this.addToCollection(content, LinkedDataStore.getCollectionPath(collection.name), collection.sortBy as SortBy[]);
                     }
                 }
                 return content;
@@ -294,35 +298,50 @@ class LinkedDataStore {
         );
     }
 
-    private getCollection(collectionPath: string, sortBy?): Collection {
+    private getCollection(collectionPath: string, sortBy?: SortBy[]): Collection {
         if (this.collectionMap.has(collectionPath)) {
             return this.collectionMap.get(collectionPath);
         }
-        const collection = new Collection(CACHE_FOLDER, collectionPath, sortBy);
+        const collection = new Collection(collectionPath, sortBy);
         this.collectionMap.set(collectionPath, collection);
         return collection;
     }
 
-    private async addToCollection(content: any, collectionPath: string, sortBy?) {
+    private getPartitions(collectionDef: CollectionDef): Partitions {
+        if (this.partitionMap.has(collectionDef.name)) {
+            return this.partitionMap.get(collectionDef.name);
+        }
+        const collectionPath = LinkedDataStore.getCollectionPath(collectionDef.name);
+        const partitions = new Partitions(collectionPath, collectionDef.groupBy as string[]);
+        this.partitionMap.set(collectionDef.name, partitions);
+        return partitions;
+    }
+
+    private async addToCollection(content: any, collectionPath: string, sortBy?: SortBy[]) {
         const collection: Collection = this.getCollection(collectionPath, sortBy);
         await collection.upsert(content);
     }
 
-    private async addToPartitionedCollection(content: any, collectionDef: any) {
-        const partitionKeys = LinkedDataStore.getPartitionKeys(content.data, collectionDef.groupBy);
+    private async addToPartitionedCollection(content: any, collectionDef: CollectionDef) {
+        const partitionKeys = LinkedDataStore.getPartitionKeys(content.data, collectionDef.groupBy as string[]);
+        const partitions = this.getPartitions(collectionDef);
         for (const key of partitionKeys) {
             if (key) {
-                await this.addToCollection(content, LinkedDataStore.getCollectionPath(collectionDef.name, key), collectionDef.sortBy);
+                partitions.add(key);
+                const partitionKey = partitions.getPartitionKey(key);
+                await this.addToCollection(
+                    content,
+                    LinkedDataStore.getCollectionPath(collectionDef.name, partitionKey),
+                    collectionDef.sortBy as SortBy[]);
             }
         }
     }
 
     private static getCollectionPath(collectionName: string, partitionKey?: string) {
-        let collectionPath = collectionName;
         if (partitionKey) {
-            collectionPath = encodeURI(`${collectionName}/${partitionKey}`);
+            return path.join(COLLECTIONS_CACHE, encodeURIComponent(collectionName), partitionKey);
         }
-        return collectionPath;
+        return path.join(COLLECTIONS_CACHE, encodeURIComponent(collectionName));
     }
 
     private static getPartitionKeys(data: any, groupBy: string[]) {
@@ -330,39 +349,27 @@ class LinkedDataStore {
             const key = queryData(data, field);
             return LinkedDataStore.stringifyKey(key);
         });
-        return LinkedDataStore.iteratePartitionKeys(keys);
+        return LinkedDataStore.iterateKeyCombination(groupBy, keys);
     }
 
-    private static iteratePartitionKeys(keys) {
-        const allKeys = [];
-        const indexes = keys.map(d => 0);
-        while (true) {
-            const keySegments = [];
-            for (let i = 0; i < keys.length; i++) {
-                const index = indexes[i];
-                const value = keys[i];
+    private static iterateKeyCombination(groupByFields: string[], groupByKeys) {
+        const partitionKeys = [];
+        const indexes = groupByKeys.map(key => Array.isArray(key) ? key.length : 0);
+        let isDone = false;
+        while (!isDone) {
+            const partitionKey = {};
+            for (let i = 0; i < groupByFields.length; i++) {
+                const value = groupByKeys[i];
                 if (Array.isArray(value)) {
-                    keySegments.push(LinkedDataStore.stringifyKey(value[index]));
-                    indexes[i]++;
+                    partitionKey[groupByFields[i]] = LinkedDataStore.stringifyKey(value[--indexes[i]]);
                 } else {
-                    keySegments.push(LinkedDataStore.stringifyKey(value));
+                    partitionKey[groupByFields[i]] = LinkedDataStore.stringifyKey(value);
                 }
             }
-            allKeys.push(keySegments.join("-"));
-            let isDone = true;
-            for (let i = 0; i < keys.length; i++) {
-                const index = indexes[i];
-                const value = keys[i];
-                if (Array.isArray(value) && index < value.length) {
-                    isDone = false;
-                    break;
-                }
-            }
-            if (isDone) {
-                break;
-            }
+            partitionKeys.push(partitionKey);
+            isDone = indexes.filter(i => i > 0).length === 0; 
         }
-        return allKeys;
+        return partitionKeys;
     }
 
     private static stringifyKey(value: any) {

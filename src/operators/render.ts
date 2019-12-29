@@ -1,15 +1,16 @@
-import {pipe} from "rxjs";
+import {pipe, Observable} from "rxjs";
 import {mergeMap} from "rxjs/operators";
 import {toJsonLdGraph, toSchemaOrgJsonLd, SCHEMA_CONTEXT} from "sambal-jsonld";
 import {queryData} from "../utils";
 import * as cheerio from "cheerio";
 import LocalCss from "../LocalCss";
+import {SambalData} from "../constants";
 
-export function render(renderer: (props: any) => Promise<string>, withSchemaOrg?: {type: string, field?: string, content?: any}) {
-    return pipe(
-        mergeMap(async (content: any) => {
+export function render(renderer: (props: any) => Promise<string>, withSchemaOrg?: {type: string, field?: string, context?: any}) {
+    return pipe<Observable<SambalData>, Observable<SambalData>>(
+        mergeMap(async (content: SambalData) => {
             const css = new LocalCss();
-            const html = await renderer({...content.data, _path: content.path, css: css});
+            const html = await renderer({...content.data, css: css});
             const $ = cheerio.load(html);
             if (css.hasSheets()) {
                 $("head").append(`
@@ -19,7 +20,7 @@ export function render(renderer: (props: any) => Promise<string>, withSchemaOrg?
                 `);
             }
             if (withSchemaOrg) {
-                addSchemaOrg($, content.data, withSchemaOrg.type, withSchemaOrg.field, withSchemaOrg.content);
+                addSchemaOrg($, content.data, withSchemaOrg.type, withSchemaOrg.field, withSchemaOrg.context);
             }
             return {
                 ...content,
