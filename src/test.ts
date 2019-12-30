@@ -43,7 +43,7 @@ function renderPage({css}) {
 
 const obs = from([{
     uri: "foisf.md",
-    data: {headline:'test'}
+    data: {headline:'test', url: 'https://chen4119.me/post2'}
 }])
 .pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "BlogPosting")))
 .pipe(render(renderPage));
@@ -54,7 +54,7 @@ const packager = new Packager(obs);
 packager.deliver();
 
 const store = new LinkedDataStore("https://chen4119.me", {contentPath: ["content"], collections: collections});
-// store.content().subscribe(d => console.log(d));
+store.content().subscribe(d => console.log(d));
 /*
 (async () => {
     const sizes = await store.stats("tags");
