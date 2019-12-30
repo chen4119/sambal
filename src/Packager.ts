@@ -1,7 +1,8 @@
 import {Observable, pipe} from "rxjs";
-import {mergeMap, filter} from "rxjs/operators";
+import {mergeMap, filter, map} from "rxjs/operators";
 import {OUTPUT_FOLDER, SambalData} from "./constants";
 import {writeFile, isExternalSource, getUriPath} from "./utils";
+import {toJsonLdGraph, toSchemaOrgJsonLd, SCHEMA_CONTEXT} from "sambal-jsonld";
 import path from "path";
 import prettier from "prettier";
 
@@ -25,8 +26,9 @@ class Packager {
     async deliver() {
         return new Promise((resolve, reject) => {
             this.obs$
+            .pipe(filter(d => Boolean(d.html)))
             .pipe(this.bundleJsFiles())
-            .pipe(filter(d => d.html !== null))
+            .pipe(this.addJsonLd())
             .pipe(this.outputHtml())
             .subscribe({
                 next: (output: string) => console.log(`Wrote ${output}`),
@@ -41,25 +43,47 @@ class Packager {
     }
 
     private bundleJsFiles() {
-        return pipe<Observable<SambalData>, Observable<{base: string, uri: string, data: any, html: string}>>(
+        return pipe<Observable<SambalData>, Observable<SambalData>>(
             mergeMap(async (data: SambalData) => {
-                let html = null;
-                if (data.html) {
-                    const bundleJobs = this.getBundlePromises(data.html);
-                    if (bundleJobs.length > 0) {
-                        const dests = await Promise.all(bundleJobs.map(d => d.promise));
-                        for (let i = 0; i < bundleJobs.length; i++) {
-                            const node = bundleJobs[i].node;
-                            const assets = dests[i];
-                            this.addAssetsToDOM(assets, data.html, node);
-                        }
-                    }
-                    html = data.html.html();
-                    if (this.options.prettyHtml) {
-                        html = prettier.format(html, {parser: "html"});
+                const bundleJobs = this.getBundlePromises(data.html);
+                if (bundleJobs.length > 0) {
+                    const dests = await Promise.all(bundleJobs.map(d => d.promise));
+                    for (let i = 0; i < bundleJobs.length; i++) {
+                        const node = bundleJobs[i].node;
+                        const assets = dests[i];
+                        this.addAssetsToDOM(assets, data.html, node);
                     }
                 }
-                return {base: data.base, uri: data.uri, data: data.data, html: html};
+                return data;
+            })
+        );
+    }
+
+    private addJsonLd() {
+        return pipe<Observable<SambalData>, Observable<SambalData>>(
+            map((data) => {
+                if (data.jsonld && data.jsonld.length > 0) {
+                    const schemaOrgJson = toJsonLdGraph(data.jsonld, SCHEMA_CONTEXT);
+                    if (schemaOrgJson) {
+                        const $ = data.html;
+                        const jsonLdBlock = $('<script type="application/ld+json"></script>').appendTo($("head"));
+                        jsonLdBlock.text(JSON.stringify(schemaOrgJson));
+                    }
+                }
+                return data;
+            })
+        );
+    }
+
+    private outputHtml() {
+        return pipe<Observable<SambalData>, Observable<string>>(
+            mergeMap(async (d) => {
+                let html = d.html.html();
+                if (this.options.prettyHtml) {
+                    html = prettier.format(html, {parser: "html"});
+                }
+                const uriPath = getUriPath(d.base, d.uri, d.data);
+                return await this.write(path.join(OUTPUT_FOLDER, uriPath), html);
             })
         );
     }
@@ -97,15 +121,6 @@ class Packager {
             }
         });
         return entriesToBundle;
-    }
-
-    private outputHtml() {
-        return pipe<Observable<{base: string, uri: string, data: any, html: string}>, Observable<string>>(
-            mergeMap(async (d) => {
-                const uriPath = getUriPath(d.base, d.uri, d.data);
-                return await this.write(path.join(OUTPUT_FOLDER, uriPath), d.html);
-            })
-        );
     }
 
     private async write(dest: string, content: string) {

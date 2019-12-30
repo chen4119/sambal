@@ -26,5 +26,6 @@ export type SambalData = {
     base?: string,
     uri: string,
     data: any,
-    html?: CheerioStatic
+    html?: CheerioStatic,
+    jsonld?: any[]
 }
