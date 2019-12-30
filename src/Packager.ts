@@ -2,7 +2,7 @@ import {Observable, pipe} from "rxjs";
 import {mergeMap, filter, map} from "rxjs/operators";
 import {OUTPUT_FOLDER, SambalData} from "./constants";
 import {writeFile, isExternalSource, getUriPath} from "./utils";
-import {toJsonLdGraph, toSchemaOrgJsonLd, SCHEMA_CONTEXT} from "sambal-jsonld";
+import {addJsonLdToDOM} from "./operators/addJsonLdToDOM";
 import path from "path";
 import prettier from "prettier";
 
@@ -28,7 +28,7 @@ class Packager {
             this.obs$
             .pipe(filter(d => Boolean(d.html)))
             .pipe(this.bundleJsFiles())
-            .pipe(this.addJsonLd())
+            .pipe(addJsonLdToDOM())
             .pipe(this.outputHtml())
             .subscribe({
                 next: (output: string) => console.log(`Wrote ${output}`),
@@ -52,22 +52,6 @@ class Packager {
                         const node = bundleJobs[i].node;
                         const assets = dests[i];
                         this.addAssetsToDOM(assets, data.html, node);
-                    }
-                }
-                return data;
-            })
-        );
-    }
-
-    private addJsonLd() {
-        return pipe<Observable<SambalData>, Observable<SambalData>>(
-            map((data) => {
-                if (data.jsonld && data.jsonld.length > 0) {
-                    const schemaOrgJson = toJsonLdGraph(data.jsonld, SCHEMA_CONTEXT);
-                    if (schemaOrgJson) {
-                        const $ = data.html;
-                        const jsonLdBlock = $('<script type="application/ld+json"></script>').appendTo($("head"));
-                        jsonLdBlock.text(JSON.stringify(schemaOrgJson));
                     }
                 }
                 return data;

@@ -5,6 +5,8 @@ import {map, mergeAll, tap, multicast} from "rxjs/operators";
 import {template} from "./template";
 import {render} from "./operators/render";
 import {toHtml} from "./operators/toHtml";
+import {toSchemaOrgJsonLd} from "./index";
+import {pushSchemaOrgJsonLd} from "./operators/pushSchemaOrgJsonLd";
 import Packager from "./Packager";
 import LocalCss from "./LocalCss";
 import {getUriPath} from "./utils";
@@ -39,18 +41,17 @@ function renderPage({css}) {
 }
 
 
-/*
-from([{
-    path: "foisf.md",
+const obs = from([{
+    uri: "foisf.md",
     data: {headline:'test'}
 }])
-.pipe(render(renderPage, {type: "BlogPosting"}))
-.pipe(toHtml())
-.subscribe(d => console.log(d));
-*/
+.pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "BlogPosting")))
+.pipe(render(renderPage));
+// .pipe(toHtml())
+// .subscribe(d => console.log(d));
 
-// const packager = new Packager(obs, null);
-// packager.deliver();
+const packager = new Packager(obs);
+packager.deliver();
 
 const store = new LinkedDataStore("https://chen4119.me", {contentPath: ["content"], collections: collections});
 // store.content().subscribe(d => console.log(d));

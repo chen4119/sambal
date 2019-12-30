@@ -62,7 +62,9 @@ export function getUriPath(base: string, uri: string, data: any) {
         return url.parse(uri).pathname;
     }
     const basename = path.basename(uri, path.extname(uri));
-    return `${path.relative(base, path.dirname(uri))}/${basename}`;
+    const from = base ? base : "";
+    return path.join(path.relative(from, path.dirname(uri)), basename);
+    // return `${path.relative(from, path.dirname(uri))}/${basename}`;
 }
 
 export function readFile(src: string): Promise<string> {

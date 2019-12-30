@@ -1,11 +1,16 @@
 import {pipe} from "rxjs";
 import {map} from "rxjs/operators";
+import {addJsonLdToDOM} from "./addJsonLdToDOM";
 
 export function toHtml() {
     return pipe(
-        map<{html: CheerioStatic}, string>((d) => {
-            const $ = d.html;
-            return $.html();
+        addJsonLdToDOM(),
+        map(d => {
+            if (d.html) {
+                const $ = d.html;
+                return $.html();
+            }
+            return "";
         })
     );
 }
