@@ -255,7 +255,7 @@ class LinkedDataStore {
             return null;
         });
         if (!hydratedJson.url) {
-            hydratedJson.url = path.join(this.host, getUriPath(options.base, uri, hydratedJson));
+            hydratedJson.url = `${this.host}/${getUriPath(options.base, uri, hydratedJson)}`; // don't use path.join here.  http double slash will become single
         }
         return {
             base: options.base,
