@@ -2,7 +2,7 @@ import {Observable, Subscriber} from "rxjs";
 import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData} from "./utils";
 import path from "path";
 import shelljs from "shelljs";
-import {ASC, DESC, SortBy} from "./constants";
+import {ASC, DESC, SortBy, SambalData, SAMBAL_INTERNAL} from "./constants";
 
 const INDEX_FILE = "index.json";
 
@@ -13,19 +13,19 @@ class Collection {
         
     }
 
-    async upsert(content) {
+    async upsert(data: SambalData) {
         if (!this.isIndexLoaded) {
             await this.loadIndex();
         }
         const meta = {};
         if (this.sortBy) {
             for (const def of this.sortBy) {
-                meta[def.field] = queryData(content.data, def.field);
+                meta[def.field] = queryData(data, def.field);
             }
         }
-        this.contentMap.set(content.uri, {
-            base: content.base,
-            uri: content.uri,
+        this.contentMap.set(data[SAMBAL_INTERNAL].uri, {
+            base: data[SAMBAL_INTERNAL].base,
+            uri: data[SAMBAL_INTERNAL].uri,
             meta: meta
         });
     }
@@ -108,8 +108,6 @@ class Collection {
                     this.contentMap.set(meta.uri, meta);
                 }
             }
-        } else {
-            console.log(`${indexFile} not found`);
         }
         this.isIndexLoaded = true;
     }

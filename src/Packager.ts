@@ -1,6 +1,6 @@
 import {Observable, pipe} from "rxjs";
 import {mergeMap, filter, map} from "rxjs/operators";
-import {OUTPUT_FOLDER, SambalData} from "./constants";
+import {OUTPUT_FOLDER, SambalData, SAMBAL_INTERNAL} from "./constants";
 import {writeFile, isExternalSource, getUriPath} from "./utils";
 import {addJsonLdToDOM} from "./operators/addJsonLdToDOM";
 import path from "path";
@@ -26,7 +26,7 @@ class Packager {
     async deliver() {
         return new Promise((resolve, reject) => {
             this.obs$
-            .pipe(filter(d => Boolean(d.html)))
+            .pipe(filter(this.isValid))
             .pipe(this.bundleJsFiles())
             .pipe(addJsonLdToDOM())
             .pipe(this.outputHtml())
@@ -42,16 +42,20 @@ class Packager {
         });
     }
 
+    private isValid(d: any): boolean {
+        return Boolean(d[SAMBAL_INTERNAL] && d[SAMBAL_INTERNAL].html && (d[SAMBAL_INTERNAL].uri || d.url));
+    }
+    
     private bundleJsFiles() {
         return pipe<Observable<SambalData>, Observable<SambalData>>(
             mergeMap(async (data: SambalData) => {
-                const bundleJobs = this.getBundlePromises(data.html);
+                const bundleJobs = this.getBundlePromises(data[SAMBAL_INTERNAL].html);
                 if (bundleJobs.length > 0) {
                     const dests = await Promise.all(bundleJobs.map(d => d.promise));
                     for (let i = 0; i < bundleJobs.length; i++) {
                         const node = bundleJobs[i].node;
                         const assets = dests[i];
-                        this.addAssetsToDOM(assets, data.html, node);
+                        this.addAssetsToDOM(assets, data[SAMBAL_INTERNAL].html, node);
                     }
                 }
                 return data;
@@ -62,11 +66,12 @@ class Packager {
     private outputHtml() {
         return pipe<Observable<SambalData>, Observable<string>>(
             mergeMap(async (d) => {
-                let html = d.html.html();
+                const sambalInternal = d[SAMBAL_INTERNAL];
+                let html = sambalInternal.html.html();
                 if (this.options.prettyHtml) {
                     html = prettier.format(html, {parser: "html"});
                 }
-                const uriPath = getUriPath(d.base, d.uri, d.data);
+                const uriPath = getUriPath(sambalInternal.base, sambalInternal.uri, d);
                 return await this.write(path.join(OUTPUT_FOLDER, uriPath), html);
             })
         );

@@ -10,6 +10,7 @@ export const CACHE_FOLDER = "./.sambal";
 export const OUTPUT_FOLDER = "./public";
 export const DESC = "desc";
 export const ASC = "asc";
+export const SAMBAL_INTERNAL = Symbol("__sambal__");
 
 export type SortBy = {
     field: string,
@@ -22,10 +23,13 @@ export type CollectionDef = {
     groupBy?: string | string[]
 };
 
+
 export type SambalData = {
-    base?: string,
-    uri: string,
-    data: any,
-    html?: CheerioStatic,
-    jsonld?: any[]
+    [propName: string]: any;
+    [SAMBAL_INTERNAL]?: {
+        base?: string,
+        uri: string,
+        html?: CheerioStatic,
+        jsonld?: any[]
+    }
 }

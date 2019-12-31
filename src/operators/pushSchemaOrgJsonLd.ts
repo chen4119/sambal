@@ -1,18 +1,21 @@
 import {pipe, Observable} from "rxjs";
 import {map} from "rxjs/operators";
-import {SambalData} from "../constants";
+import {SambalData, SAMBAL_INTERNAL} from "../constants";
 
 export function pushSchemaOrgJsonLd(renderer: (props: any) => any) {
     return pipe<Observable<SambalData>, Observable<SambalData>>(
-        map((content) => {
-            if (!content.jsonld) {
-                content.jsonld = [];
+        map((data) => {
+            if (!data[SAMBAL_INTERNAL]) {
+                data[SAMBAL_INTERNAL] = {uri: ""};
             }
-            const schemaOrgJsonLd = renderer(content.data);
+            if (!data[SAMBAL_INTERNAL].jsonld) {
+                data[SAMBAL_INTERNAL].jsonld = [];
+            }
+            const schemaOrgJsonLd = renderer(data);
             if (schemaOrgJsonLd) {
-                content.jsonld.push(schemaOrgJsonLd);
+                data[SAMBAL_INTERNAL].jsonld.push(schemaOrgJsonLd);
             }
-            return content;
+            return data;
         })
     );
 }
