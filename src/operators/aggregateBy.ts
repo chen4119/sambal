@@ -1,4 +1,4 @@
-import {queryData} from "../Utils";
+import {queryData} from "../utils";
 import {from, of, pipe} from "rxjs";
 import {mergeMap, map, groupBy, reduce, toArray} from "rxjs/operators";
 
