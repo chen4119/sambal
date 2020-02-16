@@ -1,5 +1,6 @@
 import LinkedDataStore from "./LinkedDataStore";
 import Packager from "./Packager";
+import Logger from "./Logger";
 
 export {
     toJsonLdGraph,
@@ -10,6 +11,7 @@ export {
 
 export {LinkedDataStore};
 export {Packager};
+export {Logger};
 export {template} from "./template";
 export {render} from "./operators/render";
 export {aggregateBy} from "./operators/aggregateBy";

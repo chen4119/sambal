@@ -11,6 +11,7 @@ import Packager from "./Packager";
 import LocalCss from "./LocalCss";
 import {getUriPath} from "./utils";
 import path from "path";
+import Logger from "./Logger";
 
 const collections: CollectionDef[] = [
     {
@@ -62,8 +63,8 @@ const store = new LinkedDataStore("https://chen4119.me", {contentPath: ["content
     console.log(sizes.partitions);
 })();*/
 // store.indexContent();
-store.collection("tags", {keywords: "javascript"}).subscribe(d => console.log(d));
-store.start();
+// store.collection("tags", {keywords: "javascript"}).subscribe(d => console.log(d));
+// store.start();
 
 // console.log(getUriPath(null, "https://chen4119.me/post1", {}));
 

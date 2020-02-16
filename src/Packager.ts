@@ -3,6 +3,7 @@ import {mergeMap, filter, map} from "rxjs/operators";
 import {OUTPUT_FOLDER, SambalData, SAMBAL_INTERNAL} from "./constants";
 import {writeFile, isExternalSource, getUriPath} from "./utils";
 import {addJsonLdToDOM} from "./operators/addJsonLdToDOM";
+import Logger from "./Logger";
 import path from "path";
 import prettier from "prettier";
 
@@ -16,6 +17,7 @@ const DEFAULT_OPTIONS = {
 
 class Packager {
     private bundledFileMap: Map<string, Promise<string[]>> = new Map<string, Promise<string[]>>(); // map a src file to dest file
+    private log: Logger = new Logger({name: "Packager"});
     constructor(private obs$: Observable<SambalData>, private options: {prettyHtml?: boolean, bundle?: BundleFunction} = {}) {
         this.options = {
             ...DEFAULT_OPTIONS,
@@ -31,11 +33,12 @@ class Packager {
             .pipe(addJsonLdToDOM())
             .pipe(this.outputHtml())
             .subscribe({
-                next: (output: string) => console.log(`Wrote ${output}`),
+                next: (output: string) => this.log.info(`Wrote ${output}`),
                 complete: async () => {
                     resolve();
                 },
                 error: (err) => {
+                    this.log.error(err);
                     reject(err);
                 }
             });
@@ -96,6 +99,7 @@ class Packager {
                 return;
             }
             if (!self.bundledFileMap.has(jsFile)) {
+                self.log.info(`Bundling ${jsFile}`);
                 const promise = self.options.bundle(jsFile, OUTPUT_FOLDER, isModule);
                 self.bundledFileMap.set(jsFile, promise);
                 entriesToBundle.push({

@@ -21,6 +21,7 @@ import {
 import Collection from "./Collection";
 import {hydrateJsonLd} from "sambal-jsonld";
 import Partitions from "./Partitions";
+import Logger from "./Logger";
 
 shelljs.config.silent = true;
 
@@ -39,6 +40,8 @@ class LinkedDataStore {
     private collectionMap = new Map<string, Collection>(); // map collection path to Collection
     private partitionMap = new Map<string, Partitions>(); // map collection name to partitions
     private observablesToStart: ConnectableObservable<any>[] = [];
+    private log: Logger = new Logger({name: "LinkedDataStore"});
+
     constructor(private host: string, private userOptions: StoreOptions = {}) {
         this.options = {
             ...userOptions,
@@ -56,7 +59,7 @@ class LinkedDataStore {
                         groupBy: this.sortGroupBy(collection.groupBy)
                     });
                 } else {
-                    console.log(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
+                    this.log.error(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
                 }
             }
             this.options.collections = updatedCollections;
@@ -73,7 +76,7 @@ class LinkedDataStore {
                 if (isNonEmptyString(field)) {
                     validatedGroupBy.push(field);
                 } else {
-                    console.error(`Group by fields need to be a non-empty string: ${field}`);
+                    this.log.error(`Group by fields need to be a non-empty string: ${field}`);
                 }
             }
             validatedGroupBy.sort();
@@ -101,7 +104,7 @@ class LinkedDataStore {
         if (typeof(sortBy.field) === "string" && sortBy.order === DESC || sortBy.order === ASC) {
             return true;
         }
-        console.error(`Invalid sortBy: ${JSON.stringify(sortBy)}`);
+        this.log.error(`Invalid sortBy: ${JSON.stringify(sortBy)}`);
         return false;
     }
 
@@ -109,13 +112,13 @@ class LinkedDataStore {
         return new Promise((resolve, reject) => {
             shelljs.rm("-rf", CACHE_FOLDER);
             if (this.options.collections.length === 0) {
-                console.log("No collections defined.  Indexing not required");
+                this.log.info("No collections defined.  Indexing not required");
                 resolve();
             }
             this.getSourceObservable()
             .pipe(this.iterateCollection())
             .subscribe({
-                next: (d: any) => console.log("Processed " + d[SAMBAL_INTERNAL].uri),
+                next: (d: any) => this.log.info("Processed " + d[SAMBAL_INTERNAL].uri),
                 complete: async () => {
                     for (const collection of this.collectionMap.values()) {
                         await collection.flush();

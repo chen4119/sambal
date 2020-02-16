@@ -1,7 +1,7 @@
 {
     "name": "sambal",
-    "version": "0.0.24",
-    "description": "Sambal indexer",
+    "version": "0.0.25",
+    "description": "Sambal static site generator",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "repository": {
@@ -12,7 +12,11 @@
     "license": "MIT",
     "keywords": [
         "rxjs",
-        "reactive"
+        "reactive",
+        "static site generator",
+        "json-ld",
+        "schema.org",
+        "linked data"
     ],
     "engines": {
         "node": ">=8.0.0"
@@ -27,6 +31,7 @@
     },
     "dependencies": {
         "axios": "0.19.0",
+        "chalk": "3.0.0",
         "cheerio": "1.0.0-rc.3",
         "gray-matter": "4.0.1",
         "marked": "0.5.2",

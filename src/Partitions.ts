@@ -7,6 +7,7 @@ import path from "path";
 import shelljs from "shelljs";
 
 const PARTITION_FILE = "partition.json";
+const EMPTY_KEY_PLACEHOLDER = "_empty_";
 
 class Partitions {
     private partitionMap: Map<string, any> = new Map<string, any>();
@@ -65,8 +66,9 @@ class Partitions {
         return path.join(this.collectionPath, PARTITION_FILE);
     }
 
+
     private getKey(partition: object) {
-        return encodeURIComponent(this.groupBy.map(f => partition[f]).join("-"));
+        return encodeURIComponent(this.groupBy.map(f => partition[f] ? partition[f] : EMPTY_KEY_PLACEHOLDER).join("-"));
     }
 }
 

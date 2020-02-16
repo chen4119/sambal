@@ -92,8 +92,10 @@ class Collection {
     }
 
     private compareNonNullValues(aValue: any, bValue: any, order: string) {
-        if ((isDate(aValue) && isDate(bValue)) || (typeof(aValue) === "number" && typeof(bValue) === "number")) {
+        if (isDate(aValue) && isDate(bValue)) {
             return order === ASC ? (aValue.getTime() - bValue.getTime()) : (bValue.getTime() - aValue.getTime());
+        } else if (typeof(aValue) === "number" && typeof(bValue) === "number") {
+            return order === ASC ? (aValue - bValue) : (bValue - aValue);
         }
         return order === ASC ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
     }
@@ -101,7 +103,6 @@ class Collection {
     private async loadIndex() {
         const indexFile = this.getIndexFilePath();
         if (shelljs.test("-e", indexFile)) {
-            console.log(`Loading index file ${indexFile}`);
             const metas = safeParseJson(await readFile(indexFile));
             if (metas) {
                 for (const meta of metas) {
