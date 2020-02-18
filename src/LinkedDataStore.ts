@@ -59,7 +59,7 @@ class LinkedDataStore {
                         groupBy: this.sortGroupBy(collection.groupBy)
                     });
                 } else {
-                    this.log.error(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
+                    this.log.warn(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
                 }
             }
             this.options.collections = updatedCollections;
@@ -76,7 +76,7 @@ class LinkedDataStore {
                 if (isNonEmptyString(field)) {
                     validatedGroupBy.push(field);
                 } else {
-                    this.log.error(`Group by fields need to be a non-empty string: ${field}`);
+                    this.log.warn(`Group by fields need to be a non-empty string: ${field}`);
                 }
             }
             validatedGroupBy.sort();
@@ -104,7 +104,7 @@ class LinkedDataStore {
         if (typeof(sortBy.field) === "string" && sortBy.order === DESC || sortBy.order === ASC) {
             return true;
         }
-        this.log.error(`Invalid sortBy: ${JSON.stringify(sortBy)}`);
+        this.log.warn(`Invalid sortBy: ${JSON.stringify(sortBy)}`);
         return false;
     }
 
@@ -164,8 +164,12 @@ class LinkedDataStore {
     private async loadLocalFiles(contentPath: string, files: string[], subscriber: Subscriber<any>) {
         for (const file of files) {
             if (isSupportedFile(file)) {
-                const content = await this.load(path.join(contentPath, file), {base: contentPath});
-                subscriber.next(content);
+                try {
+                    const content = await this.load(path.join(contentPath, file), {base: contentPath});
+                    subscriber.next(content);
+                } catch (e) {
+                    this.log.error(`Error loading ${file}.  Ignoring...`);
+                }
             }
         }
         subscriber.complete();

@@ -38,7 +38,6 @@ class Packager {
                     resolve();
                 },
                 error: (err) => {
-                    this.log.error(err);
                     reject(err);
                 }
             });

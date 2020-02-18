@@ -10,6 +10,7 @@ import marked from "marked";
 import axios, { AxiosResponse } from "axios";
 import shelljs from "shelljs";
 import url from "url";
+import * as cheerio from "cheerio";
 
 export function queryData(data: any, dataPath: string) {
     const fieldArray = dataPath.split('.');
@@ -98,6 +99,9 @@ export function isExternalSource(src: string) {
 }
 
 export function isSupportedFile(src: string) {
+    if (!src) {
+        return false;
+    }
     return isExternalSource(src) || (src.match(SUPPORTED_FILE_EXT_REGEX));
 }
 
