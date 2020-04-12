@@ -5,8 +5,8 @@ import LocalCss from "../LocalCss";
 import {SambalData, SAMBAL_INTERNAL} from "../constants";
 
 export function render(renderer: (props: any) => Promise<string>) {
-    return pipe<Observable<SambalData>, Observable<SambalData>>(
-        mergeMap(async (data: SambalData) => {
+    return pipe<Observable<any>, Observable<SambalData>>(
+        mergeMap(async (data: any) => {
             const css = new LocalCss();
             const html = await renderer({...data, css: css});
             const $ = cheerio.load(html);
@@ -18,7 +18,7 @@ export function render(renderer: (props: any) => Promise<string>) {
                 `);
             }
             if (!data[SAMBAL_INTERNAL]) {
-                data[SAMBAL_INTERNAL] = {uri: ""};
+                data[SAMBAL_INTERNAL] = {};
             }
             data[SAMBAL_INTERNAL].html = $;
             return data;

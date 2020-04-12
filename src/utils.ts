@@ -9,7 +9,6 @@ import matter from 'gray-matter';
 import marked from "marked";
 import axios, { AxiosResponse } from "axios";
 import shelljs from "shelljs";
-import url from "url";
 import * as cheerio from "cheerio";
 
 export function queryData(data: any, dataPath: string) {
@@ -34,6 +33,9 @@ export function setPropAt(data: any, dataPath: string, propValue: any) {
 }
 
 export async function loadContent(src: string) {
+    if (!isSupportedFile(src)) {
+        throw new Error(`Unsupported file type: ${src}`);
+    }
     if (isExternalSource(src)) {
         const response = await axios.get(src);
         return parseContent(response.data, getAxiosResponseContentType(response));
@@ -58,6 +60,7 @@ export function isNonEmptyString(val: any) {
     return typeof(val) === "string" && val.length > 0;
 }
 
+/*
 export function getUriPath(base: string, uri: string, data: any) {
     if (data.url) {
         return url.parse(data.url).pathname;
@@ -67,7 +70,7 @@ export function getUriPath(base: string, uri: string, data: any) {
     const basename = path.basename(uri, path.extname(uri));
     const from = base ? base : "";
     return path.join(path.relative(from, path.dirname(uri)), basename);
-}
+}*/
 
 export function readFile(src: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -94,11 +97,11 @@ export function writeFile(output: string, content: string): Promise<void> {
     });
 }
 
-export function isExternalSource(src: string) {
+function isExternalSource(src: string) {
     return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("//");
 }
 
-export function isSupportedFile(src: string) {
+function isSupportedFile(src: string) {
     if (!src) {
         return false;
     }

@@ -1,11 +1,11 @@
 import {pipe, Observable} from "rxjs";
-import {map} from "rxjs/operators";
+import {tap} from "rxjs/operators";
 import {SambalData, SAMBAL_INTERNAL} from "../constants";
 import {toJsonLdGraph, SCHEMA_CONTEXT} from "sambal-jsonld";
 
 export function addJsonLdToDOM() {
     return pipe<Observable<SambalData>, Observable<SambalData>>(
-        map((data) => {
+        tap((data) => {
             const sambalInternal = data[SAMBAL_INTERNAL];
             if (sambalInternal && sambalInternal.html && sambalInternal.jsonld && sambalInternal.jsonld.length > 0) {
                 const schemaOrgJson = toJsonLdGraph(sambalInternal.jsonld, SCHEMA_CONTEXT);
@@ -15,7 +15,6 @@ export function addJsonLdToDOM() {
                     jsonLdBlock.text(JSON.stringify(schemaOrgJson));
                 }
             }
-            return data;
         })
     );
 }

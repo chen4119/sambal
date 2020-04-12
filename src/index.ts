@@ -1,5 +1,4 @@
-import LinkedDataStore from "./LinkedDataStore";
-import Packager from "./Packager";
+import SambalCollection from "./SambalCollection";
 import Logger from "./Logger";
 
 export {
@@ -9,13 +8,14 @@ export {
     hydrateJsonLd
 } from "sambal-jsonld";
 
-export {LinkedDataStore};
-export {Packager};
+export {SambalCollection};
 export {Logger};
 export {template} from "./template";
+export {loadContent} from "./utils";
 export {render} from "./operators/render";
 export {aggregateBy} from "./operators/aggregateBy";
+export {loadJsonLd} from "./operators/loadJsonLd";
 export {paginate} from "./operators/paginate";
 export {toHtml} from "./operators/toHtml";
 export {pushSchemaOrgJsonLd} from "./operators/pushSchemaOrgJsonLd";
-export {OUTPUT_FOLDER, CACHE_FOLDER} from "./constants";
+export {dom} from "./operators/dom";

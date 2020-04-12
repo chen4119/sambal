@@ -35,21 +35,43 @@ class Logger {
         }
     }
 
-    info(message: string) {
-        console.log(this.getPrefix(LEVEL_INFO) + message);
+    private stringifyMessage(message: any) {
+        if (Array.isArray(message)) {
+            return message.map(m => this.stringifyMessage(m));
+        } else if (message instanceof Error) {
+            return message.stack ? [message.toString(), message.stack] : message.toString();
+        } else if (typeof(message) === "object") {
+            return JSON.stringify(message);
+        }
+        return String(message);
     }
 
-    warn(message: string) {
-        console.log(this.getPrefix(LEVEL_WARNING) + message);
+    private logToConsole(level: string, message: any) {
+        const stringifyMessage = this.stringifyMessage(message);
+        if (Array.isArray(stringifyMessage)) {
+            for (const m of stringifyMessage) {
+                console[level](this.getPrefix(level) + m);
+            }
+        } else {
+            console[level](this.getPrefix(level) + stringifyMessage);
+        }
     }
 
-    error(message: string) {
-        console.log(this.getPrefix(LEVEL_ERROR) + message);
+    info(message: any) {
+        this.logToConsole(LEVEL_INFO, message);
     }
 
-    debug(message: string) {
+    warn(message: any) {
+        this.logToConsole(LEVEL_WARNING, message);
+    }
+
+    error(message: any) {
+        this.logToConsole(LEVEL_ERROR, message);
+    }
+
+    debug(message: any) {
         if (this.options.verbose) {
-            console.log(this.getPrefix(LEVEL_DEBUG) + message);
+            this.logToConsole(LEVEL_DEBUG, message);
         }
     }
 

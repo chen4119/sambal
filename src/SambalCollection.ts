@@ -1,70 +1,51 @@
 
-import {Observable, Subscriber, empty, pipe, from, of, ConnectableObservable} from "rxjs";
-import {mergeMap, filter, mergeAll, publish} from "rxjs/operators";
+import {Observable, empty, pipe, ConnectableObservable} from "rxjs";
+import {mergeMap, filter, map, publish} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
-import fs from "fs";
-import {cloneDeep, isEqual} from "lodash";
-import {CACHE_FOLDER, ASC, DESC, SortBy, CollectionDef, SambalData, SAMBAL_INTERNAL} from "./constants";
+import {cloneDeep} from "lodash";
+import {CACHE_FOLDER, ASC, DESC, SortBy, CollectionDef, SambalData} from "./constants";
 import {
-    loadContent,
-    writeFile,
     isNullOrUndefined,
     isNonEmptyString,
     isObjectLiteral,
-    safeParseJson,
-    queryData,
-    isSupportedFile,
-    getUriPath,
-    readFile
+    queryData
 } from "./utils";
 import Collection from "./Collection";
-import {hydrateJsonLd} from "sambal-jsonld";
 import Partitions from "./Partitions";
 import Logger from "./Logger";
 
 shelljs.config.silent = true;
 
 type StoreOptions = {
-    contentPath?: string | string[],
-    content$?: Observable<any>,
-    collections?: CollectionDef[],
+    cacheFolder?: string
 };
 
-const CONFIG_FILE = "config.json";
-const COLLECTIONS_CACHE = `${CACHE_FOLDER}/collections`;
+// const CONFIG_FILE = "config.json";
 
-class LinkedDataStore {
-    private options: StoreOptions;
-    private didConfigChanged: boolean = false;
+class SambalCollection {
+    private collectionDefs: CollectionDef[] = [];
     private collectionMap = new Map<string, Collection>(); // map collection path to Collection
     private partitionMap = new Map<string, Partitions>(); // map collection name to partitions
     private observablesToStart: ConnectableObservable<any>[] = [];
-    private log: Logger = new Logger({name: "LinkedDataStore"});
+    private cacheFolder: string = CACHE_FOLDER;
+    private log: Logger = new Logger({name: "SambalCollection"});
 
-    constructor(private host: string, private userOptions: StoreOptions = {}) {
-        this.options = {
-            ...userOptions,
-            collections: []
-        };
-        if (this.userOptions.collections && this.userOptions.collections.length > 0) {
-            const updatedCollections = [];
-            // const allIndex = cloneDeep(DEFAULT_COLLECTION);
-            // updatedCollections.push(allIndex);
-            for (const collection of this.userOptions.collections) {
-                if (isNonEmptyString(collection.name)) {
-                    updatedCollections.push({
-                        name: collection.name,
-                        sortBy: this.deepCopySortBy(collection.sortBy),
-                        groupBy: this.sortGroupBy(collection.groupBy)
-                    });
-                } else {
-                    this.log.warn(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
-                }
-            }
-            this.options.collections = updatedCollections;
+    constructor(private content$: Observable<any>, private collections: CollectionDef[], private userOptions: StoreOptions = {}) {
+        if (this.userOptions.cacheFolder) {
+            this.cacheFolder = this.userOptions.cacheFolder;
         }
-        // this.didConfigChanged = !this.ensureConfigIsSame();
+        for (const collection of this.collections) {
+            if (isNonEmptyString(collection.name)) {
+                this.collectionDefs.push({
+                    name: collection.name,
+                    sortBy: this.deepCopySortBy(collection.sortBy),
+                    groupBy: this.sortGroupBy(collection.groupBy)
+                });
+            } else {
+                this.log.warn(`Ignoring collection with no name: ${JSON.stringify(collection)}`);
+            }
+        }
     }
 
     private sortGroupBy(groupBy) {
@@ -110,15 +91,19 @@ class LinkedDataStore {
 
     async indexContent() {
         return new Promise((resolve, reject) => {
-            shelljs.rm("-rf", CACHE_FOLDER);
-            if (this.options.collections.length === 0) {
-                this.log.info("No collections defined.  Indexing not required");
-                resolve();
-            }
-            this.getSourceObservable()
+            shelljs.rm("-rf", this.cacheFolder);
+            this.content$
+            .pipe(filter(d => {
+                if (!d.url) {
+                    this.log.warn("Ignoring data with no url");
+                    this.log.warn(d);
+                    return false;
+                }
+                return true;
+            }))
             .pipe(this.iterateCollection())
             .subscribe({
-                next: (d: any) => this.log.info("Processed " + d[SAMBAL_INTERNAL].uri),
+                next: (d: any) => this.log.info("Processed " + d.url),
                 complete: async () => {
                     for (const collection of this.collectionMap.values()) {
                         await collection.flush();
@@ -136,6 +121,7 @@ class LinkedDataStore {
         });
     }
 
+    /*
     content(): Observable<any> {
         const obs$: ConnectableObservable<any> = this.getSourceObservable().pipe(publish()) as ConnectableObservable<any>;
         this.observablesToStart.push(obs$);
@@ -173,12 +159,9 @@ class LinkedDataStore {
             }
         }
         subscriber.complete();
-    }
+    }*/
 
     private collectionMetas(name: string, partition?: object): Observable<any> {
-        if (this.didConfigChanged) {
-            return empty();
-        }
         const def = this.getCollectionDef(name);
         if (!def) {
             return empty();
@@ -186,9 +169,9 @@ class LinkedDataStore {
         let collectionPath;
         if (partition) {
             const partitions = this.getPartitions(def);
-            collectionPath = LinkedDataStore.getCollectionPath(name, partitions.getPartitionKey(partition));
+            collectionPath = this.getCollectionPath(name, partitions.getPartitionKey(partition));
         } else {
-            collectionPath = LinkedDataStore.getCollectionPath(name);
+            collectionPath = this.getCollectionPath(name);
         }
         const collection = this.getCollection(collectionPath, def.sortBy as SortBy[]);
         const sourceObs = collection.observe();
@@ -197,10 +180,7 @@ class LinkedDataStore {
 
     collection(name: string, partition?: object): Observable<any> {
         const obs$ = this.collectionMetas(name, partition)
-        .pipe(filter(meta => {
-            return shelljs.test("-e", meta.uri);
-        }))
-        .pipe(mergeMap(async meta => await this.load(meta.uri, {base: meta.base})))
+        .pipe(map(d => d.uri))
         .pipe(publish()) as ConnectableObservable<any>;
         this.observablesToStart.push(obs$);
         return obs$;
@@ -232,13 +212,13 @@ class LinkedDataStore {
     }
 
     private async getCollectionSize(collectionDef: CollectionDef, partitionKey?: string) {
-        const collectionPath = LinkedDataStore.getCollectionPath(collectionDef.name, partitionKey);
+        const collectionPath = this.getCollectionPath(collectionDef.name, partitionKey);
         const collection = this.getCollection(collectionPath, collectionDef.sortBy as SortBy[]);
         return await collection.size();
     }
 
     private getCollectionDef(collectionName: string) {
-        return this.options.collections.find(c => c.name === collectionName);
+        return this.collectionDefs.find(c => c.name === collectionName);
     }
 
     start() {
@@ -248,6 +228,7 @@ class LinkedDataStore {
         this.observablesToStart = [];
     }
 
+    /*
     async load(uri: string, options?: {base?: string}): Promise<SambalData> {
         const content = await loadContent(uri);
         const hydratedJson = await hydrateJsonLd(content, async (url) => {
@@ -268,7 +249,6 @@ class LinkedDataStore {
         };
     }
 
-    /*
     private async writeConfig() {
         const configPath = `${CACHE_FOLDER}/${CONFIG_FILE}`;
         await writeFile(configPath, JSON.stringify(this.options));
@@ -290,11 +270,11 @@ class LinkedDataStore {
     private iterateCollection() {
         return pipe<Observable<SambalData>, Observable<SambalData>>(
             mergeMap(async (data) => {
-                for (const collection of this.options.collections) {
+                for (const collection of this.collectionDefs) {
                     if (collection.groupBy) {
                         await this.addToPartitionedCollection(data, collection);
                     } else {
-                        await this.addToCollection(data, LinkedDataStore.getCollectionPath(collection.name), collection.sortBy as SortBy[]);
+                        await this.addToCollection(data, this.getCollectionPath(collection.name), collection.sortBy as SortBy[]);
                     }
                 }
                 return data;
@@ -315,7 +295,7 @@ class LinkedDataStore {
         if (this.partitionMap.has(collectionDef.name)) {
             return this.partitionMap.get(collectionDef.name);
         }
-        const collectionPath = LinkedDataStore.getCollectionPath(collectionDef.name);
+        const collectionPath = this.getCollectionPath(collectionDef.name);
         const partitions = new Partitions(collectionPath, collectionDef.groupBy as string[]);
         this.partitionMap.set(collectionDef.name, partitions);
         return partitions;
@@ -327,31 +307,32 @@ class LinkedDataStore {
     }
 
     private async addToPartitionedCollection(data: SambalData, collectionDef: CollectionDef) {
-        const partitionKeys = LinkedDataStore.getPartitionKeys(data, collectionDef.groupBy as string[]);
+        const partitionKeys = SambalCollection.getPartitionKeys(data, collectionDef.groupBy as string[]);
         const partitions = this.getPartitions(collectionDef);
         for (const key of partitionKeys) {
             partitions.add(key);
             const partitionKey = partitions.getPartitionKey(key);
             await this.addToCollection(
                 data,
-                LinkedDataStore.getCollectionPath(collectionDef.name, partitionKey),
+                this.getCollectionPath(collectionDef.name, partitionKey),
                 collectionDef.sortBy as SortBy[]);
         }
     }
 
-    private static getCollectionPath(collectionName: string, partitionKey?: string) {
+    private getCollectionPath(collectionName: string, partitionKey?: string) {
+        const collectionFolder = `${this.cacheFolder}/collections`;
         if (partitionKey) {
-            return path.join(COLLECTIONS_CACHE, encodeURIComponent(collectionName), partitionKey);
+            return path.join(collectionFolder, encodeURIComponent(collectionName), partitionKey);
         }
-        return path.join(COLLECTIONS_CACHE, encodeURIComponent(collectionName));
+        return path.join(collectionFolder, encodeURIComponent(collectionName));
     }
 
     private static getPartitionKeys(data: SambalData, groupBy: string[]) {
         const keys = groupBy.map(field => {
             const key = queryData(data, field);
-            return LinkedDataStore.stringifyKey(key);
+            return SambalCollection.stringifyKey(key);
         });
-        return LinkedDataStore.iterateKeyCombination(groupBy, keys);
+        return SambalCollection.iterateKeyCombination(groupBy, keys);
     }
 
     private static iterateKeyCombination(groupByFields: string[], groupByKeys) {
@@ -363,9 +344,9 @@ class LinkedDataStore {
             for (let i = 0; i < groupByFields.length; i++) {
                 const value = groupByKeys[i];
                 if (Array.isArray(value)) {
-                    partitionKey[groupByFields[i]] = LinkedDataStore.stringifyKey(value[--indexes[i]]);
+                    partitionKey[groupByFields[i]] = SambalCollection.stringifyKey(value[--indexes[i]]);
                 } else {
-                    partitionKey[groupByFields[i]] = LinkedDataStore.stringifyKey(value);
+                    partitionKey[groupByFields[i]] = SambalCollection.stringifyKey(value);
                 }
             }
             partitionKeys.push(partitionKey);
@@ -376,11 +357,11 @@ class LinkedDataStore {
 
     private static stringifyKey(value: any) {
         if (Array.isArray(value)) {
-            return value.map(v => LinkedDataStore.stringifyKey(v));
+            return value.map(v => SambalCollection.stringifyKey(v));
         }
         return isNullOrUndefined(value) ? "" : String(value);
     }
 
 }
 
-export default LinkedDataStore;
+export default SambalCollection;

@@ -2,7 +2,7 @@ import {Observable, Subscriber} from "rxjs";
 import {writeFile, readFile, safeParseJson, isNullOrUndefined, isDate, queryData} from "./utils";
 import path from "path";
 import shelljs from "shelljs";
-import {ASC, DESC, SortBy, SambalData, SAMBAL_INTERNAL} from "./constants";
+import {ASC, DESC, SortBy, SambalData} from "./constants";
 
 const INDEX_FILE = "index.json";
 
@@ -23,9 +23,8 @@ class Collection {
                 meta[def.field] = queryData(data, def.field);
             }
         }
-        this.contentMap.set(data[SAMBAL_INTERNAL].uri, {
-            base: data[SAMBAL_INTERNAL].base,
-            uri: data[SAMBAL_INTERNAL].uri,
+        this.contentMap.set(data.url, {
+            uri: data.url,
             meta: meta
         });
     }

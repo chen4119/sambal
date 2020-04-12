@@ -1,7 +1,7 @@
-import {pipe} from "rxjs";
+import {Observable, pipe} from "rxjs";
 import {map} from "rxjs/operators";
 import {addJsonLdToDOM} from "./addJsonLdToDOM";
-import {SAMBAL_INTERNAL} from "../constants";
+import {SambalData, SAMBAL_INTERNAL} from "../constants";
 
 export function toHtml() {
     return pipe(

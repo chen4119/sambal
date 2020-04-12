@@ -1,15 +1,15 @@
-import LinkedDataStore from "./LinkedDataStore";
+import SambalCollection from "./SambalCollection";
 import {CollectionDef} from "./constants";
 import {from, Subject, Observable} from "rxjs";
 import {map, mergeAll, tap, multicast} from "rxjs/operators";
 import {template} from "./template";
 import {render} from "./operators/render";
 import {toHtml} from "./operators/toHtml";
-import {toSchemaOrgJsonLd} from "./index";
-import {pushSchemaOrgJsonLd} from "./operators/pushSchemaOrgJsonLd";
-import Packager from "./Packager";
+import {dom} from "./operators/dom";
+import {loadContent} from "./utils";
+import {toSchemaOrgJsonLd, loadJsonLd, pushSchemaOrgJsonLd} from "./index";
 import LocalCss from "./LocalCss";
-import {getUriPath} from "./utils";
+
 import path from "path";
 import Logger from "./Logger";
 
@@ -47,24 +47,43 @@ const obs = from([{
     url: 'https://chen4119.me/post2'
 }])
 .pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "BlogPosting")))
-.pipe(render(renderPage));
-// .pipe(toHtml())
-// .subscribe(d => console.log(d));
+.pipe(render(renderPage))
+.pipe(dom(($) => {
+    const scriptSelector = 'script[src]';
+    $(scriptSelector).each(function() {
+        //TODO: Normalize jsFile
+        const jsFile = $(this).attr("src");
+        $(this).attr("src", '1234');
+        // const isModule = $(this).attr("type") === "module";
+    });
+}))
+.pipe(toHtml())
+.subscribe(d => console.log(d));*/
 
-const packager = new Packager(obs);
-packager.deliver();*/
+from(['content/post1.md'])
+.pipe(loadJsonLd({
+    fetcher: (async url => {
+        return await loadContent(url);
+    })
+}))
+.subscribe(d => console.log(d));
 
-const store = new LinkedDataStore("https://chen4119.me", {contentPath: ["content"], collections: collections});
-// store.content().subscribe(d => console.log(d));
+/*
+const content$ = from([
+    {url: '/post1', keywords: ['javascript', 'php'], dateCreated: new Date()},
+    {url: '/post2', keywords: ['javascript', 'golang'], dateCreated: new Date()},
+    {url: '/post3'},
+    {keywords: ['javascript', 'php']}
+]);
+const store = new SambalCollection(content$, collections);
+store.indexContent();*/
+// store.collection("tags", {keywords: "javascript"}).subscribe(d => console.log(d));
 
 /*
 (async () => {
     const sizes = await store.stats("tags");
     console.log(sizes.partitions);
-})();*/
-// store.indexContent();
-// store.collection("tags", {keywords: "javascript"}).subscribe(d => console.log(d));
-// store.start();
+})();
+store.start();*/
 
-// console.log(getUriPath(null, "https://chen4119.me/post1", {}));
 
