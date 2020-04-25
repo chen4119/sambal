@@ -9,7 +9,7 @@ import matter from 'gray-matter';
 import marked from "marked";
 import axios, { AxiosResponse } from "axios";
 import shelljs from "shelljs";
-import * as cheerio from "cheerio";
+import {getJsonLd} from "./html";
 
 export function queryData(data: any, dataPath: string) {
     const fieldArray = dataPath.split('.');
@@ -158,13 +158,7 @@ function parseContent(content: string, contentType: SUPPORTED_CONTENT_TYPE) {
                     text: marked(frontMatter.content)
                 };
             case SUPPORTED_CONTENT_TYPE.html:
-                const $ = cheerio.load(content);
-                const scriptSelector = 'script[type="application/ld+json"]';
-                const jsonlds = [];
-                $(scriptSelector).each(function() {
-                    const schemaOrg = safeParseJson($(this).html());
-                    jsonlds.push(schemaOrg);
-                });
+                const jsonlds = getJsonLd(content);
                 return jsonlds;
             default:
                 throw `Unsupported content type ${contentType}.  Expecting yaml, json or markdown`;

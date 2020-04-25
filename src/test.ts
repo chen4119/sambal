@@ -5,21 +5,12 @@ import {map, mergeAll, tap, multicast} from "rxjs/operators";
 import {template} from "./template";
 import {render} from "./operators/render";
 import {toHtml} from "./operators/toHtml";
-import {dom} from "./operators/dom";
 import {loadContent} from "./utils";
 import {toSchemaOrgJsonLd, loadJsonLd, pushSchemaOrgJsonLd} from "./index";
 import LocalCss from "./LocalCss";
-
+import {prettify} from "./html";
 import path from "path";
 import Logger from "./Logger";
-
-const collections: CollectionDef[] = [
-    {
-        name: "tags",
-        groupBy: ["keywords"],
-        sortBy: {field: "dateCreated", order: "desc"}
-    }
-];
 
 function renderPage(props) {
     const classes = props.css.style({
@@ -42,48 +33,99 @@ function renderPage(props) {
 }
 
 /*
-const obs = from([{
+from([{
     headline:'test',
     url: 'https://chen4119.me/post2'
 }])
 .pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "BlogPosting")))
 .pipe(render(renderPage))
-.pipe(dom(($) => {
-    const scriptSelector = 'script[src]';
-    $(scriptSelector).each(function() {
-        //TODO: Normalize jsFile
-        const jsFile = $(this).attr("src");
-        $(this).attr("src", '1234');
-        // const isModule = $(this).attr("type") === "module";
-    });
-}))
-.pipe(toHtml())
-.subscribe(d => console.log(d));*/
-
-from(['content/post1.md'])
-.pipe(loadJsonLd({
-    fetcher: (async url => {
-        return await loadContent(url);
-    })
+.pipe(toHtml({
+    editAttribs: (name, attribs) => {
+        if (name === 'script') {
+            return {
+                src: "sfoijwef"
+            };
+        }
+        return attribs;
+    }
 }))
 .subscribe(d => console.log(d));
+*/
 
 /*
+from(['https://www.imdb.com/title/tt1843866'])
+.pipe(loadJsonLd())
+.pipe(map(data => data[0]))
+.pipe(render(({name, actor}) => {
+    // console.log(props);
+    return template`
+        <html>
+            <body>
+                <h1>Movie name: ${name}</h1>
+                ${actor.map(a => (template`
+                    <p>${a.name}</p>
+                `))}
+            </body>
+        </html>
+    `;
+}))
+.pipe(toHtml())
+.subscribe(d => console.log(d));
+*/
+
+/*
+const collections: CollectionDef[] = [
+    {
+        name: "tags",
+        groupBy: ["keywords"],
+        sortBy: {field: "dateCreated", order: "desc"}
+    }
+];
+
 const content$ = from([
     {url: '/post1', keywords: ['javascript', 'php'], dateCreated: new Date()},
     {url: '/post2', keywords: ['javascript', 'golang'], dateCreated: new Date()},
     {url: '/post3'},
     {keywords: ['javascript', 'php']}
 ]);
-const store = new SambalCollection(content$, collections);
-store.indexContent();*/
+const store = new SambalCollection(collections);
+// store.indexContent(content$);
 // store.collection("tags", {keywords: "javascript"}).subscribe(d => console.log(d));
 
-/*
+
 (async () => {
     const sizes = await store.stats("tags");
     console.log(sizes.partitions);
 })();
-store.start();*/
+*/
 
+
+(async () => {
+    const nodes = [{
+        name: 'script',
+        body: JSON.stringify({headline: 'hasoidf', description: 'som desciof'}),
+        attributes: {
+            type: "application/ld+json"
+        }
+    }];
+    const result = await prettify(`
+        <!doctype html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="description" content="Free Web tutorials">
+                <meta name="keywords" content="HTML, CSS, JavaScript">
+                <meta name="author" content="John Doe">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <script src="dfsoi"></script>
+            </head>
+            <body>
+                <h1>Hello wordl</h1>
+                <h1>Hello wordl</h1>
+                <br>
+            </body>
+        </html>
+    `, nodes);
+    console.log(result);
+})();
 

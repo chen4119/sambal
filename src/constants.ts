@@ -26,9 +26,7 @@ export type CollectionDef = {
 export type SambalData = {
     [propName: string]: any;
     [SAMBAL_INTERNAL]?: {
-        // base?: string,
-        // uri: string,
-        html?: CheerioStatic,
+        html?: string,
         jsonld?: any[]
     }
 }

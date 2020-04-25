@@ -18,4 +18,3 @@ export {loadJsonLd} from "./operators/loadJsonLd";
 export {paginate} from "./operators/paginate";
 export {toHtml} from "./operators/toHtml";
 export {pushSchemaOrgJsonLd} from "./operators/pushSchemaOrgJsonLd";
-export {dom} from "./operators/dom";

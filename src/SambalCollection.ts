@@ -1,6 +1,6 @@
 
-import {Observable, empty, pipe, ConnectableObservable} from "rxjs";
-import {mergeMap, filter, map, publish} from "rxjs/operators";
+import {Observable, empty, pipe} from "rxjs";
+import {mergeMap, filter, map} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
 import {cloneDeep} from "lodash";
@@ -27,11 +27,11 @@ class SambalCollection {
     private collectionDefs: CollectionDef[] = [];
     private collectionMap = new Map<string, Collection>(); // map collection path to Collection
     private partitionMap = new Map<string, Partitions>(); // map collection name to partitions
-    private observablesToStart: ConnectableObservable<any>[] = [];
+    // private observablesToStart: ConnectableObservable<any>[] = [];
     private cacheFolder: string = CACHE_FOLDER;
     private log: Logger = new Logger({name: "SambalCollection"});
 
-    constructor(private content$: Observable<any>, private collections: CollectionDef[], private userOptions: StoreOptions = {}) {
+    constructor(private collections: CollectionDef[], private userOptions: StoreOptions = {}) {
         if (this.userOptions.cacheFolder) {
             this.cacheFolder = this.userOptions.cacheFolder;
         }
@@ -89,10 +89,10 @@ class SambalCollection {
         return false;
     }
 
-    async indexContent() {
+    async indexContent(content$: Observable<any>) {
         return new Promise((resolve, reject) => {
             shelljs.rm("-rf", this.cacheFolder);
-            this.content$
+            content$
             .pipe(filter(d => {
                 if (!d.url) {
                     this.log.warn("Ignoring data with no url");
@@ -179,11 +179,8 @@ class SambalCollection {
     }
 
     collection(name: string, partition?: object): Observable<any> {
-        const obs$ = this.collectionMetas(name, partition)
-        .pipe(map(d => d.uri))
-        .pipe(publish()) as ConnectableObservable<any>;
-        this.observablesToStart.push(obs$);
-        return obs$;
+        return this.collectionMetas(name, partition)
+        .pipe(map(d => d.uri));
     }
 
     async stats(collectionName: string) {
@@ -221,12 +218,13 @@ class SambalCollection {
         return this.collectionDefs.find(c => c.name === collectionName);
     }
 
+    /*
     start() {
         for (const obs$ of this.observablesToStart) {
             obs$.connect();
         }
         this.observablesToStart = [];
-    }
+    }*/
 
     /*
     async load(uri: string, options?: {base?: string}): Promise<SambalData> {

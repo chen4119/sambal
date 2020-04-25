@@ -1,16 +1,22 @@
-import {Observable, pipe} from "rxjs";
-import {map} from "rxjs/operators";
-import {addJsonLdToDOM} from "./addJsonLdToDOM";
-import {SambalData, SAMBAL_INTERNAL} from "../constants";
+import {pipe} from "rxjs";
+import {mergeMap} from "rxjs/operators";
+import {SAMBAL_INTERNAL} from "../constants";
+import {HtmlAttributes, editHtml} from "../html";
+import Logger from "../Logger";
 
-export function toHtml() {
+type EditAttributesFn = (name: string, attribs: HtmlAttributes) => HtmlAttributes;
+
+const log: Logger = new Logger({name: "toHtml"});
+export function toHtml(editOptions?: {editAttribs: EditAttributesFn}) {
     return pipe(
-        addJsonLdToDOM(),
-        map(d => {
+        mergeMap(async d => {
             if (d[SAMBAL_INTERNAL] && d[SAMBAL_INTERNAL].html) {
-                const $ = d[SAMBAL_INTERNAL].html;
-                return $.html();
+                if (editOptions) {
+                    return await editHtml(d[SAMBAL_INTERNAL].html, editOptions.editAttribs);
+                }
+                return d[SAMBAL_INTERNAL].html;
             }
+            log.warn("No html rendered.  Need to call render first");
             return "";
         })
     );
