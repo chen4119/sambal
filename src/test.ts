@@ -56,31 +56,44 @@ from([{
 from(['./content/post2.md'])
 .pipe(loadJsonLd())
 .pipe(render(({text}) => {
-    // console.log(props);
     return template`
         <html>
             <body>
-                ${text}
+                ${template`
+                    <main>
+                        ${text}
+                    </main>
+                    <a>hellowe</a>
+                `}
             </body>
         </html>
     `;
 }))
-.pipe(toHtml())
+.pipe(toHtml({
+    editAttribs: (name, attribs) => attribs
+}))
 .subscribe(d => console.log(d));
 */
+
 
 
 from(['https://www.imdb.com/title/tt1843866'])
 .pipe(loadJsonLd())
 .pipe(map(data => data[0]))
-.pipe(render(({name, actor}) => {
-    // console.log(props);
+.pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "Movie")))
+.pipe(render(({css, name, actor}) => {
+    const classes = css.style({
+        actor: {
+            "font-style": "italic"
+        }
+    });
+
     return template`
         <html>
             <body>
                 <h1>Movie name: ${name}</h1>
                 ${actor.map(a => (template`
-                    <p>${a.name}</p>
+                    <span class="${classes.actor}">${a.name}</span>
                 `))}
             </body>
         </html>

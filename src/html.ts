@@ -79,7 +79,7 @@ export async function prettify(srcHtml: string, appendHeadNodes: HtmlNode[] = []
                 spacing += INDENT;
             },
             ontext:(data) => {
-                html += addText(spacing, data);
+                html += addText(data);
             },
             onclosetag: (name) => {
                 if (name === 'head' && !isAppendedHeadNodes) {
@@ -119,7 +119,7 @@ export async function editHtml(
                 spacing += INDENT;
             },
             ontext:(data) => {
-                html += addText(spacing, data);
+                html += addText(data);
             },
             onclosetag: (name) => {
                 spacing -= INDENT;
@@ -145,7 +145,7 @@ function addNodesToHtml(spacing: number, nodes: HtmlNode[]) {
     let html = '';
     for (const node of nodes) {
         html += addOpeningTag(spacing, node.name, node.attributes);
-        html += addText(spacing + INDENT, node.body);
+        html += addText(node.body);
         html += addClosingTag(spacing, node.name);
     }
     return html;
@@ -161,9 +161,9 @@ function addOpeningTag(spacing: number, name: string, attribs?: HtmlAttributes) 
     return `${makeIndent(spacing)}<${name}${attributes}>\n`
 }
 
-function addText(spacing: number, data: string) {
+function addText(data: string) {
     if (data && data.trim()) {
-        return `${data}\n`;
+        return `${data.trim()}\n`;
     }
     return '';
 }
