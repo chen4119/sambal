@@ -39,7 +39,7 @@ class Logger {
         if (Array.isArray(message)) {
             return message.map(m => this.stringifyMessage(m));
         } else if (message instanceof Error) {
-            return message.stack ? [message.toString(), message.stack] : message.toString();
+            return message.stack ? message.stack : message.toString();
         } else if (typeof(message) === "object") {
             return JSON.stringify(message);
         }

@@ -54,7 +54,7 @@ export async function getJsonLd(srcHtml: string) {
                 resolve(allJsonLds);
             }
         };
-        const parser = new Parser(handler, { decodeEntities: true });
+        const parser = new Parser(handler);
         parser.write(srcHtml);
         parser.end();
     });
@@ -99,7 +99,7 @@ export async function prettify(srcHtml: string, appendHeadNodes: HtmlNode[] = []
                 resolve(html);
             }
         };
-        const parser = new Parser(handler, { decodeEntities: true });
+        const parser = new Parser(handler);
         parser.write(srcHtml);
         parser.end();
     });
@@ -135,7 +135,7 @@ export async function editHtml(
                 resolve(html);
             }
         };
-        const parser = new Parser(handler, { decodeEntities: true });
+        const parser = new Parser(handler);
         parser.write(srcHtml);
         parser.end();
     });
@@ -163,7 +163,7 @@ function addOpeningTag(spacing: number, name: string, attribs?: HtmlAttributes) 
 
 function addText(spacing: number, data: string) {
     if (data && data.trim()) {
-        return `${makeIndent(spacing)}${data}\n`;
+        return `${data}\n`;
     }
     return '';
 }

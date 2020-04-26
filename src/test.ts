@@ -53,6 +53,23 @@ from([{
 */
 
 /*
+from(['./content/post2.md'])
+.pipe(loadJsonLd())
+.pipe(render(({text}) => {
+    // console.log(props);
+    return template`
+        <html>
+            <body>
+                ${text}
+            </body>
+        </html>
+    `;
+}))
+.pipe(toHtml())
+.subscribe(d => console.log(d));
+*/
+
+
 from(['https://www.imdb.com/title/tt1843866'])
 .pipe(loadJsonLd())
 .pipe(map(data => data[0]))
@@ -71,7 +88,7 @@ from(['https://www.imdb.com/title/tt1843866'])
 }))
 .pipe(toHtml())
 .subscribe(d => console.log(d));
-*/
+
 
 /*
 const collections: CollectionDef[] = [
@@ -99,7 +116,7 @@ const store = new SambalCollection(collections);
 })();
 */
 
-
+/*
 (async () => {
     const nodes = [{
         name: 'script',
@@ -127,5 +144,5 @@ const store = new SambalCollection(collections);
         </html>
     `, nodes);
     console.log(result);
-})();
+})();*/
 
