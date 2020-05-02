@@ -52,12 +52,24 @@ from([{
 .subscribe(d => console.log(d));
 */
 
-/*
+
 from(['./content/post2.md'])
 .pipe(loadJsonLd())
 .pipe(render(({text}) => {
     return template`
+        <!doctype html>
         <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+                <meta http-equiv="X-UA-Compatible" content="ie=edge">
+                <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+                <meta http-equiv="Pragma" content="no-cache">
+                <meta http-equiv="Expires" content="0">
+                <base href="/">
+                
+                <script src="./js/index.js"></script>
+            </head>
             <body>
                 ${template`
                     <main>
@@ -65,18 +77,26 @@ from(['./content/post2.md'])
                     </main>
                     <a>hellowe</a>
                 `}
+                <br>
+                <br>
             </body>
         </html>
     `;
 }))
 .pipe(toHtml({
-    editAttribs: (name, attribs) => attribs
+    editAttribs: (name, attribs) => {
+        if (name === 'script') {
+            return {
+                src: 'sdf'
+            };
+        }
+        return attribs;
+    }
 }))
 .subscribe(d => console.log(d));
-*/
 
 
-
+/*
 from(['https://www.imdb.com/title/tt1843866'])
 .pipe(loadJsonLd())
 .pipe(map(data => data[0]))
@@ -99,9 +119,11 @@ from(['https://www.imdb.com/title/tt1843866'])
         </html>
     `;
 }))
-.pipe(toHtml())
+.pipe(toHtml({
+    editAttribs: (name, attribs) => attribs
+}))
 .subscribe(d => console.log(d));
-
+*/
 
 /*
 const collections: CollectionDef[] = [
