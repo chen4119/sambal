@@ -140,7 +140,7 @@ function getHtmlSerializer(resolve, reject, preOpenTag?, preCloseTag?) {
                 indent ++;
                 html += `\n${addOpeningTag(indent, name, attribs)}`;
             } else if (!insidePreTag && prev === CLOSE) {
-                html += addOpeningTag(indent, name, attribs);
+                html += `\n${addOpeningTag(indent, name, attribs)}`;
             } else {
                 html += addOpeningTag(0, name, attribs);
             }
@@ -152,7 +152,7 @@ function getHtmlSerializer(resolve, reject, preOpenTag?, preCloseTag?) {
         ontext:(data) => {
             const trimmed = data.trim();
             if (trimmed) {
-                html += trimmed;
+                html += data;
                 prev = TEXT;
             }
         },
@@ -160,13 +160,11 @@ function getHtmlSerializer(resolve, reject, preOpenTag?, preCloseTag?) {
             if (preCloseTag) {
                 preCloseTag(name);
             }
-            if (insidePreTag) {
+            if (insidePreTag || prev === TEXT || prev === OPEN) {
                 html += addClosingTag(0, name);
-            } else if (prev === TEXT || prev === OPEN) {
-                html += `${addClosingTag(0, name)}\n`;
             } else {
                 indent = Math.max(0, indent - 1);
-                html += `${addClosingTag(indent, name)}\n`;
+                html += `\n${addClosingTag(indent, name)}`;
             }
             prev = CLOSE;
             if (name === 'pre') {
