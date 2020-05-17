@@ -4,10 +4,11 @@ import preset from "jss-preset-default";
 jss.setup(preset());
 
 class LocalCss {
-    private registry: SheetsRegistry = new SheetsRegistry();
-    private numSheets: number = 0;
+    private registry: SheetsRegistry;
+    private numSheets: number;
     constructor() {
-        
+        this.registry = new SheetsRegistry();
+        this.numSheets = 0;
     }
 
     style(styleObj: object) {

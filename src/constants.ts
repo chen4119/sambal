@@ -1,3 +1,5 @@
+import LocalCss from "./LocalCss";
+
 export enum SUPPORTED_CONTENT_TYPE {
     yaml,
     markdown,
@@ -27,6 +29,7 @@ export type SambalData = {
     [propName: string]: any;
     [SAMBAL_INTERNAL]?: {
         html?: string,
-        jsonld?: any[]
+        jsonld?: any[],
+        css?: LocalCss
     }
 }

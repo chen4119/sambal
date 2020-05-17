@@ -17,4 +17,5 @@ export {aggregateBy} from "./operators/aggregateBy";
 export {loadJsonLd} from "./operators/loadJsonLd";
 export {paginate} from "./operators/paginate";
 export {toHtml} from "./operators/toHtml";
-export {pushSchemaOrgJsonLd} from "./operators/pushSchemaOrgJsonLd";
+export {listJsonLd} from "./operators/listJsonLd";
+export {pushJsonLd} from "./operators/pushJsonLd";

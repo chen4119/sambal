@@ -6,10 +6,9 @@ import {template} from "./template";
 import {render} from "./operators/render";
 import {toHtml} from "./operators/toHtml";
 import {loadContent} from "./utils";
-import {toSchemaOrgJsonLd, loadJsonLd, pushSchemaOrgJsonLd} from "./index";
+import {toSchemaOrgJsonLd, loadJsonLd, pushJsonLd} from "./index";
 import LocalCss from "./LocalCss";
 import {prettify} from "./html";
-import path from "path";
 import Logger from "./Logger";
 
 function renderPage(props) {
@@ -37,7 +36,7 @@ from([{
     headline:'test',
     url: 'https://chen4119.me/post2'
 }])
-.pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "BlogPosting")))
+.pipe(pushJsonLd(d => toSchemaOrgJsonLd(d, "BlogPosting")))
 .pipe(render(renderPage))
 .pipe(toHtml({
     editAttribs: (name, attribs) => {
@@ -100,7 +99,7 @@ from(['./content/post2.md'])
 from(['https://www.imdb.com/title/tt1843866'])
 .pipe(loadJsonLd())
 .pipe(map(data => data[0]))
-.pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "Movie")))
+.pipe(pushJsonLd(d => toSchemaOrgJsonLd(d, "Movie")))
 .pipe(render(({css, name, actor}) => {
     const classes = css.style({
         actor: {
@@ -179,5 +178,5 @@ const store = new SambalCollection(collections);
         </html>
     `, nodes);
     console.log(result);
-})();*/
-
+})();
+*/

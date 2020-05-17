@@ -16,14 +16,14 @@ Or use with [Sambal CLI](https://github.com/chen4119/sambal-cli) for integrated 
 ## Example
 
 ```js
-const {template, render, pushSchemaOrgJsonLd, toSchemaOrgJsonLd, loadJsonLd, toHtml} = require("sambal");
+const {template, render, pushJsonLd, toSchemaOrgJsonLd, loadJsonLd, toHtml} = require("sambal");
 const {from} = require("rxjs");
 const {map} = require("rxjs/operators");
 
 from(['https://www.imdb.com/title/tt1843866'])
 .pipe(loadJsonLd())                                                                    // load json-ld from url or local drive.  Supports html, json, md, or yml
 .pipe(map(data => data[0]))
-.pipe(pushSchemaOrgJsonLd(d => toSchemaOrgJsonLd(d, "Movie")))                         // Add schema.org json-ld metadata to your HTML doc
+.pipe(pushJsonLd(d => toSchemaOrgJsonLd(d, "Movie")))                                  // Add schema.org json-ld metadata to your HTML doc
 .pipe(render(({css, name, actor}) => {
     const classes = css.style({                                                        // jss instance injected into render function
         actor: {
