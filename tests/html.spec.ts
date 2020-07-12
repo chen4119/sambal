@@ -71,7 +71,7 @@ describe('html', () => {
     });
 
     it('preserve <pre>', async () => {
-        const result = await from(['tests/post.md'])
+        const result = await from(['tests/content/post.md'])
         .pipe(loadJsonLd())
         .pipe(render(({text}) => {
             return template`
@@ -91,4 +91,4 @@ describe('html', () => {
         .toPromise();
         expect(result).toMatchSnapshot();
     });
-})
+});

@@ -7,10 +7,13 @@ import {ASC, DESC, SortBy, SambalData} from "./constants";
 const INDEX_FILE = "index.json";
 
 class Collection {
-    private contentMap: Map<string, any> = new Map<string, any>();
-    private isIndexLoaded: boolean = false;
+    private contentMap: Map<string, any>;
+    private sortedContent: any[];
+    private isIndexLoaded: boolean;
     constructor(private collectionPath: string, private sortBy?: SortBy[]) {
-        
+        this.contentMap = new Map<string, any>();
+        this.sortedContent = [];
+        this.isIndexLoaded = false;
     }
 
     async upsert(data: SambalData) {
@@ -46,7 +49,7 @@ class Collection {
         if (!this.isIndexLoaded) {
             await this.loadIndex();
         }
-        for (const meta of this.contentMap.values()) {
+        for (const meta of this.sortedContent) {
             subscriber.next(meta);
         }
         subscriber.complete();
@@ -55,10 +58,10 @@ class Collection {
 
     async flush() {
         if (this.contentMap.size > 0) {
-            const values = [...this.contentMap.values()];
-            this.sort(values);
+            this.sortedContent = [...this.contentMap.values()];
+            this.sort(this.sortedContent);
             const output = this.getIndexFilePath();
-            await writeFile(output, JSON.stringify(values));
+            await writeFile(output, JSON.stringify(this.sortedContent));
         }
     }
 
@@ -83,9 +86,9 @@ class Collection {
         if (isNullOrUndefined(aValue) && isNullOrUndefined(bValue)) {
             return 0;
         } else if (isNullOrUndefined(aValue)) {
-            return order === ASC ? 1 : -1;
+            return 1;
         } else if (isNullOrUndefined(bValue)) {
-            return order === ASC ? -1 : 1;
+            return -1;
         }
         return this.compareNonNullValues(aValue, bValue, order);
     }
@@ -107,6 +110,7 @@ class Collection {
                 for (const meta of metas) {
                     this.contentMap.set(meta.uri, meta);
                 }
+                this.sortedContent = [...metas];
             }
         }
         this.isIndexLoaded = true;

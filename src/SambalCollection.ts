@@ -24,14 +24,18 @@ type StoreOptions = {
 // const CONFIG_FILE = "config.json";
 
 class SambalCollection {
-    private collectionDefs: CollectionDef[] = [];
-    private collectionMap = new Map<string, Collection>(); // map collection path to Collection
-    private partitionMap = new Map<string, Partitions>(); // map collection name to partitions
-    // private observablesToStart: ConnectableObservable<any>[] = [];
-    private cacheFolder: string = CACHE_FOLDER;
-    private log: Logger = new Logger({name: "SambalCollection"});
+    private collectionDefs: CollectionDef[];
+    private collectionMap: Map<string, Collection>; // map collection path to Collection
+    private partitionMap: Map<string, Partitions>; // map collection name to partitions
+    private cacheFolder: string;
+    private log: Logger;
 
     constructor(private collections: CollectionDef[], private userOptions: StoreOptions = {}) {
+        this.log = new Logger({name: "SambalCollection"});
+        this.collectionDefs = [];
+        this.collectionMap = new Map<string, Collection>();
+        this.partitionMap = new Map<string, Partitions>();
+        this.cacheFolder = CACHE_FOLDER;
         if (this.userOptions.cacheFolder) {
             this.cacheFolder = this.userOptions.cacheFolder;
         }
@@ -121,46 +125,6 @@ class SambalCollection {
         });
     }
 
-    /*
-    content(): Observable<any> {
-        const obs$: ConnectableObservable<any> = this.getSourceObservable().pipe(publish()) as ConnectableObservable<any>;
-        this.observablesToStart.push(obs$);
-        return obs$;
-    }
-
-    private getSourceObservable(): Observable<any> {
-        const localContent$ = this.localData$();
-        const moreContent$ = this.options.content$ ? this.options.content$ : empty();
-        return from([localContent$, moreContent$]).pipe(mergeAll());
-    }
-
-    private localData$() {
-        let localContent$: Observable<any> = empty();
-        if (this.options.contentPath) {
-            localContent$ = Array.isArray(this.options.contentPath) ? from(this.options.contentPath) : of(this.options.contentPath);
-        }
-        return localContent$.pipe(mergeMap((contentPath: any) => {
-            const files = shelljs.ls("-R", contentPath);
-            return new Observable(subscriber => {
-                this.loadLocalFiles(contentPath, files, subscriber);
-            });
-        }));
-    }
-
-    private async loadLocalFiles(contentPath: string, files: string[], subscriber: Subscriber<any>) {
-        for (const file of files) {
-            if (isSupportedFile(file)) {
-                try {
-                    const content = await this.load(path.join(contentPath, file), {base: contentPath});
-                    subscriber.next(content);
-                } catch (e) {
-                    this.log.error(`Error loading ${file}.  Ignoring...`);
-                }
-            }
-        }
-        subscriber.complete();
-    }*/
-
     private collectionMetas(name: string, partition?: object): Observable<any> {
         const def = this.getCollectionDef(name);
         if (!def) {
@@ -217,53 +181,6 @@ class SambalCollection {
     private getCollectionDef(collectionName: string) {
         return this.collectionDefs.find(c => c.name === collectionName);
     }
-
-    /*
-    start() {
-        for (const obs$ of this.observablesToStart) {
-            obs$.connect();
-        }
-        this.observablesToStart = [];
-    }*/
-
-    /*
-    async load(uri: string, options?: {base?: string}): Promise<SambalData> {
-        const content = await loadContent(uri);
-        const hydratedJson = await hydrateJsonLd(content, async (url) => {
-            if (isSupportedFile(url)) {
-                return await loadContent(url);
-            }
-            return null;
-        });
-        if (!hydratedJson.url) {
-            hydratedJson.url = `${this.host}/${getUriPath(options.base, uri, hydratedJson)}`; // don't use path.join here.  http double slash will become single
-        }
-        return {
-            ...hydratedJson,
-            [SAMBAL_INTERNAL]: {
-                base: options.base,
-                uri: uri
-            }
-        };
-    }
-
-    private async writeConfig() {
-        const configPath = `${CACHE_FOLDER}/${CONFIG_FILE}`;
-        await writeFile(configPath, JSON.stringify(this.options));
-    }
-
-    private ensureConfigIsSame() {
-        const configPath = `${CACHE_FOLDER}/${CONFIG_FILE}`;
-        if (shelljs.test("-e", configPath)) {
-            const config = safeParseJson(fs.readFileSync(configPath, "utf-8"));
-            const isSame = isEqual(config, this.options);
-            if (!isSame) {
-                console.error("Sambal config changed.  Need to re-index content first");
-            }
-            return isSame;
-        }
-        return false;
-    }*/
 
     private iterateCollection() {
         return pipe<Observable<SambalData>, Observable<SambalData>>(

@@ -20,6 +20,7 @@ export function queryData(data: any, dataPath: string) {
     return current;
 }
 
+/*
 export function setPropAt(data: any, dataPath: string, propValue: any) {
     const fieldArray = dataPath.split('.');
     let current = data;
@@ -30,7 +31,7 @@ export function setPropAt(data: any, dataPath: string, propValue: any) {
             current[fieldArray[i]] = propValue;
         }
     }
-}
+}*/
 
 export async function loadContent(src: string) {
     if (!isSupportedFile(src)) {
@@ -59,18 +60,6 @@ export function isNullOrUndefined(val: any) {
 export function isNonEmptyString(val: any) {
     return typeof(val) === "string" && val.length > 0;
 }
-
-/*
-export function getUriPath(base: string, uri: string, data: any) {
-    if (data.url) {
-        return url.parse(data.url).pathname;
-    } else if (isExternalSource(uri)) {
-        return url.parse(uri).pathname;
-    }
-    const basename = path.basename(uri, path.extname(uri));
-    const from = base ? base : "";
-    return path.join(path.relative(from, path.dirname(uri)), basename);
-}*/
 
 export function readFile(src: string): Promise<string> {
     return new Promise((resolve, reject) => {

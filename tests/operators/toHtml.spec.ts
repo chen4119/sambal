@@ -37,7 +37,7 @@ describe('toHtml', () => {
     });
 
     it('add schema.org to head', async () => {
-        const result = await from(['tests/post.md'])
+        const result = await from(['tests/content/post.md'])
         .pipe(loadJsonLd())
         .pipe(pushJsonLd(d => toSchemaOrgJsonLd(d, "BlogPosting")))
         .pipe(render(({text}) => {

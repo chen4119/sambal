@@ -10,10 +10,11 @@ const PARTITION_FILE = "partition.json";
 const EMPTY_KEY_PLACEHOLDER = "_empty_";
 
 class Partitions {
-    private partitionMap: Map<string, any> = new Map<string, any>();
-    private isIndexLoaded: boolean = false;
+    private partitionMap: Map<string, any>;
+    private isIndexLoaded: boolean;
     constructor(private collectionPath: string, private groupBy?: string[]) {
-        
+        this.partitionMap = new Map<string, any>();
+        this.isIndexLoaded = false;
     }
 
     add(partition: object) {
