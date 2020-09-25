@@ -3,9 +3,9 @@
 exports[`listJsonLd add schema.org to head 1`] = `
 Array [
   Object {
-    "@context": "http://schema.org",
+    "@context": "https://schema.org",
     "@type": "BlogPosting",
-    "dateCreated": "2019-03-04T00:00:00.000Z",
+    "dateCreated": "2019-03-03T19:00:00.000-05:00",
     "description": "Some description",
     "headline": "Second post",
     "keywords": Array [

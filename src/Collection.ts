@@ -73,7 +73,7 @@ class Collection {
                     const aValue = queryData(a.meta, def.field);
                     const bValue = queryData(b.meta, def.field);
                     
-                    let compareVal = this.compare(aValue, bValue, def.order);
+                    const compareVal = this.compare(aValue, bValue, def.order);
                     if (compareVal !== 0 || i === this.sortBy.length - 1) {
                         return compareVal;
                     }

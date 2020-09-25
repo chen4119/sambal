@@ -11,7 +11,7 @@ class LocalCss {
         this.numSheets = 0;
     }
 
-    style(styleObj: object) {
+    style(styleObj: unknown) {
         const sheet = jss.createStyleSheet(styleObj);
         this.registry.add(sheet);
         this.numSheets ++;

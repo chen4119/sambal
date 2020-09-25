@@ -135,20 +135,20 @@ function getLocalFileContentType(src: string): SUPPORTED_CONTENT_TYPE {
 
 function parseContent(content: string, contentType: SUPPORTED_CONTENT_TYPE) {
     try {
+        let frontMatter;
         switch (contentType) {
             case SUPPORTED_CONTENT_TYPE.yaml:
                 return yaml.safeLoad(content);
             case SUPPORTED_CONTENT_TYPE.json:
                 return safeParseJson(content);
             case SUPPORTED_CONTENT_TYPE.markdown:
-                const frontMatter = matter(content);
+                frontMatter = matter(content);
                 return {
                     ...frontMatter.data,
                     text: marked(frontMatter.content)
                 };
             case SUPPORTED_CONTENT_TYPE.html:
-                const jsonlds = getJsonLd(content);
-                return jsonlds;
+                return getJsonLd(content);
             default:
                 throw `Unsupported content type ${contentType}.  Expecting yaml, json or markdown`;
         }

@@ -1,7 +1,8 @@
 import {Parser} from "htmlparser2";
 import {Handler} from "htmlparser2/lib/Parser";
 import {safeParseJson} from "./utils";
-const SPACING: number = 4;
+
+const SPACING = 4;
 const SELF_CLOSING_TAGS = [
     'area',
     'base',
@@ -33,7 +34,7 @@ export type HtmlNode = {
 
 export async function getJsonLd(srcHtml: string) {
     return new Promise<any[]>((resolve, reject) => {
-        let allJsonLds = [];
+        const allJsonLds = [];
         let isJsonLdInBody = false;
         const handler: Partial<Handler> = {
             onopentag: (name,  attribs) => {
@@ -91,13 +92,13 @@ function getHtmlSerializer(
     append: (name: string, attribs: HtmlAttributes) => HtmlNode[],
     replace: (name: string, attribs: HtmlAttributes) => HtmlNode,
     ) {
-    let html: string = '';
-    let indent: number = 0;
+    let html = '';
+    let indent = 0;
     let prev: string = null;
-    let insidePreTag: boolean = false;
-    let stack: any[] = [];
+    let insidePreTag = false;
+    const stack: any[] = [];
     let deleteTag: any = null;
-    let appendToTag: any[] = [];
+    const appendToTag: any[] = [];
     const handler: Partial<Handler> = {
         onopentag: (name,  attribs) => {
             const tag = {name: name};

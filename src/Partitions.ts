@@ -17,12 +17,12 @@ class Partitions {
         this.isIndexLoaded = false;
     }
 
-    add(partition: object) {
+    add(partition: unknown) {
         const key = this.getKey(partition);
         this.partitionMap.set(key, partition);
     }
 
-    getPartitionKey(partition: object) {
+    getPartitionKey(partition: unknown) {
         return this.getKey(partition);
     }
 
@@ -68,7 +68,7 @@ class Partitions {
     }
 
 
-    private getKey(partition: object) {
+    private getKey(partition: unknown) {
         return encodeURIComponent(this.groupBy.map(f => partition[f] ? partition[f] : EMPTY_KEY_PLACEHOLDER).join("-"));
     }
 }

@@ -3,7 +3,7 @@ headline: Second post
 breadcrumb: guide
 description: Some description
 keywords: ["javascript", "rxjs"]
-dateCreated: 2019-03-04
+dateCreated: 2019-03-04T00:00:00.000Z
 id: second
 ---
 

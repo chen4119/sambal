@@ -3,7 +3,6 @@ import {Observable, empty, pipe} from "rxjs";
 import {mergeMap, filter, map} from "rxjs/operators";
 import shelljs from "shelljs";
 import path from "path";
-import {cloneDeep} from "lodash";
 import {CACHE_FOLDER, ASC, DESC, SortBy, CollectionDef, SambalData} from "./constants";
 import {
     isNullOrUndefined,
@@ -77,12 +76,16 @@ class SambalCollection {
             const validatedSortBy = [];
             for (const field of sortBy) {
                 if (this.validateSortByField(field)) {
-                    validatedSortBy.push(cloneDeep(field));
+                    validatedSortBy.push(this.cloneDeep(field));
                 }
             }
             return validatedSortBy;
         }
         return null;
+    }
+
+    private cloneDeep(obj) {
+        return JSON.parse(JSON.stringify(obj));
     }
 
     private validateSortByField(sortBy) {
@@ -125,7 +128,7 @@ class SambalCollection {
         });
     }
 
-    private collectionMetas(name: string, partition?: object): Observable<any> {
+    private collectionMetas(name: string, partition?: unknown): Observable<any> {
         const def = this.getCollectionDef(name);
         if (!def) {
             return empty();
@@ -142,7 +145,7 @@ class SambalCollection {
         return sourceObs;
     }
 
-    collection(name: string, partition?: object): Observable<any> {
+    collection(name: string, partition?: unknown): Observable<any> {
         return this.collectionMetas(name, partition)
         .pipe(map(d => d.uri));
     }
@@ -158,7 +161,7 @@ class SambalCollection {
                     const partitionKey = partitions.getPartitionKey(partition.meta);
                     const size = await this.getCollectionSize(def, partitionKey);
                     partitionSizes.push({
-                        partition: cloneDeep(partition.meta),
+                        partition: this.cloneDeep(partition.meta),
                         size: size
                     });
                 }

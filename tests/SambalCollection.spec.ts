@@ -1,7 +1,7 @@
 import SambalCollection from "../src/SambalCollection";
 import {from} from "rxjs";
 import {toArray} from "rxjs/operators";
-import moment from "moment";
+import {DateTime} from 'luxon';
 
 describe("SambalCollection", () => {
 
@@ -20,12 +20,12 @@ describe("SambalCollection", () => {
     const data = [{
         url: "/one",
         keywords: ["javascript", "rxjs"],
-        dateCreated: moment("2012-12-25").toDate(),
+        dateCreated: DateTime.fromISO("2012-12-25").toJSDate(),
         order: 3
     }, {
         url: "/two",
         keywords: ["java"],
-        dateCreated: moment("2001-12-25").toDate(),
+        dateCreated: DateTime.fromISO("2001-12-25").toJSDate(),
         order: 1
     }, {
         url: "/three",
@@ -33,7 +33,7 @@ describe("SambalCollection", () => {
         order: 2
     }, {
         url: "/four",
-        dateCreated: moment("1995-12-25").toDate()
+        dateCreated: DateTime.fromISO("1995-12-25").toJSDate()
     }];
 
     let indexer: SambalCollection;
