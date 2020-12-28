@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { isObjectLiteral } from "./utils";
 
 const LEVEL_INFO = "info";
 const LEVEL_WARNING = "warn";
@@ -20,7 +21,7 @@ class Logger {
     }
 
     private getPrefix(level: string) {
-        const prefix = this.options.name ? `${this.options.name}: ` : "";
+        const prefix = this.options.name ? this.options.name : "";
         switch(level) {
             case LEVEL_INFO:
                 return chalk.green(prefix);
@@ -35,43 +36,43 @@ class Logger {
         }
     }
 
-    private stringifyMessage(message: any) {
-        if (Array.isArray(message)) {
-            return message.map(m => this.stringifyMessage(m));
-        } else if (message instanceof Error) {
-            return message.stack ? message.stack : message.toString();
+    private getMessageType(message:unknown) {
+        if (Number.isInteger(message)) {
+            return "%i";
+        } else if (typeof(message) === "number") {
+            return "%f";
+        } else if (isObjectLiteral(message)) {
+            return "%j"; // json
         } else if (typeof(message) === "object") {
-            return JSON.stringify(message);
+            return "%O";
         }
-        return String(message);
+        return "%s"; // string
     }
 
-    private logToConsole(level: string, message: any) {
-        const stringifyMessage = this.stringifyMessage(message);
-        if (Array.isArray(stringifyMessage)) {
-            for (const m of stringifyMessage) {
-                console[level](this.getPrefix(level) + m);
-            }
+    private logToConsole(level: string, message: unknown, ...args) {
+        if (args.length > 0 && typeof(message) === "string") {
+            const template = `%s - ${message}`;
+            console[level](template, this.getPrefix(level), ...args);
         } else {
-            console[level](this.getPrefix(level) + stringifyMessage);
+            console[level](`%s - ${this.getMessageType(message)}`, this.getPrefix(level), message);
         }
     }
 
-    info(message: any) {
-        this.logToConsole(LEVEL_INFO, message);
+    info(message: unknown, ...args) {
+        this.logToConsole(LEVEL_INFO, message, ...args);
     }
 
-    warn(message: any) {
-        this.logToConsole(LEVEL_WARNING, message);
+    warn(message: unknown, ...args) {
+        this.logToConsole(LEVEL_WARNING, message, ...args);
     }
 
-    error(message: any) {
-        this.logToConsole(LEVEL_ERROR, message);
+    error(message: unknown, ...args) {
+        this.logToConsole(LEVEL_ERROR, message, ...args);
     }
 
-    debug(message: any) {
+    debug(message: unknown, ...args) {
         if (this.options.verbose) {
-            this.logToConsole(LEVEL_DEBUG, message);
+            this.logToConsole(LEVEL_DEBUG, message, ...args);
         }
     }
 

@@ -1,6 +1,6 @@
 {
     "name": "sambal",
-    "version": "0.0.35",
+    "version": "0.0.36",
     "description": "Sambal static site generator",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -41,7 +41,7 @@
         "jss": "10.0.0",
         "jss-preset-default": "10.0.0",
         "rxjs": "6.5.2",
-        "sambal-jsonld": "~0.0.16",
+        "sambal-jsonld": "~0.0.19",
         "shelljs": "0.8.4"
     },
     "devDependencies": {
