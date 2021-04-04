@@ -1,8 +1,8 @@
-
 export async function template(literals, ...expressions) {
     const resolvedExpr = await Promise.all(expressions);
     let string = "";
-    for (const [i, val] of resolvedExpr.entries()) {
+    for (let i = 0; i < resolvedExpr.length; i++) {
+        const val = resolvedExpr[i];
         if (Array.isArray(val)) {
             const resolvedValues = await Promise.all(val);
             string += `${literals[i]}${resolvedValues.filter(v => v !== null && v !== undefined).join("")}`;
