@@ -1,6 +1,6 @@
 {
     "name": "sambal",
-    "version": "0.0.36",
+    "version": "0.0.38",
     "description": "Sambal static site generator",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -55,6 +55,7 @@
         "sharp": "0.27.2",
         "shelljs": "0.8.4",
         "style-loader": "2.0.0",
+        "typescript": "4.2.3",
         "webpack": "5.24.3",
         "webpack-node-externals": "2.5.2",
         "webpack-dev-middleware": "4.1.0",
@@ -78,7 +79,6 @@
         "eslint": "7.21.0",
         "jest": "25.5.4",
         "rimraf": "3.0.0",
-        "ts-node": "9.1.1",
-        "typescript": "4.2.3"
+        "ts-node": "9.1.1"
     }
 }
