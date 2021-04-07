@@ -3,6 +3,7 @@ import Graph from "./Graph";
 import {
     Collection,
     SortBy,
+    PartitionKey,
     SORT_ASC
 } from "./helpers/constant";
 import {
@@ -10,11 +11,10 @@ import {
     isNullOrUndefined
 } from "./helpers/util";
 import {
-    mapJsonToPartitions,
     getSortKey
 } from "./helpers/collection";
-import { toAbsWellKnownIRI } from "./helpers/schema";
-import { searchLocalFiles, normalizeRelativePath } from "./helpers/data";
+import { searchLocalFiles, normalizeJsonLdId } from "./helpers/data";
+import { isObjectLiteral } from "sambal-jsonld/dist/utils";
 
 type IndexItem = {
     [JSONLD_ID]: string,
@@ -24,20 +24,25 @@ type IndexItem = {
 type IndexList = IndexItem[];
 
 type Partition = {
-    groupBy?: string[],
+    groupBy?: PartitionKey,
     feed: IndexList
 };
 
-const PARTITION_PATH = "_part_";
+const RESERVED_PARTITION_KEY_NAMES = ["pageNum"];
 
 export default class CollectionBuilder {
-    private collectionMap: Map<String, Partition[]> = new Map<String, Partition[]>();
+    private collectionMap: Map<String, Partition[]>;
     constructor(private siteGraph: Graph, private collections: Collection[]) {
-
+        if (collections) {
+            collections.forEach(c => {
+                c[JSONLD_ID] = normalizeJsonLdId(c[JSONLD_ID]);
+            });
+        }
+        this.collectionMap = new Map<String, Partition[]>();
     }
 
     async getCollectionPages(collectionIRI: string, pageSize: number) {
-        const normalizeIRI = normalizeRelativePath(collectionIRI);
+        const normalizeIRI = normalizeJsonLdId(collectionIRI);
         const collection = this.getCollection(normalizeIRI);
         let partitions: Partition[] = this.collectionMap.get(normalizeIRI);
         if (!partitions) {
@@ -46,40 +51,31 @@ export default class CollectionBuilder {
         let pages = [];
         for (const partition of partitions) {
             pages.push({
-                key: partition.groupBy ? this.toPartitionKeyObject(normalizeIRI, partition.groupBy) : null,
+                key: partition.groupBy ? partition.groupBy : null,
                 pages: await this.paginatePartition(collection, partition, pageSize)
             });
         }
         return pages;
     }
 
-    async getPartitionPages(collectionIRI: string, partitionKey: any, pageSize: number) {
-        const normalizeIRI = normalizeRelativePath(collectionIRI);
+    async getPartitionPages(collectionIRI: string, partitionKey: PartitionKey, pageSize: number) {
+        const normalizeIRI = normalizeJsonLdId(collectionIRI);
         const collection = this.getCollection(normalizeIRI);
         let partitions: Partition[] = this.collectionMap.get(normalizeIRI);
         if (!partitions) {
             partitions = await this.build(collection);
         }
-    }
-
-    private toPartitionKeyObject(collectionIRI: string, partitionKey: string[]) {
-        const collection = this.getCollection(collectionIRI);
-        const partitionObj: any = {};
-        for (let i = 0; i < collection.groupBy.length; i++) {
-            partitionObj[toAbsWellKnownIRI(collection.groupBy[i])] = partitionKey[i];
+        const keyStrToMatch = this.stringifyKey(partitionKey);
+        let pages = [];
+        for (const partition of partitions) {
+            if (partition.groupBy && this.stringifyKey(partition.groupBy) === keyStrToMatch) {
+                pages.push({
+                    key: partition.groupBy ? partition.groupBy : null,
+                    pages: await this.paginatePartition(collection, partition, pageSize)
+                });
+            }
         }
-        return partitionObj;
-    }
-
-    private toPartitionKeyStringArray(collectionIRI: string, partitionKey: object) {
-        const collection = this.getCollection(collectionIRI);
-        const partitionArr: any = {};
-        for (let i = 0; i < collection.groupBy.length; i++) {
-            // TODO: what if value is null or empty?
-            const value = partitionKey[toAbsWellKnownIRI(collection.groupBy[i])];
-            partitionArr.push(value);
-        }
-        return partitionArr;
+        return pages;
     }
 
     private async paginatePartition(collection: Collection, partition: Partition, pageSize: number) {
@@ -137,18 +133,20 @@ export default class CollectionBuilder {
         }
     }
 
-    private getCollectionPageUrl(collectionIRI: string, partitionKey?: string[], pageIndex?: number) {
+    private getCollectionPageUrl(collectionIRI: string, partitionKey?: PartitionKey, pageIndex?: number) {
         const paths = [collectionIRI];
-        if (partitionKey) {
-            paths.push(PARTITION_PATH);
-            for (const key of partitionKey) {
-                paths.push(encodeURIComponent(key));
-            }
-        }
+        const params: any = partitionKey ? partitionKey : {};
         if (pageIndex) {
-            paths.push(String(pageIndex + 1));
+            params.pageNum = pageIndex + 1;
         }
-        return paths.join("/");
+        let queries = [];
+        for (const name of Object.keys(params)) {
+            queries.push(`${encodeURIComponent(name)}=${encodeURIComponent(params[name])}`);
+        }
+        if (queries.length > 0) {
+            return `${collectionIRI}?${queries.join("&")}`;
+        }
+        return collectionIRI;
     }
 
     private async build(collection: Collection) {
@@ -181,31 +179,42 @@ export default class CollectionBuilder {
     private async addToPartitionedList(collection: Collection, filePaths: string[]) {
         const partitionMap = new Map<string, Partition>();
         for (const filePath of filePaths) {
-            const jsonld = expandJsonLd(await this.siteGraph.load(filePath));
-            // TODO: Support other vocab for groupBy
-            const partitions = mapJsonToPartitions(jsonld, collection.groupBy.map(d => toAbsWellKnownIRI(d)));
-            for (const partitionKey of partitions) {
-                const key = this.stringifyKey(partitionKey);
-                let partition: Partition;
-                if (partitionMap.has(key)) {
-                    partition = partitionMap.get(key);
-                } else {
-                    partition = {
-                        groupBy: partitionKey,
-                        feed: []
-                    };
-                    partitionMap.set(key, partition);
+            const mainEntity = await this.siteGraph.load(filePath);
+            const partitions = collection.groupBy(mainEntity);
+            if (Array.isArray(partitions)) {
+                for (const partitionKey of partitions) {
+                    const partition = this.getPartition(partitionMap, partitionKey);
+                    partition.feed.push(this.getFeedItem(mainEntity, collection.sortBy));
                 }
-                partition.feed.push(this.getFeedItem(jsonld, collection.sortBy));
+            } else if (isObjectLiteral(partitions)) {
+                const partition = this.getPartition(partitionMap, partitions);
+                partition.feed.push(this.getFeedItem(mainEntity, collection.sortBy));
+            } else {
+                throw new Error(`Invalid partition key: ${partitions}`);
             }
         }
         return Array.from(partitionMap.values());
     }
 
+    private getPartition(partitionMap: Map<string, Partition>, key: PartitionKey) {
+        const keyStr = this.stringifyKey(key);
+        let partition: Partition;
+        if (partitionMap.has(keyStr)) {
+            partition = partitionMap.get(keyStr);
+        } else {
+            partition = {
+                groupBy: key,
+                feed: []
+            };
+            partitionMap.set(keyStr, partition);
+        }
+        return partition;
+    }
+
     private getFeedItem(jsonld: any, sortBy?: SortBy) {
         const item: IndexItem = { [JSONLD_ID]: jsonld[JSONLD_ID] };
         if (sortBy) {
-            item.sortValue = getSortKey(jsonld, toAbsWellKnownIRI(sortBy.prop));
+            item.sortValue = getSortKey(jsonld, sortBy.prop);
         }
         return item;
     }
@@ -237,15 +246,29 @@ export default class CollectionBuilder {
     }
 
     private getCollection(collectionIRI: string) {
-        const collection = this.collections.find(d => d[JSONLD_ID] === collectionIRI);
+        const collection = this.collections ? this.collections.find(d => d[JSONLD_ID] === collectionIRI) : null;
         if (!collection) {
             throw new Error(`collection ${collectionIRI} not found`);
         }
         return collection;
     }
 
-    private stringifyKey(groupByValues: string[] | number[]) {
-        return groupByValues.join("-");
+    private stringifyKey(partitionKey: PartitionKey) {
+        const fieldNames = Object.keys(partitionKey);
+        fieldNames.sort();
+        let keyStr = "";
+        for (const name of fieldNames) {
+            if (RESERVED_PARTITION_KEY_NAMES.indexOf(name.toLowerCase()) >= 0) {
+                throw new Error(`${name} is a reserved partition key name`);
+            }
+            if (typeof(partitionKey[name]) !== "string" && 
+                typeof(partitionKey[name]) !== "number" &&
+                !isJsDate(partitionKey[name])) {
+                throw new Error(`Invalid partition key: ${JSON.stringify(partitionKey)} - Only string, number or date value allowed`);
+            }
+            keyStr += `${name}=${partitionKey[name]};`;
+        }
+        return keyStr;
     }
 
 }

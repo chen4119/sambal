@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import shelljs from "shelljs";
-import { PageNode } from "./constant";
 
 export function isObjectLiteral(obj) {
     return obj !== null && typeof(obj) === "object" && Object.getPrototypeOf(obj) === Object.prototype;
@@ -96,9 +95,10 @@ export function frontMatter(md: string) {
     }
 }
 
+/*
 export async function traverseSiteGraph(root: PageNode, callback: (page: PageNode) => void | Promise<void>) {
     await callback(root);
     for (const child of root.hasPart) {
         await traverseSiteGraph(child, callback);
     }
-}
+}*/

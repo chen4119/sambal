@@ -4,6 +4,7 @@ import {
     SCHEMA_CONTEXT
 } from "sambal-jsonld";
 
+/*
 const PREFIX_MAP = new Map();
 PREFIX_MAP.set("schema", SCHEMA_CONTEXT);
 
@@ -24,35 +25,5 @@ export function toCompactWellKnownIRI(absoluteIRI: string) {
     }
     return absoluteIRI;
 }
-
-// TODO: Assuming everything is schema.org.  Support generic jsonld?
-export function deriveEntityType(entity: unknown) {
-    return `schema:${entity[JSONLD_TYPE]}`.toLowerCase();
-}
-
-/*
-export function toSchemaPage(route: Route) {
-    const pageJson: any = {
-        ...route.pageProps,
-        url: route.url,
-        [JSONLD_CONTEXT]: SCHEMA_CONTEXT,
-        [JSONLD_TYPE]: getSchemaWebPageType(route.pageType)
-    };
-    return pageJson;
-}
-
-function getSchemaWebPageType(pageType) {
-    switch (pageType) {
-        case Page.About:
-        case Page.Collection:
-        case Page.Contact:
-        case Page.FAQ:
-        case Page.Item:
-        case Page.Profile:
-        case Page.SearchResults:
-            return pageType;
-        default:
-            return "schema:webpage";
-    }
-}*/
+*/
 

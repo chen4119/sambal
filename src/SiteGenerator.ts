@@ -1,6 +1,5 @@
 import path from "path";
-import { PageNode } from "./helpers/constant";
-import { traverseSiteGraph } from "./helpers/util";
+import { WebPage } from "./helpers/constant";
 import Renderer from "./Renderer";
 import prettier from "prettier";
 import { writeText } from "./helpers/util";
@@ -12,13 +11,13 @@ export default class SiteGenerator {
 
     }
 
-    async start(root: PageNode) {
-        await traverseSiteGraph(root, async (page: PageNode) => {
+    async start(pages: WebPage[]) {
+        for (const page of pages) {
             log.info(`Rendering ${page.url}`);
             let html = await this.renderer.renderPage(page);
             html =  prettier.format(html, {parser: "html"});
             await this.write(`./${OUTPUT_FOLDER}${page.url}`, html);
-        });
+        }
     }
 
     private async write(dest: string, content: string) {

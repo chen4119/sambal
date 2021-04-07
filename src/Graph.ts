@@ -3,11 +3,10 @@ import {
     JSONLD_GRAPH,
     JSONLD_ID,
     JSONLD_TYPE,
-    SCHEMA_CONTEXT,
-    toJsonLdGraph
+    SCHEMA_CONTEXT
 } from "sambal-jsonld";
 import { isObjectLiteral, writeText } from "./helpers/util";
-import { OUTPUT_FOLDER } from "./helpers/constant";
+import { OUTPUT_FOLDER, WebPage } from "./helpers/constant";
 import Media from "./Media";
 import Links from "./Links";
 import { 
@@ -25,12 +24,12 @@ const IMAGE_OBJECT = "imageobject";
 const MAX_DEPTH = 100;
 
 export default class Graph {
-    private objectCache: Map<string, unknown> = new Map<string, unknown>();
-    private links = new Links();
-    private blankNodeIndex: number = 1;
+    private objectCache: Map<string, unknown>;
+    private blankNodeIndex: number;
 
-    constructor(private baseUrl: string, private media: Media) {
-
+    constructor(private baseUrl: string, private media: Media, private links: Links) {
+        this.objectCache = new Map<string, unknown>();
+        this.blankNodeIndex = 1;
     }
 
     async serialize() {
@@ -47,32 +46,22 @@ export default class Graph {
         }
     }
 
+    getIncomingLinks(iri: string) {
+        return this.links.getIncomingLinks(iri);
+    }
+
+    getOutgoingLinks(iri: string) {
+        return this.links.getOutgoingLinks(iri);
+    }
+
     async load(src: any) {
         let jsonld = src;
         if (typeof(src) === "string") {
             jsonld = await this.loadJsonLdPath(src);
         }
         await this.ensureJsonLd(jsonld);
-        
         jsonld = await this.hydrate(null, null, jsonld, 1);
-        this.cacheJsonLd(jsonld);
-
-        if (!jsonld[JSONLD_CONTEXT]) {
-            return {
-                [JSONLD_CONTEXT]: SCHEMA_CONTEXT,
-                ...jsonld,
-            };
-        }
         return jsonld;
-    }
-
-    private cacheJsonLd(jsonld: object) {
-        // TODO: What if jsonld already has @graph
-        const context = jsonld[JSONLD_CONTEXT] ? jsonld[JSONLD_CONTEXT] : SCHEMA_CONTEXT;
-        const flatten = toJsonLdGraph([jsonld], context);
-        for (const item of flatten[JSONLD_GRAPH]) {
-            this.objectCache.set(item[JSONLD_ID], item);
-        }
     }
 
     private async loadJsonLdPath(src: string) {
@@ -100,7 +89,6 @@ export default class Graph {
             }
         }
         await this.ensureJsonLd(jsonld, idFromSrc);
-        // this.objectCache.set(jsonld[JSONLD_ID], jsonld);
         return jsonld;
     }
     
@@ -139,7 +127,7 @@ export default class Graph {
             }
             return resolvedArr;
         } else if (this.isJsonLdRef(target)) {
-            this.links.add(subjectIRI, predicateIRI, target[JSONLD_ID]);
+            // this.links.add(subjectIRI, predicateIRI, target[JSONLD_ID]);
             let nextTarget;
             if (graph && graph.has(target[JSONLD_ID])) {
                 nextTarget = graph.get(target[JSONLD_ID]);
@@ -153,25 +141,39 @@ export default class Graph {
                 level,
                 graph
             );
-        } else if (isObjectLiteral(target) && !this.objectCache.has(target[JSONLD_ID])) {
-            let objectGraph = null;
-            for (const fieldName of Object.keys(target)) {
-                if (fieldName !== JSONLD_ID && fieldName !== JSONLD_TYPE && fieldName !== JSONLD_CONTEXT) {
-                    const fieldValue = target[fieldName];
-                    if (fieldName === JSONLD_GRAPH) {
-                        objectGraph = this.getGraphContext(fieldValue);
-                    }
-                    target[fieldName] = await this.hydrate(
-                        target[JSONLD_ID],
-                        `schema:${fieldName}`, // TODO: may not always be schema
-                        fieldValue,
-                        nextLevel,
-                        objectGraph ? objectGraph : graph
-                    );
-                }
+        } else if (isObjectLiteral(target)) {
+            await this.ensureJsonLd(target);
+            this.links.add(subjectIRI, predicateIRI, target[JSONLD_ID]);
+
+            if (!this.objectCache.has(target[JSONLD_ID])) {
+                this.objectCache.set(target[JSONLD_ID], target);
+                await this.iterateObjectKeys(target, nextLevel, graph);
             }
         }
         return target;
+    }
+
+    private async iterateObjectKeys(
+        target: unknown,
+        level: number,
+        graph?: Map<string, unknown>
+    ) {
+        let objectGraph = null;
+        for (const fieldName of Object.keys(target)) {
+            if (fieldName !== JSONLD_ID && fieldName !== JSONLD_TYPE && fieldName !== JSONLD_CONTEXT) {
+                const fieldValue = target[fieldName];
+                if (fieldName === JSONLD_GRAPH) {
+                    objectGraph = this.getGraphContext(fieldValue);
+                }
+                target[fieldName] = await this.hydrate(
+                    target[JSONLD_ID],
+                    `schema:${fieldName}`, // TODO: may not always be schema
+                    fieldValue,
+                    level,
+                    objectGraph ? objectGraph : graph
+                );
+            }
+        }
     }
 
     private getGraphContext(graph: any[]) {

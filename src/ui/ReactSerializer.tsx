@@ -11,7 +11,7 @@ export default class ReactSerializer implements IHtmlSerializer {
     }
 
     toHtml(renderResult: unknown) {
-        return ReactDOMServer.renderToStaticMarkup(
+        return ReactDOMServer.renderToString(
             <>
                 {renderResult}
             </>

@@ -136,7 +136,9 @@ export default class Renderer {
             });
         }
         if (renderResult) {
-            const html = this.serializer.toHtml(renderResult);
+            const html = typeof(renderResult) === "string" ? 
+                renderResult :
+                this.serializer.toHtml(renderResult);
             return await this.postProcessHtml(html);
         }
         return null;

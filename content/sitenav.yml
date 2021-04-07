@@ -1,0 +1,5 @@
+"@type": "ItemList"
+itemListElement:
+  - "@type": "SiteNavigationElement"
+    name: Getting Started
+    url: /getting started

@@ -15,6 +15,7 @@ import CollectionBuilder from "./CollectionBuilder";
 import Graph from "./Graph";
 import Media from "./Media";
 import Router from "./Router";
+import Links from "./Links";
 import {
     makeVariableStatement,
     makeStringLiteral,
@@ -29,9 +30,6 @@ import {
     writeJavascript
 } from "./helpers/ast";
 import { log } from "./helpers/log";
-import { JSONLD_ID } from "sambal-jsonld";
-import { normalizeRelativePath } from "./helpers/data";
-
 
 const siteFile = getAbsFilePath(SAMBAL_SITE_FILE);
 let entryFile = getAbsFilePath(SAMBAL_ENTRY_FILE);
@@ -67,13 +65,10 @@ async function initSite() {
 
         const imageTransforms = module.siteConfig.imageTransforms ? module.siteConfig.imageTransforms : [];
         const media = new Media(imageTransforms);
-    
-        siteGraph = new Graph(baseUrl, media);
+        const links = new Links();
+        siteGraph = new Graph(baseUrl, media, links);
     
         const collections = module.siteConfig.collections ? module.siteConfig.collections : [];
-        collections.forEach(c => {
-            c[JSONLD_ID] = normalizeRelativePath(c[JSONLD_ID]);
-        });
         const collectionBuilder = new CollectionBuilder(siteGraph, collections);
     
         const router = new Router(siteGraph, collectionBuilder);
@@ -93,13 +88,13 @@ async function serve() {
     const publicPath = "/_sambal";
 
     try {
-        const root = await initSite();
+        const pages = await initSite();
 
         const renderer = new Renderer(entryFile, theme, publicPath, siteGraph);
         await renderer.initTheme();
 
         const server = new DevServer(publicPath, renderer, 3000);
-        server.start(root);
+        server.start(pages);
     } catch(e) {
         log.error(e);
     }
@@ -112,13 +107,13 @@ async function build() {
     const publicPath = `/js`;
     
     try {
-        const root = await initSite();
+        const pages = await initSite();
 
         const renderer = new Renderer(entryFile, theme, publicPath, siteGraph);
         await renderer.init();
 
         const builder = new SiteGenerator(baseUrl, renderer);
-        await builder.start(root);
+        await builder.start(pages);
 
         log.info("Writing schema.org json-lds");
         await siteGraph.serialize();

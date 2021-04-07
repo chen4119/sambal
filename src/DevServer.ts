@@ -2,34 +2,33 @@ import express from "express";
 // import { Watching } from "webpack";
 import webpackDevMiddleware from "webpack-dev-middleware";
 import Renderer from "./Renderer";
-import { traverseSiteGraph } from "./helpers/util";
-import { PageNode } from "./helpers/constant";
+import { WebPage } from "./helpers/constant";
 import { log } from "./helpers/log";
 
 export default class DevServer {
     private expressApp;
     // private watchEntryFile: Watching;
-    private routeMap: Map<string, PageNode> = new Map<string, PageNode>();
+    private routeMap: Map<string, WebPage> = new Map<string, WebPage>();
     constructor(private publicPath: string, private renderer: Renderer, private port: Number) {
 
     }
     
-    start(root: PageNode) {
+    start(pages: WebPage[]) {
         this.renderer.watchForEntryChange((isError) => {
             log.info("sambal.entry.js compiled");
             if (!isError && !this.expressApp) {
-                this.startDevServer(root);
+                this.startDevServer(pages);
             }
         });
     }
 
-    private async startDevServer(root: PageNode) {
+    private startDevServer(pages: WebPage[]) {
         this.expressApp = express();
         this.addBrowserBundleMiddleware();
-        await traverseSiteGraph(root, (page: PageNode) => {
+        for (const page of pages) {
             this.routeMap.set(page.url, page);
             this.expressApp.get(page.url, this.route.bind(this));
-        });
+        }
         this.expressApp.listen(this.port, () => {
             log.info(`Dev server started on port ${this.port}`);
         });

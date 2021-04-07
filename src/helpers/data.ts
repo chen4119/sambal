@@ -64,10 +64,10 @@ export function normalizeJsonLdId(src: string) {
         return src;
     }
     let normalSrc = normalizeRelativePath(src);
-    if (isSupportedFile(src)) {
-        normalSrc = src.substring(0, src.lastIndexOf("."));
+    if (isSupportedFile(normalSrc)) {
+        normalSrc = normalSrc.substring(0, normalSrc.lastIndexOf("."));
     }
-    return normalSrc;
+    return encodeURI(normalSrc);
 }
 
 export function getLocalFilePath(src: string) {
@@ -162,7 +162,7 @@ function getLocalFileContentType(src: string): SUPPORTED_CONTENT_TYPE {
     }
 }
 
-// TODO: ensure markdown is only for creative work!!
+// TODO: ensure markdown is only for creative work!
 function parseContent(content: any, contentType: SUPPORTED_CONTENT_TYPE) {
     try {
         let md;

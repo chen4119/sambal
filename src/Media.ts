@@ -24,10 +24,12 @@ type ImageTransform = {
 };
 
 export default class Media {
-    private imageTransformMap: Map<string, ImageTransform> = new Map<string, ImageTransform>();
-    private cachedJsonldMap: Map<string, unknown> = new Map<string, unknown>();
+    private imageTransformMap: Map<string, ImageTransform>;
+    private cachedJsonldMap: Map<string, unknown>;
 
     constructor(imageTransforms: ImageTransform[]) {
+        this.imageTransformMap = new Map<string, ImageTransform>();
+        this.cachedJsonldMap = new Map<string, unknown>();
         for (const transform of imageTransforms) {
             const matches = searchLocalFiles(transform.src);
             matches.forEach(filePath => this.imageTransformMap.set(normalizeRelativePath(filePath), transform));

@@ -3,11 +3,12 @@ type LinkTuple = [string, string];
 type LinkMap = Map<string, LinkTuple>;
 
 export default class Links {
-    private incomingLinks: Map<string, LinkMap> = new Map<string, LinkMap>();
-    private outgoingLinks: Map<string, LinkMap> = new Map<string, LinkMap>();
+    private incomingLinks: Map<string, LinkMap>;
+    private outgoingLinks: Map<string, LinkMap>;
 
     constructor() {
-
+        this.incomingLinks = new Map<string, LinkMap>();
+        this.outgoingLinks = new Map<string, LinkMap>();
     }
 
     getIncomingLinks(iri: string) {
@@ -36,6 +37,7 @@ export default class Links {
         if (!subjectIRI || !predicateIRI || !targetIRI) {
             return;
         }
+        // console.log(subjectIRI + " " + predicateIRI + " " + targetIRI);
         this.addLinkToMap(this.incomingLinks, targetIRI, [subjectIRI, predicateIRI]);
         this.addLinkToMap(this.outgoingLinks, subjectIRI, [predicateIRI, targetIRI]);
     }

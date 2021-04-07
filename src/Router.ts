@@ -1,8 +1,9 @@
 import Graph from "./Graph";
 import CollectionBuilder from "./CollectionBuilder";
 import { searchLocalFiles, normalizeRelativePath } from "./helpers/data";
-import { JSONLD_ID, JSONLD_TYPE, SCHEMA_CONTEXT, toJsonLdGraph } from "sambal-jsonld";
+import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
 import { log } from "./helpers/log";
+import { PartitionKey, WebPage } from "./helpers/constant";
 
 type EntityType = string | unknown | Promise<unknown>;
 type CallbackResult = string | {path: string, options: RouteOption};
@@ -24,10 +25,11 @@ type RouteGenerator = {
     getRoute: getRouteFn
 }
 
+/*
 type RouteNode = {
     path: string,
     children: Map<string, RouteNode>
-}
+}*/
 
 export const Page = {
     About: "AboutPage",
@@ -43,10 +45,11 @@ export const Page = {
 };
 
 export default class Router {
-    private routeMap: Map<string, Route> = new Map<string, Route>();
-    private routeGenerators: RouteGenerator[] = [];
+    private routeMap: Map<string, Route>;
+    private routeGenerators: RouteGenerator[];
     constructor(private graph: Graph, private collections: CollectionBuilder) {
-
+        this.routeMap = new Map<string, Route>();
+        this.routeGenerators = [];
     }
     
     get instance() {
@@ -95,7 +98,7 @@ export default class Router {
                     pageSize
                 }, getRoute);
             },
-            paginatePartition(collectionIRI: string, partitionKey: any, pageSize: number, getRoute: getRouteFn) {
+            paginatePartition(collectionIRI: string, partitionKey: PartitionKey, pageSize: number, getRoute: getRouteFn) {
                 return setGenerator("paginatePartition", {
                     collectionIRI,
                     partitionKey,
@@ -123,18 +126,16 @@ export default class Router {
                 await this.iterateItems(generator.args, generator.getRoute);
             }
         }
-        
-        const root = this.createRouteHierarchy();
-        const flatten = toJsonLdGraph([root], SCHEMA_CONTEXT);
-        await this.graph.load(flatten);
-        return root;
+        return await this.createRoutePages();
+
+        // const root = this.createRouteHierarchy();
+        // const flatten = toJsonLdGraph([root], SCHEMA_CONTEXT);
+        // await this.graph.load(flatten);
+        // return root;
     }
 
     private async loadEntity(entity: EntityType) {
-        if (typeof(entity) === "string") {
-            return await this.graph.load(entity);
-        }
-        return await entity; // Entity can be a promise
+        return await this.graph.load(await entity); // entity maybe a promise
     }
 
     private setRouteHelper(path: string, pageType: string, mainEntity: EntityType, options?: RouteOption) {
@@ -176,6 +177,54 @@ export default class Router {
         }
     }
 
+    private async createRoutePages() {
+        const pages: WebPage[] = [];
+        const paths: string[] = Array.from(this.routeMap.keys());
+
+        for (const path of paths) {
+            const pageJsonLd = this.getPageJsonLd(path, this.routeMap.get(path));
+            await this.graph.load(pageJsonLd);
+            // pageJsonLd.mainEntity.mainEntityOfPage = pageJsonLd.url;
+            pages.push(pageJsonLd);
+        }
+
+        // set mainEntityOfPage url
+        for (const page of pages) {
+            const incomingLinks = this.graph.getIncomingLinks(page.mainEntity[JSONLD_ID]);
+            const mainEntityLinks = incomingLinks.filter(l => l.predicate === "schema:mainEntity");
+            if (mainEntityLinks.length === 1) {
+                page.mainEntity.mainEntityOfPage = page.url;
+            } else {
+                for (const link of mainEntityLinks) {
+                    const route = this.routeMap.get(link.subject);
+                    if (route.options.canonical) {
+                        page.mainEntity.mainEntityOfPage = link.subject;
+                    }
+                }
+                if (!page.mainEntity.mainEntityOfPage) {
+                    throw new Error(`${page.mainEntity[JSONLD_ID]} is the mainEntity of multiple pages ${mainEntityLinks.map(l => l.subject)}.  Specify which one is canonical`);
+                }
+            }
+        }
+        return pages;
+    }
+
+    private getMainEntityLinks(incomingLinks: {subject: string, predicate: string}[]) {
+        
+    }
+    private getPageJsonLd(path: string, route: Route) {
+        const page: WebPage = {
+            ...route.options.page ? route.options.page as object : {},
+            [JSONLD_ID]: path,
+            [JSONLD_TYPE]: route.pageType,
+            url: path,
+            mainEntity: route.mainEntity,
+        };
+        
+        return page;
+    }
+
+    /*
     private createRouteHierarchy() {
         const paths: string[] = Array.from(this.routeMap.keys());
         paths.sort();
@@ -231,25 +280,6 @@ export default class Router {
                 currentNode = newNode;
             }
         }
-    }
-
-    private getPageJsonLd(path: string, route: Route) {
-        /*
-        if (route.mainEntity["mainEntityOfPage"]) {
-            throw new Error(`@id:${route.mainEntity[JSONLD_ID]} is the main entity of multiple webpages.  Specify the canonical url`);
-        }
-        route.mainEntity["mainEntityOfPage"] = path;*/
-        const page = {
-            [JSONLD_ID]: path,
-            [JSONLD_TYPE]: route.pageType,
-            url: path,
-            mainEntity: route.mainEntity,
-            ...route.options.page ? route.options.page as object : {}
-        };
-        
-        return page;
-    }
-
-
+    }*/
 
 }

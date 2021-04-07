@@ -35,20 +35,21 @@ export type Theme = {
     options: object
 };
 
+export type PartitionKey = {[key: string]: string | number | Date};
 export type Collection = {
     "@id": string,
     "@type"?: string,
     src: string | string[],
-    groupBy?: string[],
+    groupBy?: (mainEntity: any) => PartitionKey | PartitionKey[],
     sortBy?: SortBy
 }
 
-export type PageNode = {
+
+export type WebPage = {
     "@id": string,
     "@type": string,
     url: string,
     mainEntity: any,
-    hasPart: any[],
     [key: string]: any
 }
 
