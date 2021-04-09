@@ -41,8 +41,8 @@ describe("SambalCollection", () => {
 
     beforeEach(async () => {
         links = new Links();
-        graph = new Graph(baseUrl, new Media([]), links);
-        collectionBuilder = new CollectionBuilder(graph, collections);
+        collectionBuilder = new CollectionBuilder(collections);
+        graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
     });
 
     it('get collections/tags pages', async () => {
@@ -59,8 +59,14 @@ describe("SambalCollection", () => {
         const partitionKey = {tag: 'java script'};
         const partitions = await collectionBuilder.getPartitionPages("collections/tags", partitionKey, 100);
         expect(partitions[0].pages.length).toBe(1);
-        expect(partitions[0].pages[0].itemListElement.length).toBe(2);
+        const itemList = partitions[0].pages[0].item;
+        expect(itemList.itemListElement.length).toBe(2);
     });
 
+    it('getCollectionByIRI', async () => {
+        const collection: any = await collectionBuilder.getCollectionByIRI("collections/year/_part/year=2019");
+        expect(collection["@id"]).toBe("/collections/year/_part/year=2019");
+        expect(collection.itemListElement[0]["@id"]).toBe("/blogs/blog1");
+    });
 
 });

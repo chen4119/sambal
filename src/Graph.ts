@@ -3,12 +3,14 @@ import {
     JSONLD_GRAPH,
     JSONLD_ID,
     JSONLD_TYPE,
-    SCHEMA_CONTEXT
+    SCHEMA_CONTEXT,
+    toJsonLdGraph
 } from "sambal-jsonld";
-import { isObjectLiteral, writeText } from "./helpers/util";
-import { OUTPUT_FOLDER, WebPage } from "./helpers/constant";
+import { isObjectLiteral, writeText, isJsonLdRef } from "./helpers/util";
+import { OUTPUT_FOLDER } from "./helpers/constant";
 import Media from "./Media";
 import Links from "./Links";
+import CollectionBuilder from "./CollectionBuilder";
 import { 
     isExternalSource,
     isImageFile,
@@ -21,28 +23,42 @@ import {
 
 
 const IMAGE_OBJECT = "imageobject";
+const SITE_NAV_ELEMENT = "sitenavigationelement";
 const MAX_DEPTH = 100;
 
 export default class Graph {
     private objectCache: Map<string, unknown>;
+    private siteNavs: any[];
     private blankNodeIndex: number;
 
-    constructor(private baseUrl: string, private media: Media, private links: Links) {
+    constructor(
+        private baseUrl: string,
+        private media: Media,
+        private links: Links,
+        private collectionBuilder: CollectionBuilder
+    ) {
         this.objectCache = new Map<string, unknown>();
+        this.siteNavs = [];
         this.blankNodeIndex = 1;
+        this.collectionBuilder.graph = this;
     }
 
     async serialize() {
+        const graph = [];
         for (const iri of Array.from(this.objectCache.keys())) {
             if (!isExternalSource(iri) && !iri.startsWith("_:")) {
-                await writeText(`./${OUTPUT_FOLDER}/content/${iri}.json`, JSON.stringify({
-                    [JSONLD_CONTEXT]: {
-                        "@vocab": SCHEMA_CONTEXT,
-                        "@base": this.baseUrl
-                    },
-                    ...this.objectCache.get(iri) as object
-                }, null, 4));
+                graph.push(this.objectCache.get(iri));
             }
+        }
+        const flatten = toJsonLdGraph(graph, SCHEMA_CONTEXT);
+        for (const jsonld of flatten[JSONLD_GRAPH]) {
+            await writeText(`./${OUTPUT_FOLDER}/content/${jsonld[JSONLD_ID]}.json`, JSON.stringify({
+                [JSONLD_CONTEXT]: {
+                    "@vocab": SCHEMA_CONTEXT,
+                    "@base": this.baseUrl
+                },
+                ...jsonld as object
+            }, null, 4));
         }
     }
 
@@ -52,6 +68,10 @@ export default class Graph {
 
     getOutgoingLinks(iri: string) {
         return this.links.getOutgoingLinks(iri);
+    }
+
+    get siteNavElements() {
+        return this.siteNavs;
     }
 
     async load(src: any) {
@@ -77,32 +97,41 @@ export default class Graph {
         } else if (isExternalSource(src)) {
             jsonld = await loadRemoteFile(src);
         } else {
+            jsonld = await this.tryLoadingLocalFile(src);
+            if (!jsonld) {
+                jsonld = await this.collectionBuilder.getCollectionByIRI(src);
+            }
+        }
+        if (!jsonld) {
+            throw new Error(`Unable to resolve ${src}`);
+        }
+        await this.ensureJsonLd(jsonld, idFromSrc);
+        return jsonld;
+    }
+    
+    private async tryLoadingLocalFile(src: string) {
+        try {
             let filePath = src;
             // Most likely no file extension specified
             if (!isSupportedFile(filePath)) {
                 filePath = getLocalFilePath(src);
             }
             if (isImageFile(filePath)) {
-                jsonld = await this.media.loadImagePath(filePath);
-            } else {
-                jsonld = await loadLocalFile(filePath);
+                return await this.media.loadImagePath(filePath);
             }
+            return await loadLocalFile(filePath);
+        } catch (e) {
+            return null;
         }
-        await this.ensureJsonLd(jsonld, idFromSrc);
-        return jsonld;
     }
-    
+
     // all data need @id and @type
-    // make sure image obj are populated correctly
     private async ensureJsonLd(jsonld: any, impliedId?: string) {
         if (!jsonld[JSONLD_ID]) {
             jsonld[JSONLD_ID] = impliedId ? impliedId : `_:${this.blankNodeIndex++}`;
         }
         if (!jsonld[JSONLD_TYPE]) {
             jsonld[JSONLD_TYPE] = "Thing"; // root type
-        }
-        if (jsonld[JSONLD_TYPE].toLowerCase() === IMAGE_OBJECT) {
-            await this.media.loadImageObject(jsonld);
         }
     }
 
@@ -126,7 +155,7 @@ export default class Graph {
                 );
             }
             return resolvedArr;
-        } else if (this.isJsonLdRef(target)) {
+        } else if (isJsonLdRef(target)) {
             // this.links.add(subjectIRI, predicateIRI, target[JSONLD_ID]);
             let nextTarget;
             if (graph && graph.has(target[JSONLD_ID])) {
@@ -158,6 +187,14 @@ export default class Graph {
         level: number,
         graph?: Map<string, unknown>
     ) {
+        if (target[JSONLD_TYPE].toLowerCase() === IMAGE_OBJECT) {
+            await this.media.loadImageObject(target);
+        } else if (target[JSONLD_TYPE].toLowerCase() === SITE_NAV_ELEMENT) {
+            // No need to process SiteNavigationElement.  Router will do it.
+            this.siteNavs.push(target);
+            return;
+        }
+
         let objectGraph = null;
         for (const fieldName of Object.keys(target)) {
             if (fieldName !== JSONLD_ID && fieldName !== JSONLD_TYPE && fieldName !== JSONLD_CONTEXT) {
@@ -182,9 +219,5 @@ export default class Graph {
             context.set(item[JSONLD_ID], item);
         }
         return context;
-    }
-
-    private isJsonLdRef(value) {
-        return isObjectLiteral(value) && Object.keys(value).length === 1 && typeof (value[JSONLD_ID]) === "string";
     }
 }

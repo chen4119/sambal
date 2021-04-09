@@ -1,9 +1,14 @@
 import fs from "fs";
 import path from "path";
 import shelljs from "shelljs";
+import { JSONLD_ID } from "sambal-jsonld";
 
 export function isObjectLiteral(obj) {
     return obj !== null && typeof(obj) === "object" && Object.getPrototypeOf(obj) === Object.prototype;
+}
+
+export function  isJsonLdRef(value) {
+    return isObjectLiteral(value) && Object.keys(value).length === 1 && typeof (value[JSONLD_ID]) === "string";
 }
 
 export function isJsDate(value) {

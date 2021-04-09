@@ -65,12 +65,12 @@ async function initSite() {
 
         const imageTransforms = module.siteConfig.imageTransforms ? module.siteConfig.imageTransforms : [];
         const media = new Media(imageTransforms);
-        const links = new Links();
-        siteGraph = new Graph(baseUrl, media, links);
-    
         const collections = module.siteConfig.collections ? module.siteConfig.collections : [];
-        const collectionBuilder = new CollectionBuilder(siteGraph, collections);
-    
+        const collectionBuilder = new CollectionBuilder(collections);
+        const links = new Links();
+
+        siteGraph = new Graph(baseUrl, media, links, collectionBuilder);
+
         const router = new Router(siteGraph, collectionBuilder);
         module.siteMap(router.instance);
         log.info("Getting all routes...");

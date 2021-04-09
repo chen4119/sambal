@@ -4,6 +4,7 @@ import { searchLocalFiles, normalizeRelativePath } from "./helpers/data";
 import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
 import { log } from "./helpers/log";
 import { PartitionKey, WebPage } from "./helpers/constant";
+import { isJsonLdRef } from "./helpers/util";
 
 type EntityType = string | unknown | Promise<unknown>;
 type CallbackResult = string | {path: string, options: RouteOption};
@@ -126,12 +127,29 @@ export default class Router {
                 await this.iterateItems(generator.args, generator.getRoute);
             }
         }
-        return await this.createRoutePages();
+        const pages = await this.createRoutePages();
+        await this.verifySiteNavigation();
+        return pages;
 
         // const root = this.createRouteHierarchy();
         // const flatten = toJsonLdGraph([root], SCHEMA_CONTEXT);
         // await this.graph.load(flatten);
         // return root;
+    }
+
+    private async verifySiteNavigation() {
+        for (const nav of this.graph.siteNavElements) {
+            if (isJsonLdRef(nav.mainEntity)) {
+                const iri = nav.mainEntity[JSONLD_ID];
+                const jsonld = await this.loadEntity(iri);
+                delete nav.mainEntity;
+                nav.name = jsonld.name ? jsonld.name : jsonld.headline;
+                nav.url = jsonld.mainEntityOfPage;
+                if (!nav.url) {
+                    throw new Error(`Invalid site nav link: ${iri} does not have a url`);
+                }
+            }
+        }
     }
 
     private async loadEntity(entity: EntityType) {
@@ -209,9 +227,6 @@ export default class Router {
         return pages;
     }
 
-    private getMainEntityLinks(incomingLinks: {subject: string, predicate: string}[]) {
-        
-    }
     private getPageJsonLd(path: string, route: Route) {
         const page: WebPage = {
             ...route.options.page ? route.options.page as object : {},
