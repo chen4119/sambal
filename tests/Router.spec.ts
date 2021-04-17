@@ -5,7 +5,7 @@ import Media from "../src/Media";
 import Links from "../src/Links";
 import { Collection } from "../src/helpers/constant";
 
-describe("SambalCollection", () => {
+describe("Router", () => {
     const baseUrl = "https://example.com";
     let router: Router;
     let graph: Graph;

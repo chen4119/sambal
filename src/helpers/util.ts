@@ -35,7 +35,7 @@ export function readTextFile(src: string): Promise<string> {
     });
 }
 
-export function readFile(src: string): Promise<any> {
+export function readFileAsBuffer(src: string): Promise<any> {
     return new Promise((resolve, reject) => {
         fs.readFile(src, (err, data) => {
             if (err) {
@@ -71,6 +71,26 @@ export function writeBuffer(output: string, content: Buffer): Promise<void> {
             }
         });
     });
+}
+
+export function getMimeType(filePath: string) {
+    const ext = path.extname(filePath);
+    switch(ext) {
+        case ".js":
+        case ".mjs":
+            return "text/javascript";
+        case ".ico":
+            return "image/vnd.microsoft.icon";
+        case ".css":
+            return "text/css";
+        case ".woff":
+        case ".woff2":
+            return `font/${ext}`;
+        case ".svg":
+            return "image/svg+xml";
+        default:
+            throw new Error(`Unrecognized mime type for file ${filePath}`);
+    }
 }
 
 export function safeParseJson(jsonStr: string) {

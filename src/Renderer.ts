@@ -10,12 +10,15 @@ import {
 } from "./helpers/bundler";
 import {
     getAbsFilePath,
-    isObjectLiteral
+    isObjectLiteral,
+    getMimeType,
+    readFileAsBuffer
 } from "./helpers/util";
 import {
     CACHE_FOLDER,
     OUTPUT_FOLDER,
     SAMBAL_ENTRY_FILE,
+    THEME_PUBLIC_PATH,
     Theme,
     OnBundleChanged,
     IHtmlSerializer
@@ -39,17 +42,20 @@ type UI = {
 }
 
 export default class Renderer {
-    private serializer: IHtmlSerializer = new ReactSerializer();
+    private serializer: IHtmlSerializer;
     private internalRenderer: UI;
     private internalBrowserBundleEntry: object;
     private themeRenderer: UI;
+    private themeBrowserBundleEntry: object;
     private themeFolder: string;
     private themeOptions: object;
+
     constructor(
         private entryFile: string,
         private theme: string | Theme,
         private publicPath: string,
         private siteGraph: Graph) {
+        this.serializer = new ReactSerializer();
         if (theme) {
             if (typeof(theme) === "string") {
                 this.themeFolder = theme;
@@ -83,11 +89,15 @@ export default class Renderer {
         if (this.themeFolder) {
             try {
                 log.info(`Loading theme ${this.themeFolder}`);
-                this.themeRenderer = require(getAbsFilePath(`${this.themeFolder}/dist/sambal.bundle.js`));
+                const module = require(getAbsFilePath(`${this.themeFolder}/dist/index.js`));
+                this.themeRenderer = module.entry;
+                this.themeBrowserBundleEntry = module.browserBundle;
+                return true;
             } catch (e) {
                 log.error("Error loading theme", e);
             }
         }
+        return false;
     }
 
     watchForEntryChange(onChange: OnBundleChanged) {
@@ -116,6 +126,8 @@ export default class Renderer {
 
     async renderPage(page: unknown) {
         let renderResult;
+        let clientBundle;
+        let bundlePrefix = this.publicPath;
         if (this.internalRenderer) {
             const defaultOptions = this.getDefaultOptions(this.internalRenderer);
             renderResult = await this.internalRenderer.renderPage({ 
@@ -123,7 +135,9 @@ export default class Renderer {
                 siteGraph: this.siteGraph,
                 options: defaultOptions
             });
+            clientBundle = this.internalBrowserBundleEntry;
         }
+        // if internalRenderer didn't render, try theme renderer, if available
         if (!renderResult && this.themeRenderer) {
             const defaultOptions = this.getDefaultOptions(this.themeRenderer);
             renderResult = await this.themeRenderer.renderPage({ 
@@ -134,28 +148,37 @@ export default class Renderer {
                     ...this.themeOptions
                 }
             });
+            clientBundle = this.themeBrowserBundleEntry;
+            bundlePrefix = THEME_PUBLIC_PATH;
         }
         if (renderResult) {
             const html = typeof(renderResult) === "string" ? 
                 renderResult :
                 this.serializer.toHtml(renderResult);
-            return await this.postProcessHtml(html);
+            return await this.postProcessHtml(html, clientBundle, bundlePrefix);
         }
         return null;
     }
 
-    private async postProcessHtml(html: string) {
-        if (this.internalBrowserBundleEntry) {
-            return await replaceScriptSrc(html, (src) => {
-                for (const entryName of Object.keys(this.internalBrowserBundleEntry)) {
-                    if (src === entryName) {
-                        return `${this.publicPath}/${this.internalBrowserBundleEntry[entryName]}`;
-                    }
-                }
-                return src;
-            });   
+    private async postProcessHtml(html: string, bundle: object, prefix: string) {
+        if (!bundle) {
+            return html;
         }
-        return html;
+        return await replaceScriptSrc(html, (src) => {
+            for (const entryName of Object.keys(bundle)) {
+                if (src === entryName) {
+                    return `${prefix}/${bundle[entryName]}`;
+                }
+            }
+            return src;
+        });
+    }
+
+    async getThemeFile(filePath: string) {
+        return {
+            mime: getMimeType(filePath),
+            data: await readFileAsBuffer(getAbsFilePath(`${this.themeFolder}/dist/${filePath}`))
+        }
     }
 
     /*

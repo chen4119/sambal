@@ -4,7 +4,7 @@ import Media from "../src/Media";
 import Links from "../src/Links";
 import { Collection } from "../src/helpers/constant";
 
-describe("SambalCollection", () => {
+describe("CollectionBuilder", () => {
     const baseUrl = "https://example.com";
     let graph: Graph;
     let links: Links;

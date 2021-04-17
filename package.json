@@ -24,6 +24,7 @@
         "sambal": "./bin/sambal"
     },
     "scripts": {
+        "init": "ts-node src/cli.ts init",
         "start": "ts-node src/cli.ts build",
         "test": "jest",
         "test:coverage": "jest --coverage",

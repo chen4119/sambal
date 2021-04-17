@@ -65,6 +65,10 @@ export const SAMBAL_ENTRY_FILE = "sambal.entry.js";
 export const SAMBAL_SITE_FILE = "sambal.site.js";
 export const WEBSOCKET_ADDR = "ws://localhost:3001/";
 
+// for DevServer
+export const THEME_PUBLIC_PATH = "/_theme";
+export const DEV_PUBLIC_PATH = "/_sambal";
+
 // collection
 export const NULL_VALUE = "__null__";
 export const EMPTY_VALUE = "__empty__";

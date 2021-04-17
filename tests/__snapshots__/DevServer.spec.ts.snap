@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Renderer get client bundle 1`] = `"console.log(\\"Hello from client!\\");"`;
+
+exports[`Renderer render html 1`] = `
+"
+                <html>
+                    <head> 
+                        <script src=\\"/_theme/client/client.123.js\\"></script>
+                    </head>
+                    <body>
+                        <h1>Hello from mock theme</h1>
+                    </body>
+                </html>
+            "
+`;

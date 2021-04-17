@@ -4,9 +4,10 @@ import {
     OUTPUT_FOLDER,
     SAMBAL_ENTRY_FILE,
     SAMBAL_SITE_FILE,
-    CACHE_FOLDER
+    CACHE_FOLDER,
+    DEV_PUBLIC_PATH
 } from "./helpers/constant";
-import { getAbsFilePath } from "./helpers/util";
+import { getAbsFilePath, writeText } from "./helpers/util";
 import { bundleSambalFile, bundleBrowserPackage } from "./helpers/bundler";
 import Renderer from "./Renderer";
 import SiteGenerator from "./SiteGenerator";
@@ -29,6 +30,12 @@ import {
     makeExpressionStatement,
     writeJavascript
 } from "./helpers/ast";
+import {
+    initSambalEntry,
+    initSambalSite,
+    initBlogpost,
+    initPerson
+} from "./helpers/init";
 import { log } from "./helpers/log";
 
 const siteFile = getAbsFilePath(SAMBAL_SITE_FILE);
@@ -85,15 +92,14 @@ async function initSite() {
 async function serve() {
     log.info("Cleaning cache folder");
     clean(`./${CACHE_FOLDER}`);
-    const publicPath = "/_sambal";
 
     try {
         const pages = await initSite();
 
-        const renderer = new Renderer(entryFile, theme, publicPath, siteGraph);
+        const renderer = new Renderer(entryFile, theme, DEV_PUBLIC_PATH, siteGraph);
         await renderer.initTheme();
 
-        const server = new DevServer(publicPath, renderer, 3000);
+        const server = new DevServer(DEV_PUBLIC_PATH, renderer, 3000);
         server.start(pages);
     } catch(e) {
         log.error(e);
@@ -169,9 +175,22 @@ async function publishTheme() {
     }
 }
 
+async function init() {
+    const contentFolder = "test";
+    await writeText(getAbsFilePath(`${contentFolder}/blogs/blog1.md`), initBlogpost("author"));
+    await writeText(getAbsFilePath(`${contentFolder}/author.yml`), initPerson());
+    await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());
+    await writeText(getAbsFilePath(SAMBAL_ENTRY_FILE), initSambalEntry());
+}
+
 function clean(folder: string) {
     shelljs.rm("-rf", folder);
 }
+
+program
+.command(`init`)
+.description('Init Sambal project files')
+.action(init);
 
 program
 .command(`build`)

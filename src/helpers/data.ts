@@ -6,7 +6,7 @@ import yaml from "js-yaml";
 import glob from "glob";
 import {
     getAbsFilePath,
-    readFile,
+    readFileAsBuffer,
     readTextFile,
     frontMatter,
     safeParseJson
@@ -95,7 +95,7 @@ export async function loadLocalFile(src: string) {
     const contentType = getLocalFileContentType(src);
     let content;
     if (contentType === SUPPORTED_CONTENT_TYPE.image) {
-        content = await readFile(`${LINKED_DATA_ROOT_DIR}/${src}`);
+        content = await readFileAsBuffer(`${LINKED_DATA_ROOT_DIR}/${src}`);
     } else {
         content = await readTextFile(`${LINKED_DATA_ROOT_DIR}/${src}`);
     }

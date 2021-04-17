@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Renderer render using mock-theme 1`] = `
+"
+                <html>
+                    <head> 
+                        <script src=\\"/_theme/client/client.123.js\\"></script>
+                    </head>
+                    <body>
+                        <h1>Hello from mock theme</h1>
+                    </body>
+                </html>
+            "
+`;
