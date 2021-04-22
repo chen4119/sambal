@@ -1,10 +1,9 @@
 import Graph from "./Graph";
 import CollectionBuilder from "./CollectionBuilder";
 import { searchLocalFiles, normalizeRelativePath } from "./helpers/data";
-import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
+import { JSONLD_ID, JSONLD_TYPE, isJsonLdRef } from "sambal-jsonld";
 import { log } from "./helpers/log";
 import { PartitionKey, WebPage } from "./helpers/constant";
-import { isJsonLdRef } from "./helpers/util";
 
 type EntityType = string | unknown | Promise<unknown>;
 type CallbackResult = string | {path: string, options: RouteOption};
@@ -213,6 +212,7 @@ export default class Router {
             if (mainEntityLinks.length === 1) {
                 page.mainEntity.mainEntityOfPage = page.url;
             } else {
+                log.debug("Multiple mainEntity links found %s", mainEntityLinks);
                 for (const link of mainEntityLinks) {
                     const route = this.routeMap.get(link.subject);
                     if (route.options.canonical) {

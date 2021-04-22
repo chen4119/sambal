@@ -14,7 +14,7 @@ export const defaultOptions = {
 export function initSambalSite(): string {
     return`
 export function siteMap(router) {
-    
+    router.landingPage("blogs/blog1");
 }
 
 export const siteConfig = {
@@ -51,6 +51,6 @@ dateCreated: 2002-05-01
 keywords: ["tag1", "tag2"]
 ---
 
-Go Duke!
+First post on Sambal!
 `.trim();
 }

@@ -1,4 +1,4 @@
-import { expandJsonLd, JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
+import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
 import Graph from "./Graph";
 import {
     Collection,
@@ -234,8 +234,8 @@ export default class CollectionBuilder {
     private async addToSingleList(collection: Collection, filePaths: string[]) {
         const feed: IndexList = [];
         for (const filePath of filePaths) {
-            const jsonld = expandJsonLd(await this.siteGraph.load(filePath));
-            feed.push(this.getFeedItem(jsonld, collection.sortBy));
+            const mainEntity = await this.siteGraph.load(filePath);
+            feed.push(this.getFeedItem(mainEntity, collection.sortBy));
         }
         return [{
             feed: feed

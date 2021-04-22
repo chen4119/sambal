@@ -4,9 +4,10 @@ import {
     JSONLD_ID,
     JSONLD_TYPE,
     SCHEMA_CONTEXT,
-    toJsonLdGraph
+    toJsonLdGraph,
+    isJsonLdRef
 } from "sambal-jsonld";
-import { isObjectLiteral, writeText, isJsonLdRef } from "./helpers/util";
+import { isObjectLiteral, writeText } from "./helpers/util";
 import { OUTPUT_FOLDER } from "./helpers/constant";
 import Media from "./Media";
 import Links from "./Links";

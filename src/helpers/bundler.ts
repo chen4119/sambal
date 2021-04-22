@@ -160,7 +160,10 @@ function parseStats(err, stats, onChange: OnBundleChanged) {
         return;
     }
     if (stats.hasErrors()) {
-        log.error(info.errors);
+        // log.error(info.errors);
+        for (const err of info.errors) {
+            log.error(err.message);
+        }
         onChange(true, entry);
         return;
     }

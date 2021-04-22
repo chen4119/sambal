@@ -176,7 +176,7 @@ async function publishTheme() {
 }
 
 async function init() {
-    const contentFolder = "test";
+    const contentFolder = "content";
     await writeText(getAbsFilePath(`${contentFolder}/blogs/blog1.md`), initBlogpost("author"));
     await writeText(getAbsFilePath(`${contentFolder}/author.yml`), initPerson());
     await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());

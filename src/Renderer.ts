@@ -103,9 +103,11 @@ export default class Renderer {
     watchForEntryChange(onChange: OnBundleChanged) {
         if (this.entryFile) {
             return watchSambalFile(this.entryFile, (isError, entry) => {
-                const module = require(getAbsFilePath(`${CACHE_FOLDER}/watch/${entry.main}`));
-                this.internalRenderer = module;
-                onChange(isError, entry);
+                if (!isError) {
+                    const module = require(getAbsFilePath(`${CACHE_FOLDER}/watch/${entry.main}`));
+                    this.internalRenderer = module;
+                    onChange(isError, entry);
+                }
             });
         } else {
             onChange(false, {});
