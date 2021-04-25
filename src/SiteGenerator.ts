@@ -7,14 +7,14 @@ import { log } from "./helpers/log";
 import { OUTPUT_FOLDER } from "./helpers/constant";
 
 export default class SiteGenerator {
-    constructor(private baseUrl: string, private renderer: Renderer) {
+    constructor(private publicPath: string, private renderer: Renderer) {
 
     }
 
     async start(pages: WebPage[]) {
         for (const page of pages) {
             log.info(`Rendering ${page.url}`);
-            let html = await this.renderer.renderPage(page);
+            let html = await this.renderer.renderPage(page, this.publicPath);
             html =  prettier.format(html, {parser: "html"});
             await this.write(`./${OUTPUT_FOLDER}${page.url}`, html);
         }

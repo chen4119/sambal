@@ -30,9 +30,9 @@ describe("Renderer", () => {
         links = new Links();
         collectionBuilder = new CollectionBuilder([]);
         graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
-        renderer = new Renderer(null, "mock-theme", DEV_PUBLIC_PATH, graph);
+        renderer = new Renderer(null, "mock-theme", graph);
         await renderer.initTheme();
-        server = new DevServer("/_public", renderer, 3000);
+        server = new DevServer(renderer, 3000);
         server.start(pages);
     });
 
@@ -46,7 +46,7 @@ describe("Renderer", () => {
     });
 
     it('get client bundle', async () => {
-        const response = await axios.get("http://localhost:3000/_theme/client/client.123.js");
+        const response = await axios.get("http://localhost:3000/_theme/client.123.js");
         expect(response.data).toMatchSnapshot();
     });
 

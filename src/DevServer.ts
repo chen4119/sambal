@@ -2,7 +2,7 @@ import express from "express";
 // import { Watching } from "webpack";
 import webpackDevMiddleware from "webpack-dev-middleware";
 import Renderer from "./Renderer";
-import { WebPage, THEME_PUBLIC_PATH } from "./helpers/constant";
+import { WebPage, THEME_PUBLIC_PATH, DEV_PUBLIC_PATH } from "./helpers/constant";
 import { log } from "./helpers/log";
 
 export default class DevServer {
@@ -11,7 +11,7 @@ export default class DevServer {
     // private watchEntryFile: Watching;
     private routeMap: Map<string, WebPage>;
     
-    constructor(private publicPath: string, private renderer: Renderer, private port: Number) {
+    constructor(private renderer: Renderer, private port: Number) {
         this.routeMap = new Map<string, WebPage>();
     }
     
@@ -46,7 +46,7 @@ export default class DevServer {
         if (compiler) {
             const middleware = webpackDevMiddleware(
                 compiler, {
-                    publicPath: this.publicPath
+                    publicPath: DEV_PUBLIC_PATH
                 });
             this.expressApp.use(middleware);
         }

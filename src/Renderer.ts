@@ -1,3 +1,4 @@
+import shelljs from "shelljs";
 import Graph from "./Graph";
 import ReactSerializer from "./ui/ReactSerializer";
 import WebpackListenerPlugin from "./WebpackListenerPlugin";
@@ -19,6 +20,7 @@ import {
     OUTPUT_FOLDER,
     SAMBAL_ENTRY_FILE,
     THEME_PUBLIC_PATH,
+    DEV_PUBLIC_PATH,
     Theme,
     OnBundleChanged,
     IHtmlSerializer
@@ -53,7 +55,6 @@ export default class Renderer {
     constructor(
         private entryFile: string,
         private theme: string | Theme,
-        private publicPath: string,
         private siteGraph: Graph) {
         this.serializer = new ReactSerializer();
         if (theme) {
@@ -66,7 +67,7 @@ export default class Renderer {
         }
     }
 
-    async init() {
+    async build(publicPath: string) {
         if (this.entryFile) {
             log.info("Bundling sambal.entry.js...");
             await bundleSambalFile(this.entryFile, getAbsFilePath(`${CACHE_FOLDER}/output`));
@@ -75,11 +76,18 @@ export default class Renderer {
                 log.info("Bundling browser bundle...");
                 this.internalBrowserBundleEntry = await bundleBrowserPackage(
                     this.internalRenderer.browserBundle,
-                    getAbsFilePath(`${OUTPUT_FOLDER}/${this.publicPath}`)
+                    getAbsFilePath(`${OUTPUT_FOLDER}/${publicPath}`)
                 );
             }
         }
         await this.initTheme();
+        if (this.themeBrowserBundleEntry) {
+            const outputDir = `${OUTPUT_FOLDER}/${publicPath}/${this.themeFolder}`;
+            shelljs.mkdir("-p", outputDir);
+            shelljs.cp("-R",
+                getAbsFilePath(`${this.themeFolder}/dist/client/*`),
+                getAbsFilePath(outputDir));
+        }
         if (!this.internalRenderer && !this.themeRenderer) {
             throw new Error("No html renderer available.  Implement sambal.entry.js or specify a theme in sambal.site.js");
         }
@@ -126,10 +134,10 @@ export default class Renderer {
         return null;
     }
 
-    async renderPage(page: unknown) {
+    async renderPage(page: unknown, publicPath?: string) {
         let renderResult;
         let clientBundle;
-        let bundlePrefix = this.publicPath;
+        let bundlePrefix;
         if (this.internalRenderer) {
             const defaultOptions = this.getDefaultOptions(this.internalRenderer);
             renderResult = await this.internalRenderer.renderPage({ 
@@ -138,6 +146,7 @@ export default class Renderer {
                 options: defaultOptions
             });
             clientBundle = this.internalBrowserBundleEntry;
+            bundlePrefix = publicPath ? publicPath : DEV_PUBLIC_PATH;
         }
         // if internalRenderer didn't render, try theme renderer, if available
         if (!renderResult && this.themeRenderer) {
@@ -151,7 +160,7 @@ export default class Renderer {
                 }
             });
             clientBundle = this.themeBrowserBundleEntry;
-            bundlePrefix = THEME_PUBLIC_PATH;
+            bundlePrefix = publicPath ? `${publicPath}/${this.themeFolder}` : THEME_PUBLIC_PATH;
         }
         if (renderResult) {
             const html = typeof(renderResult) === "string" ? 
@@ -179,7 +188,7 @@ export default class Renderer {
     async getThemeFile(filePath: string) {
         return {
             mime: getMimeType(filePath),
-            data: await readFileAsBuffer(getAbsFilePath(`${this.themeFolder}/dist/${filePath}`))
+            data: await readFileAsBuffer(getAbsFilePath(`${this.themeFolder}/dist/client/${filePath}`))
         }
     }
 

@@ -14,11 +14,13 @@ describe("Graph", () => {
 
 
     beforeEach(async () => {
-        shelljs.rm("-rf", OUTPUT_FOLDER);
         links = new Links();
         collectionBuilder = new CollectionBuilder([]);
         graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
-        
+    });
+
+    afterEach(async () => {
+        shelljs.rm("-rf", OUTPUT_FOLDER);
     });
 
     it('serialize', async () => {

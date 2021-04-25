@@ -4,8 +4,7 @@ import {
     OUTPUT_FOLDER,
     SAMBAL_ENTRY_FILE,
     SAMBAL_SITE_FILE,
-    CACHE_FOLDER,
-    DEV_PUBLIC_PATH
+    CACHE_FOLDER
 } from "./helpers/constant";
 import { getAbsFilePath, writeText } from "./helpers/util";
 import { bundleSambalFile, bundleBrowserPackage } from "./helpers/bundler";
@@ -96,10 +95,10 @@ async function serve() {
     try {
         const pages = await initSite();
 
-        const renderer = new Renderer(entryFile, theme, DEV_PUBLIC_PATH, siteGraph);
+        const renderer = new Renderer(entryFile, theme, siteGraph);
         await renderer.initTheme();
 
-        const server = new DevServer(DEV_PUBLIC_PATH, renderer, 3000);
+        const server = new DevServer(renderer, 3000);
         server.start(pages);
     } catch(e) {
         log.error(e);
@@ -115,10 +114,10 @@ async function build() {
     try {
         const pages = await initSite();
 
-        const renderer = new Renderer(entryFile, theme, publicPath, siteGraph);
-        await renderer.init();
+        const renderer = new Renderer(entryFile, theme, siteGraph);
+        await renderer.build(publicPath);
 
-        const builder = new SiteGenerator(baseUrl, renderer);
+        const builder = new SiteGenerator(publicPath, renderer);
         await builder.start(pages);
 
         log.info("Writing schema.org json-lds");
@@ -150,7 +149,7 @@ async function publishTheme() {
                 getAbsFilePath("dist/client")
             );
             for (const fieldName of Object.keys(browserBundleEntry)) {
-                browserBundleEntry[fieldName] = `client/${browserBundleEntry[fieldName]}`;
+                browserBundleEntry[fieldName] = browserBundleEntry[fieldName];
             }
         }
         const statements = [];

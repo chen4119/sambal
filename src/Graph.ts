@@ -4,7 +4,7 @@ import {
     JSONLD_ID,
     JSONLD_TYPE,
     SCHEMA_CONTEXT,
-    toJsonLdGraph,
+    // toJsonLdGraph,
     isJsonLdRef
 } from "sambal-jsonld";
 import { isObjectLiteral, writeText } from "./helpers/util";
@@ -51,8 +51,8 @@ export default class Graph {
                 graph.push(this.objectCache.get(iri));
             }
         }
-        const flatten = toJsonLdGraph(graph, SCHEMA_CONTEXT);
-        for (const jsonld of flatten[JSONLD_GRAPH]) {
+        // const flatten = toJsonLdGraph(graph, SCHEMA_CONTEXT);
+        for (const jsonld of graph) {
             await writeText(`./${OUTPUT_FOLDER}/content/${jsonld[JSONLD_ID]}.json`, JSON.stringify({
                 [JSONLD_CONTEXT]: {
                     "@vocab": SCHEMA_CONTEXT,
@@ -157,7 +157,6 @@ export default class Graph {
             }
             return resolvedArr;
         } else if (isJsonLdRef(target)) {
-            // this.links.add(subjectIRI, predicateIRI, target[JSONLD_ID]);
             let nextTarget;
             if (graph && graph.has(target[JSONLD_ID])) {
                 nextTarget = graph.get(target[JSONLD_ID]);
