@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`util frontMatter return original id 1`] = `
+Object {
+  "content": "
+            body of the markdown
+            
+            \`\`\`md
+                ---
+                test: hello world
+                ---
+                something
+            \`\`\`
+        ",
+  "frontMatter": "
+            test: hello world
+            ",
+}
+`;

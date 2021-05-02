@@ -62,6 +62,9 @@ async function initSite() {
             entryFile = null;  // optional
         }
         baseUrl = module.siteConfig.baseUrl;
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+        }
         log.info(`baseUrl: ${baseUrl}`);
         theme = module.siteConfig.theme;
         
@@ -77,7 +80,7 @@ async function initSite() {
 
         siteGraph = new Graph(baseUrl, media, links, collectionBuilder);
 
-        const router = new Router(siteGraph, collectionBuilder);
+        const router = new Router(baseUrl, siteGraph, collectionBuilder);
         module.siteMap(router.instance);
         log.info("Getting all routes...");
         return await router.getRoutes();

@@ -5,7 +5,6 @@ import {
     isExternalSource,
     loadRemoteFile,
     loadLocalFile,
-    normalizeJsonLdId,
     normalizeRelativePath
 } from "./helpers/data";
 import { formatSize } from "./helpers/util";
@@ -44,7 +43,7 @@ export default class Media {
         }
 
         const imageObj = this.newImageObject(normalSrc);
-        imageObj[JSONLD_ID] = normalizeJsonLdId(src);
+        // imageObj[JSONLD_ID] = normalizeJsonLdId(src);
 
         if (this.imageTransformMap.has(normalSrc)) {
             await this.transform(normalSrc, imageObj, this.imageTransformMap.get(normalSrc));

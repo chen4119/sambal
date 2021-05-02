@@ -53,10 +53,14 @@ export function normalizeRelativePath(src: string) {
     if (isExternalSource(src)) {
         return src;
     }
-    if (!src.startsWith("/")) {
-        return `/${src}`;
+    let normalSrc = src;
+    if (normalSrc.endsWith("/")) {
+        normalSrc = normalSrc.substring(0, normalSrc.length - 1);
     }
-    return src;
+    if (!normalSrc.startsWith("/")) {
+        normalSrc = `/${normalSrc}`;
+    }
+    return normalSrc;
 }
 
 export function normalizeJsonLdId(src: string) {

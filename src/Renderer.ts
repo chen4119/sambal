@@ -30,7 +30,7 @@ import { log } from "./helpers/log";
 type UI = {
     renderPage: (props: {
         page: unknown,
-        siteGraph: unknown,
+        // siteGraph: unknown,
         options?: unknown
     }) => Promise<unknown>,
     renderComponent: (props: {
@@ -142,7 +142,7 @@ export default class Renderer {
             const defaultOptions = this.getDefaultOptions(this.internalRenderer);
             renderResult = await this.internalRenderer.renderPage({ 
                 page: page,
-                siteGraph: this.siteGraph,
+                // siteGraph: this.siteGraph,
                 options: defaultOptions
             });
             clientBundle = this.internalBrowserBundleEntry;
@@ -153,7 +153,7 @@ export default class Renderer {
             const defaultOptions = this.getDefaultOptions(this.themeRenderer);
             renderResult = await this.themeRenderer.renderPage({ 
                 page: page,
-                siteGraph: this.siteGraph,
+                // siteGraph: this.siteGraph,
                 options: {
                     ...defaultOptions,
                     ...this.themeOptions

@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import shelljs from "shelljs";
-import { JSONLD_ID } from "sambal-jsonld";
 
 export function isObjectLiteral(obj) {
     return obj !== null && typeof(obj) === "object" && Object.getPrototypeOf(obj) === Object.prototype;
@@ -108,7 +107,7 @@ export function frontMatter(md: string) {
     if (splitted.length >= 1) {
         return {
             frontMatter: splitted[1],
-            content: splitted.slice(2).join("")
+            content: splitted.slice(2).join("---")
         };
     }
     return {

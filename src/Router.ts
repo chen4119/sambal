@@ -47,7 +47,7 @@ export const Page = {
 export default class Router {
     private routeMap: Map<string, Route>;
     private routeGenerators: RouteGenerator[];
-    constructor(private graph: Graph, private collections: CollectionBuilder) {
+    constructor(private baseUrl: string, private graph: Graph, private collections: CollectionBuilder) {
         this.routeMap = new Map<string, Route>();
         this.routeGenerators = [];
     }
@@ -145,7 +145,8 @@ export default class Router {
                 nav.name = jsonld.name ? jsonld.name : jsonld.headline;
                 nav.url = jsonld.mainEntityOfPage;
                 if (!nav.url) {
-                    throw new Error(`Invalid site nav link: ${iri} does not have a url`);
+                    log.warn(`Invalid site nav: ${iri} does not have a url`);
+                    // throw new Error(`Invalid site nav link: ${iri} does not have a url`);
                 }
             }
         }
@@ -201,26 +202,27 @@ export default class Router {
         for (const path of paths) {
             const pageJsonLd = this.getPageJsonLd(path, this.routeMap.get(path));
             await this.graph.load(pageJsonLd);
-            // pageJsonLd.mainEntity.mainEntityOfPage = pageJsonLd.url;
             pages.push(pageJsonLd);
         }
 
         // set mainEntityOfPage url
         for (const page of pages) {
+            page.mainEntity.mainEntityOfPage = page.url;
+
             const incomingLinks = this.graph.getIncomingLinks(page.mainEntity[JSONLD_ID]);
             const mainEntityLinks = incomingLinks.filter(l => l.predicate === "schema:mainEntity");
-            if (mainEntityLinks.length === 1) {
-                page.mainEntity.mainEntityOfPage = page.url;
-            } else {
-                log.debug("Multiple mainEntity links found %s", mainEntityLinks);
+            if (mainEntityLinks.length > 1) {
+                log.debug("Multiple mainEntity links found %s", mainEntityLinks.map(l => l.subject));
                 for (const link of mainEntityLinks) {
-                    const route = this.routeMap.get(link.subject);
-                    if (route.options.canonical) {
-                        page.mainEntity.mainEntityOfPage = link.subject;
+                    const relativePath = link.subject.substring(this.baseUrl.length);
+                    const route = this.routeMap.get(relativePath);
+                    if (route && route.options.canonical) {
+                        page.mainEntity.mainEntityOfPage = relativePath;
                     }
                 }
                 if (!page.mainEntity.mainEntityOfPage) {
-                    throw new Error(`${page.mainEntity[JSONLD_ID]} is the mainEntity of multiple pages ${mainEntityLinks.map(l => l.subject)}.  Specify which one is canonical`);
+                    log.warn(`${page.mainEntity[JSONLD_ID]} is the mainEntity of multiple pages.  Specify which one is canonical`);
+                    // throw new Error(`${page.mainEntity[JSONLD_ID]} is the mainEntity of multiple pages ${mainEntityLinks.map(l => l.subject)}.  Specify which one is canonical`);
                 }
             }
         }
@@ -230,7 +232,7 @@ export default class Router {
     private getPageJsonLd(path: string, route: Route) {
         const page: WebPage = {
             ...route.options.page ? route.options.page as object : {},
-            [JSONLD_ID]: path,
+            [JSONLD_ID]: `${this.baseUrl}${path}`,
             [JSONLD_TYPE]: route.pageType,
             url: path,
             mainEntity: route.mainEntity,

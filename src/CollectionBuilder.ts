@@ -8,13 +8,13 @@ import {
 } from "./helpers/constant";
 import {
     isJsDate,
-    isNullOrUndefined
+    isNullOrUndefined,
+    isObjectLiteral
 } from "./helpers/util";
 import {
     getSortKey
 } from "./helpers/collection";
 import { searchLocalFiles, normalizeJsonLdId } from "./helpers/data";
-import { isObjectLiteral } from "sambal-jsonld/dist/utils";
 
 type IndexItem = {
     [JSONLD_ID]: string,

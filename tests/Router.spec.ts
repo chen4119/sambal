@@ -28,7 +28,7 @@ describe("Router", () => {
         links = new Links();
         collectionBuilder = new CollectionBuilder(collections);
         graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
-        router = new Router(graph, collectionBuilder);
+        router = new Router(baseUrl, graph, collectionBuilder);
 
         router.instance
         .landingPage("johnsmith", {page: {
