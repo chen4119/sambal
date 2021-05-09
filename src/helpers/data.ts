@@ -1,4 +1,3 @@
-import path from "path";
 import shelljs from "shelljs";
 import axios, { AxiosResponse } from "axios";
 import yaml from "js-yaml";
@@ -9,7 +8,8 @@ import {
     readFileAsBuffer,
     readTextFile,
     frontMatter,
-    safeParseJson
+    safeParseJson,
+    getFileExt
 } from "./util";
 
 enum SUPPORTED_CONTENT_TYPE {
@@ -40,13 +40,6 @@ export function searchLocalFiles(query: string | string[]): string[] {
     const matches = glob.sync(query, globOption);
     return matches
     .filter(m => isDataFileExist(m));
-
-    /*
-    .map(m => {
-        const basename = path.basename(m);
-        const filename = basename.substring(0, basename.lastIndexOf(path.extname(basename)));
-        return `${path.dirname(m)}/${filename}`;
-    });*/
 }
 
 export function normalizeRelativePath(src: string) {
@@ -112,7 +105,7 @@ export async function loadRemoteFile(src: string) {
 }
 
 export function isExternalSource(src: string) {
-    return src.startsWith("http://") || src.startsWith("https://") || src.startsWith("//");
+    return src.startsWith("http://") || src.startsWith("https://");
 }
 
 const IMAGE_EXT_REGEX = /.+(.jpg|.jpeg|.gif|.png|.webp)$/i;
@@ -146,20 +139,20 @@ function getAxiosResponseContentType(response: AxiosResponse<any>): SUPPORTED_CO
 }
 
 function getLocalFileContentType(src: string): SUPPORTED_CONTENT_TYPE {
-    const ext = path.extname(src).toLowerCase();
+    const ext = getFileExt(src);
     switch (ext) {
-        case ".yaml":
-        case ".yml":
+        case "yaml":
+        case "yml":
             return SUPPORTED_CONTENT_TYPE.yaml;
-        case ".json":
+        case "json":
             return SUPPORTED_CONTENT_TYPE.json;
-        case ".md":
+        case "md":
             return SUPPORTED_CONTENT_TYPE.markdown;
-        case ".jpg":
-        case ".jpeg":
-        case ".webp":
-        case ".gif":
-        case ".png":
+        case "jpg":
+        case "jpeg":
+        case "webp":
+        case "gif":
+        case "png":
             return SUPPORTED_CONTENT_TYPE.image;
         default:
             throw `Unsupported file type with extension ${ext}`;

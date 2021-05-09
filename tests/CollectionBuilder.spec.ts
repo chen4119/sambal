@@ -2,7 +2,7 @@ import CollectionBuilder from "../src/CollectionBuilder";
 import Graph from "../src/Graph";
 import Media from "../src/Media";
 import Links from "../src/Links";
-import { Collection } from "../src/helpers/constant";
+import { CACHE_FOLDER, Collection } from "../src/helpers/constant";
 
 describe("CollectionBuilder", () => {
     const baseUrl = "https://example.com";
@@ -42,7 +42,7 @@ describe("CollectionBuilder", () => {
     beforeEach(async () => {
         links = new Links();
         collectionBuilder = new CollectionBuilder(collections);
-        graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
+        graph = new Graph(new Media(CACHE_FOLDER, []), links, collectionBuilder);
     });
 
     it('get collections/tags pages', async () => {
@@ -57,9 +57,9 @@ describe("CollectionBuilder", () => {
 
     it('get javascript tag pages', async () => {
         const partitionKey = {tag: 'java script'};
-        const partitions = await collectionBuilder.getPartitionPages("collections/tags", partitionKey, 100);
-        expect(partitions[0].pages.length).toBe(1);
-        const itemList = partitions[0].pages[0].item;
+        const partition = await collectionBuilder.getPartitionPages("collections/tags", partitionKey, 100);
+        expect(partition.pages.length).toBe(1);
+        const itemList = partition.pages[0].item;
         expect(itemList.itemListElement.length).toBe(2);
     });
 

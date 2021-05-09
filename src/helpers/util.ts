@@ -68,23 +68,35 @@ export function writeBuffer(output: string, content: Buffer): Promise<void> {
     });
 }
 
-export function getMimeType(filePath: string) {
-    const ext = path.extname(filePath);
+export function getFileExt(filePath: string) {
+    const index = filePath.lastIndexOf(".");
+    if (index >= 0 && index < filePath.length - 1) {
+        return filePath.substring(index + 1).toLowerCase();
+    }
+    return "";
+}
+
+export function getMimeType(ext: string) {
     switch(ext) {
-        case ".js":
-        case ".mjs":
+        case "js":
+        case "mjs":
             return "text/javascript";
-        case ".ico":
+        case "ico":
             return "image/vnd.microsoft.icon";
-        case ".css":
-            return "text/css";
-        case ".woff":
-        case ".woff2":
+        case "css":
+            return `text/${ext}`;
+        case "woff":
+        case "woff2":
             return `font/${ext}`;
-        case ".svg":
+        case "jpeg":
+        case "webp":
+        case "gif":
+        case "png":
+            return `image/${ext}`;
+        case "svg":
             return "image/svg+xml";
         default:
-            throw new Error(`Unrecognized mime type for file ${filePath}`);
+            throw new Error(`Unrecognized mime type ${ext}`);
     }
 }
 

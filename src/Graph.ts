@@ -33,7 +33,7 @@ export default class Graph {
     private blankNodeIndex: number;
 
     constructor(
-        private baseUrl: string,
+        // private baseUrl: string,
         private media: Media,
         private links: Links,
         private collectionBuilder: CollectionBuilder
@@ -44,7 +44,7 @@ export default class Graph {
         this.collectionBuilder.graph = this;
     }
 
-    async serialize() {
+    async serialize(baseUrl: string) {
         const graph = [];
         for (const iri of Array.from(this.objectCache.keys())) {
             if (!isExternalSource(iri) && !iri.startsWith("_:")) {
@@ -56,7 +56,7 @@ export default class Graph {
             await writeText(`./${OUTPUT_FOLDER}/content/${jsonld[JSONLD_ID]}.json`, JSON.stringify({
                 [JSONLD_CONTEXT]: {
                     "@vocab": SCHEMA_CONTEXT,
-                    "@base": this.baseUrl
+                    "@base": baseUrl
                 },
                 ...jsonld as object
             }, null, 4));
@@ -92,8 +92,8 @@ export default class Graph {
         }
 
         let jsonld;
+        // need this because url can be image
         if (isImageFile(src)) {
-            // src can be remote or local
             jsonld = await this.media.loadImagePath(src);
         } else if (isExternalSource(src)) {
             jsonld = await loadRemoteFile(src);

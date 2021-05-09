@@ -16,7 +16,7 @@ describe("Renderer", () => {
     beforeEach(async () => {
         links = new Links();
         collectionBuilder = new CollectionBuilder([]);
-        graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
+        graph = new Graph(new Media(OUTPUT_FOLDER, []), links, collectionBuilder);
         renderer = new Renderer(null, "mock-theme", graph);
     });
 

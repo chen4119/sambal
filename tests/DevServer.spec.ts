@@ -5,7 +5,7 @@ import Graph from "../src/Graph";
 import Media from "../src/Media";
 import Links from "../src/Links";
 import DevServer from "../src/DevServer";
-import { WebPage, DEV_PUBLIC_PATH } from "../src/helpers/constant";
+import { WebPage, CACHE_FOLDER } from "../src/helpers/constant";
 
 describe("Renderer", () => {
     const baseUrl = "https://example.com";
@@ -29,7 +29,7 @@ describe("Renderer", () => {
     beforeAll(async () => {
         links = new Links();
         collectionBuilder = new CollectionBuilder([]);
-        graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
+        graph = new Graph(new Media(CACHE_FOLDER, []), links, collectionBuilder);
         renderer = new Renderer(null, "mock-theme", graph);
         await renderer.initTheme();
         server = new DevServer(renderer, 3000);

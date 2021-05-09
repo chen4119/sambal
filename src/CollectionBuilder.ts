@@ -83,14 +83,14 @@ export default class CollectionBuilder {
         const collection = this.getCollection(normalizeIRI);
         const partitions = await this.build(collection);
 
-        let pages = [];
+        let partitionPages = [];
         for (const partition of partitions) {
-            pages.push({
+            partitionPages.push({
                 key: partition.groupBy ? partition.groupBy : null,
                 pages: await this.paginatePartition(collection, partition, pageSize)
             });
         }
-        return pages;
+        return partitionPages;
     }
 
     async getPartitionPages(collectionIRI: string, partitionKey: PartitionKey, pageSize: number) {
@@ -99,16 +99,15 @@ export default class CollectionBuilder {
         const partitions = await this.build(collection);
 
         const keyStrToMatch = this.stringifyKey(partitionKey);
-        let pages = [];
         for (const partition of partitions) {
             if (partition.groupBy && this.stringifyKey(partition.groupBy) === keyStrToMatch) {
-                pages.push({
+                return {
                     key: partition.groupBy ? partition.groupBy : null,
                     pages: await this.paginatePartition(collection, partition, pageSize)
-                });
+                };
             }
         }
-        return pages;
+        return null;
     }
 
     set graph(graph: Graph) {
@@ -230,6 +229,12 @@ export default class CollectionBuilder {
         this.collectionMap.set(collection[JSONLD_ID], partitions);
         return partitions;
     }
+
+    /*
+    private isCollectionIriUnique(collectionIRI: string) {
+        const files = searchLocalFiles([`${collectionIRI}.*`, `${collectionIRI}\\**\\*`]);
+        return files.length === 0;
+    }*/
 
     private async addToSingleList(collection: Collection, filePaths: string[]) {
         const feed: IndexList = [];

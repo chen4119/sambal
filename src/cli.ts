@@ -43,7 +43,7 @@ let siteGraph: Graph;
 let baseUrl: string = "";
 let theme = null;
 
-async function initSite() {
+async function initSite(outputFolder: string) {
     if (shelljs.test('-f', siteFile)) {
         log.info("Bundling sambal.site.js...");
         await bundleSambalFile(siteFile, getAbsFilePath(`${CACHE_FOLDER}/output`));
@@ -73,12 +73,12 @@ async function initSite() {
         }
 
         const imageTransforms = module.siteConfig.imageTransforms ? module.siteConfig.imageTransforms : [];
-        const media = new Media(imageTransforms);
+        const media = new Media(outputFolder, imageTransforms);
         const collections = module.siteConfig.collections ? module.siteConfig.collections : [];
         const collectionBuilder = new CollectionBuilder(collections);
         const links = new Links();
 
-        siteGraph = new Graph(baseUrl, media, links, collectionBuilder);
+        siteGraph = new Graph(media, links, collectionBuilder);
 
         const router = new Router(baseUrl, siteGraph, collectionBuilder);
         module.siteMap(router.instance);
@@ -96,7 +96,7 @@ async function serve() {
     clean(`./${CACHE_FOLDER}`);
 
     try {
-        const pages = await initSite();
+        const pages = await initSite(CACHE_FOLDER);
 
         const renderer = new Renderer(entryFile, theme, siteGraph);
         await renderer.initTheme();
@@ -115,7 +115,7 @@ async function build() {
     const publicPath = `/js`;
     
     try {
-        const pages = await initSite();
+        const pages = await initSite(OUTPUT_FOLDER);
 
         const renderer = new Renderer(entryFile, theme, siteGraph);
         await renderer.build(publicPath);
@@ -124,7 +124,7 @@ async function build() {
         await builder.start(pages);
 
         log.info("Writing schema.org json-lds");
-        await siteGraph.serialize();
+        await siteGraph.serialize(baseUrl);
     } catch(e) {
         log.error(e);
     }

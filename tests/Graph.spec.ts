@@ -16,7 +16,7 @@ describe("Graph", () => {
     beforeEach(async () => {
         links = new Links();
         collectionBuilder = new CollectionBuilder([]);
-        graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
+        graph = new Graph(new Media(OUTPUT_FOLDER, []), links, collectionBuilder);
     });
 
     afterEach(async () => {
@@ -25,7 +25,7 @@ describe("Graph", () => {
 
     it('serialize', async () => {
         await graph.load("blogs/blog1");
-        await graph.serialize();
+        await graph.serialize(baseUrl);
         expect(shelljs.test('-f', getAbsFilePath(`${OUTPUT_FOLDER}/content/blogs/blog1.json`))).toBeTruthy();
         expect(shelljs.test('-f', getAbsFilePath(`${OUTPUT_FOLDER}/content/johnsmith.json`))).toBeTruthy();
     });

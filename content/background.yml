@@ -1,0 +1,6 @@
+"@type": ImageObject
+contentUrl: images/image2.jpg
+name: My background
+thumbnails:
+  - name: background50
+    width: 50

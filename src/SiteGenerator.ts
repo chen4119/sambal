@@ -2,7 +2,7 @@ import path from "path";
 import { WebPage } from "./helpers/constant";
 import Renderer from "./Renderer";
 import prettier from "prettier";
-import { writeText } from "./helpers/util";
+import { writeText, getFileExt } from "./helpers/util";
 import { log } from "./helpers/log";
 import { OUTPUT_FOLDER } from "./helpers/constant";
 
@@ -21,9 +21,9 @@ export default class SiteGenerator {
     }
 
     private async write(dest: string, content: string) {
-        const ext = path.extname(dest).toLowerCase();
+        const ext = getFileExt(dest);
         let output = dest;
-        if (ext !== '.html' && ext !== '.htm' && ext !== '.json') {
+        if (ext !== 'html' && ext !== 'htm' && ext !== 'json') {
             output = `${dest}/index.html`;
         }
         output = path.normalize(output);

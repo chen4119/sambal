@@ -34,7 +34,7 @@ export const defaultOptions = {
 export function initSambalSite(): string {
     return`
 export function siteMap(router) {
-    router.landingPage("blogs/blog1");
+    router.page("/", "blogs/blog1");
 }
 
 export const siteConfig = {

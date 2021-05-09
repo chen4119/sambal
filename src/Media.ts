@@ -7,15 +7,17 @@ import {
     loadLocalFile,
     normalizeRelativePath
 } from "./helpers/data";
-import { formatSize } from "./helpers/util";
+import { formatSize, getMimeType, isObjectLiteral, writeBuffer } from "./helpers/util";
 import { searchLocalFiles } from "./helpers/data";
+import { log } from "./helpers/log";
+import { URL } from "url";
 
 type ImageTransform = {
     src: string | string[],
     width?: number,
     height?: number,
     encodingFormat?: string
-    thumbnails?: {
+    thumbnail?: {
         name: string,
         width?: number,
         height?: number
@@ -25,16 +27,19 @@ type ImageTransform = {
 export default class Media {
     private imageTransformMap: Map<string, ImageTransform>;
     private cachedJsonldMap: Map<string, unknown>;
+    private publishedMediaPaths: Set<string>;
 
-    constructor(imageTransforms: ImageTransform[]) {
+    constructor(private outputFolder: string, imageTransforms: ImageTransform[]) {
         this.imageTransformMap = new Map<string, ImageTransform>();
         this.cachedJsonldMap = new Map<string, unknown>();
+        this.publishedMediaPaths = new Set<string>();
         for (const transform of imageTransforms) {
             const matches = searchLocalFiles(transform.src);
             matches.forEach(filePath => this.imageTransformMap.set(normalizeRelativePath(filePath), transform));
         }
     }
 
+    // src can be either URL or relative path
     async loadImagePath(src: string) {
         const normalSrc = normalizeRelativePath(src);
         // src will have image file extension
@@ -43,7 +48,6 @@ export default class Media {
         }
 
         const imageObj = this.newImageObject(normalSrc);
-        // imageObj[JSONLD_ID] = normalizeJsonLdId(src);
 
         if (this.imageTransformMap.has(normalSrc)) {
             await this.transform(normalSrc, imageObj, this.imageTransformMap.get(normalSrc));
@@ -60,15 +64,17 @@ export default class Media {
         if (this.cachedJsonldMap.has(imageObj[JSONLD_ID])) {
             return this.cachedJsonldMap.get(imageObj[JSONLD_ID]);
         }
-        const normalSrc = normalizeRelativePath(imageObj.contentUrl);
-        if (this.imageTransformMap.has(normalSrc)) {
+        if (!imageObj.contentUrl) {
+            log.warn(`Image ${imageObj[JSONLD_ID]} does not have a contentUrl`);
+        } else {
+            imageObj.contentUrl = normalizeRelativePath(imageObj.contentUrl);
             await this.transform(
-                normalSrc,
+                imageObj.contentUrl,
                 imageObj,
-                this.imageTransformMap.get(normalSrc)
+                imageObj
             );
-            this.cachedJsonldMap.set(imageObj[JSONLD_ID], imageObj);
         }
+        
         return imageObj;
     }
 
@@ -81,27 +87,37 @@ export default class Media {
 
     private async transform(filePath: string, imageObj: any, transform?: ImageTransform) {
         const output = await this.loadImage(filePath, transform);
-        imageObj.encodingFormat = this.getImageMimeType(output.info.format);
+        imageObj.encodingFormat = getMimeType(output.info.format);
         imageObj.width = output.info.width;
         imageObj.height = output.info.height;
         imageObj.contentSize = formatSize(output.info.size);
-        if (transform && transform.thumbnails) {
-            imageObj.thumbnail = [];
-            for (const thumbnail of transform.thumbnails) {
-                const thumbnailurl = `${path.dirname(filePath)}/${thumbnail.name}.${output.info.format}`;
-                const thumbnailJsonLd = this.newImageObject(thumbnailurl);
-                imageObj.thumbnail.push(await this.transform(filePath, thumbnailJsonLd, {
+        if (output.isTransformed) {
+            imageObj.contentUrl = this.updateContentUrlType(imageObj.contentUrl, output.info.format);
+            if (this.publishedMediaPaths.has(imageObj.contentUrl)) {
+                log.warn(`Duplicate ${imageObj.contentUrl}`);
+            }
+            this.publishedMediaPaths.add(imageObj.contentUrl);
+            await writeBuffer(`${this.outputFolder}${imageObj.contentUrl}`, output.buffer);
+        }
+        const thumbnails = this.getThumbnails(transform);
+        if (thumbnails.length > 0) {
+            const thumbnailJsonLds = [];
+            for (const thumbnail of thumbnails) {
+                const thumbnailUrl = this.getThumbnailContentUrl(filePath, thumbnail.name, output.info.format);
+                const thumbnailJsonLd = this.newImageObject(thumbnailUrl);
+                thumbnailJsonLds.push(await this.transform(filePath, thumbnailJsonLd, {
                     src: filePath,
                     width: thumbnail.width,
                     height: thumbnail.height
                 }));
             }
+            imageObj.thumbnail = thumbnailJsonLds;
         }
         return imageObj;
     }
     
     
-    private async loadImage(filePath: string, transform?: ImageTransform): Promise<{info: OutputInfo, buffer: Buffer}> {
+    private async loadImage(filePath: string, transform?: ImageTransform): Promise<{info: OutputInfo, buffer: Buffer, isTransformed: boolean}> {
         return new Promise(async (resolve, reject) => {
             try {
                 let instance;
@@ -110,7 +126,7 @@ export default class Media {
                 } else {
                     instance = sharp(await loadLocalFile(filePath));
                 }
-    
+                let isTransformed = false;
                 if (transform) {
                     if (transform.width || transform.height) {
                         const options = {
@@ -118,9 +134,11 @@ export default class Media {
                             height: transform.height
                         };
                         instance.resize(options);
+                        isTransformed = true;
                     }
                     if (transform.encodingFormat) {
                         this.transformImage(instance, transform.encodingFormat);
+                        isTransformed = true;
                     }
                 }
 
@@ -131,7 +149,8 @@ export default class Media {
                     } else {
                         resolve({
                             buffer: buffer,
-                            info: info
+                            info: info,
+                            isTransformed: isTransformed
                         });
                     }
                 });
@@ -142,16 +161,32 @@ export default class Media {
         });
     }
     
-    private getImageMimeType(type: string) {
-        switch (type) {
-            case "jpeg":
-            case "webp":
-            case "gif":
-            case "png":
-                return `image/${type}`;
-            default:
-                throw new Error(`No mime type defined for ${type}`);
+    private getThumbnails(transform?: ImageTransform) {
+        if (transform && transform.thumbnail) {
+            if (Array.isArray(transform.thumbnail)) {
+                return transform.thumbnail;
+            } else if (isObjectLiteral(transform.thumbnail)) {
+                return [transform.thumbnail];
+            }
         }
+        return [];
+    }
+    private getThumbnailContentUrl(contentUrl: string, thumbnailName: string, ext: string) {
+        return `${path.dirname(contentUrl)}/${thumbnailName}.${ext}`;
+    }
+
+    // change file extension to match mime-type, remove protocal if absolute url
+    private updateContentUrlType(contentUrl: string, ext: string) {
+        let localPath = contentUrl;
+        const index = localPath.lastIndexOf(".");
+        if (index >= 0) {
+            localPath = `${localPath.substring(0, index)}.${ext}`;
+        }
+        if (isExternalSource(contentUrl)) {
+            const myUrl = new URL(contentUrl);
+            localPath = `/${localPath.substring(myUrl.protocol.length + 2)}`;
+        }
+        return localPath;
     }
     
     private transformImage(instance: Sharp, mimeFormat: string) {
@@ -165,7 +200,7 @@ export default class Media {
             case "image/png":
                 return instance.png();
             default:
-                console.error(`Unrecognized mime type: ${mimeFormat}`);
+                log.error(`Unrecognized mime type: ${mimeFormat}`);
                 return instance;
         }
     }

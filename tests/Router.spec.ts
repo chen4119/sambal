@@ -3,7 +3,7 @@ import CollectionBuilder from "../src/CollectionBuilder";
 import Graph from "../src/Graph";
 import Media from "../src/Media";
 import Links from "../src/Links";
-import { Collection } from "../src/helpers/constant";
+import { CACHE_FOLDER, Collection } from "../src/helpers/constant";
 
 describe("Router", () => {
     const baseUrl = "https://example.com";
@@ -27,16 +27,16 @@ describe("Router", () => {
     beforeEach(async () => {
         links = new Links();
         collectionBuilder = new CollectionBuilder(collections);
-        graph = new Graph(baseUrl, new Media([]), links, collectionBuilder);
+        graph = new Graph(new Media(CACHE_FOLDER, []), links, collectionBuilder);
         router = new Router(baseUrl, graph, collectionBuilder);
 
         router.instance
-        .landingPage("johnsmith", {page: {
+        .page("/", "johnsmith", {page: {
             hasPart: {"@id": "collections/year"}
         }})
-        .itemPage("/blog1", "blogs/blog1")
-        .itemPage("/canonical/blog1", "blogs/blog1", { canonical: true })
-        .itemPage("/blog2", "blogs/blog2");
+        .page("/blog1", "blogs/blog1")
+        .page("/canonical/blog1", "blogs/blog1", { canonical: true })
+        .page("/blog2", "blogs/blog2");
     });
 
     it('getRoutes', async () => {

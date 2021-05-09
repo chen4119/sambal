@@ -25,31 +25,25 @@ type RouteGenerator = {
     getRoute: getRouteFn
 }
 
-/*
-type RouteNode = {
-    path: string,
-    children: Map<string, RouteNode>
-}*/
-
 export const Page = {
-    About: "AboutPage",
-    Collection: "CollectionPage",
-    Contact: "ContactPage",
-    // Error: "sambal:error",
-    // FAQ: "schema:faqpage",
-    Item: "ItemPage",
-    Landing: "sambal:Landing",
+    // About: "AboutPage",
+    // Collection: "CollectionPage",
+    // Contact: "ContactPage",
+    // Item: "ItemPage",
+    // Landing: "sambal:Landing",
     NotFound: "sambal:NotFound",
-    Profile: "ProfilePage"
-    // SearchResults: "schema:searchresultspage"
+    WebPage: "WebPage"
+    // Profile: "ProfilePage"
 };
 
 export default class Router {
     private routeMap: Map<string, Route>;
+    private entities: EntityType[];
     private routeGenerators: RouteGenerator[];
     constructor(private baseUrl: string, private graph: Graph, private collections: CollectionBuilder) {
         this.routeMap = new Map<string, Route>();
         this.routeGenerators = [];
+        this.entities = [];
     }
     
     get instance() {
@@ -68,29 +62,20 @@ export default class Router {
         };
 
         const closure = {
-            aboutPage: (path: string, mainEntity: EntityType, options?: RouteOption) => { 
-                return setRoute(path, Page.About, mainEntity, options);
+            page: (path: string, mainEntity: EntityType, options?: RouteOption) => { 
+                return setRoute(path, Page.WebPage, mainEntity, options);
             },
-            collectionPage: (path: string, mainEntity: EntityType, options?: RouteOption) => { 
-                return setRoute(path, Page.Collection, mainEntity, options);
+            jsonLd: (mainEntity: EntityType) => { 
+                this.entities.push(mainEntity);
             },
-            contactPage: (path: string, mainEntity: EntityType, options?: RouteOption) => { 
-                return setRoute(path, Page.Contact, mainEntity, options);
-            },
-            itemPage: (path: string, mainEntity: EntityType, options?: RouteOption) => { 
-                return setRoute(path, Page.Item, mainEntity, options);
-            },
-            landingPage: (mainEntity: EntityType, options?: RouteOption) => { 
-                return setRoute("/", Page.Landing, mainEntity, options);
-            },
-            notFound: (path: string) => {
+            notFoundPage: (path: string) => {
                 return setRoute(path, Page.NotFound, null, null);
             },
-            profilePage: (path: string, mainEntity: EntityType, options?: RouteOption) => { 
-                return setRoute(path, Page.Profile, mainEntity, options);
+            multiplePages: (src: string | string[], getRoute: getRouteFn) => {
+                return setGenerator("multiplePages", src, getRoute);
             },
-            iterateItems: (src: string | string[], getRoute: getRouteFn) => {
-                return setGenerator("iterateItems", src, getRoute);
+            multipleJsonLds: (src: string | string[]) => {
+                return setGenerator("multipleJsonLds", src, null);
             },
             paginateCollection(collectionIRI: string, pageSize: number, getRoute: getRouteFn) {
                 return setGenerator("paginateCollection", {
@@ -121,19 +106,30 @@ export default class Router {
         }
         for (const generator of this.routeGenerators) {
             if (generator.type === "paginateCollection") {
-                await this.paginateCollection(generator.args.collectionIRI, generator.args.pageSize, generator.getRoute);
-            } else if (generator.type === "iterateItems") {
-                await this.iterateItems(generator.args, generator.getRoute);
+                await this.paginateCollection(
+                    generator.args.collectionIRI,
+                    generator.args.pageSize,
+                    generator.getRoute
+                );
+            } else if (generator.type === "paginatePartition") {
+                await this.paginatePartition(
+                    generator.args.collectionIRI,
+                    generator.args.partitionKey,
+                    generator.args.pageSize,
+                    generator.getRoute
+                );
+            } else if (generator.type === "multiplePages") {
+                await this.multiplePages(generator.args, generator.getRoute);
+            } else if (generator.type === "multipleJsonLds") {
+                await this.multipleJsonLds(generator.args);
             }
+        }
+        for (const entity of this.entities) {
+            await this.loadEntity(entity);
         }
         const pages = await this.createRoutePages();
         await this.verifySiteNavigation();
         return pages;
-
-        // const root = this.createRouteHierarchy();
-        // const flatten = toJsonLdGraph([root], SCHEMA_CONTEXT);
-        // await this.graph.load(flatten);
-        // return root;
     }
 
     private async verifySiteNavigation() {
@@ -178,11 +174,18 @@ export default class Router {
         }
     }
 
-    private async iterateItems(src: string | string[], getRoute: getRouteFn) {
+    private async multiplePages(src: string | string[], getRoute: getRouteFn) {
         const matches = searchLocalFiles(src);
         for (const srcPath of matches) {
             const data = await this.graph.load(srcPath);
-            await this.getRouteHelper(getRoute, Page.Item, data);
+            await this.getRouteHelper(getRoute, Page.WebPage, data);
+        }
+    }
+
+    private async multipleJsonLds(src: string | string[]) {
+        const matches = searchLocalFiles(src);
+        for (const srcPath of matches) {
+            this.entities.push(srcPath);
         }
     }
 
@@ -190,7 +193,16 @@ export default class Router {
         const partitions = await this.collections.getCollectionPages(collectionIRI, pageSize);
         for (const partition of partitions) {
             for (const page of partition.pages) {
-                await this.getRouteHelper(getRoute, Page.Collection, page, partition.key);
+                await this.getRouteHelper(getRoute, Page.WebPage, page, partition.key);
+            }
+        }
+    }
+
+    private async paginatePartition(collectionIRI: string, partitionKey: PartitionKey, pageSize: number, getRoute: getRouteFn) {
+        const partition = await this.collections.getPartitionPages(collectionIRI, partitionKey, pageSize);
+        if (partition) {
+            for (const page of partition.pages) {
+                await this.getRouteHelper(getRoute, Page.WebPage, page, partition.key);
             }
         }
     }
@@ -240,63 +252,5 @@ export default class Router {
         
         return page;
     }
-
-    /*
-    private createRouteHierarchy() {
-        const paths: string[] = Array.from(this.routeMap.keys());
-        paths.sort();
-        const root = {
-            path: "/",
-            children: new Map<string, RouteNode>()
-        };
-        for (const path of paths) {
-            if (path !== "/") {
-                this.addPathToTree(root, path);
-            }
-        }
-        return this.recurseHierarchy("", root);
-    }
-
-    private recurseHierarchy(prefix: string, currentNode: RouteNode) {
-        const path = prefix ? `${prefix === "/" ? prefix : `${prefix}/`}${currentNode.path}` : "/";
-        let pageJsonLd;
-        if (this.routeMap.has(path)) {
-            pageJsonLd = this.getPageJsonLd(path, this.routeMap.get(path));
-        }
-        let hasPart = [];
-        for(const childNode of Array.from(currentNode.children.values())) {
-            const childParts = this.recurseHierarchy(path, childNode);
-            if (Array.isArray(childParts)) {
-                hasPart = [...hasPart, ...childParts];
-            } else {
-                hasPart.push(childParts);
-            }
-            hasPart.forEach(d => d.isPartOf = path);
-        }
-        if (pageJsonLd) {
-            pageJsonLd.hasPart = hasPart;
-            return pageJsonLd;
-        }
-        return hasPart;
-    }
-
-    private addPathToTree(root: RouteNode, path: string) {
-        const segments = path.split("/");
-        let currentNode = root;
-        // 0 will be empty string
-        for (let i = 1; i < segments.length; i++) {
-            const pathSegment = segments[i];
-            if (currentNode.children.has(pathSegment)) {
-                currentNode = currentNode.children.get(pathSegment);
-            } else {
-                const newNode = {
-                    path: pathSegment,
-                    children: new Map<string, RouteNode>()
-                };
-                currentNode.children.set(pathSegment, newNode);
-                currentNode = newNode;
-            }
-        }
-    }*/
 
 }
