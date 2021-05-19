@@ -1,24 +1,20 @@
 import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
-import Graph from "./Graph";
 import {
     Collection,
-    SortBy,
     PartitionKey,
-    SORT_ASC
+    PAGES_FOLDER,
+    URI
 } from "./helpers/constant";
 import {
     isJsDate,
-    isNullOrUndefined,
     isObjectLiteral
 } from "./helpers/util";
-import {
-    getSortKey
-} from "./helpers/collection";
-import { searchLocalFiles, normalizeJsonLdId } from "./helpers/data";
+import { searchFiles, normalizeJsonLdId } from "./helpers/data";
+import Graph from "./Graph";
 
 type IndexItem = {
     [JSONLD_ID]: string,
-    sortValue?: string | number | Date
+    [key: string]: any
 };
 
 type IndexList = IndexItem[];
@@ -33,54 +29,56 @@ const PAGE_PATH = "_page";
 
 export default class CollectionBuilder {
     private collectionMap: Map<String, Partition[]>;
-    private siteGraph: Graph;
-    constructor(private collections: Collection[]) {
+
+    constructor(private collections: Collection[], private graph: Graph) {
         if (collections) {
             collections.forEach(c => {
-                c[JSONLD_ID] = normalizeJsonLdId(c[JSONLD_ID]);
+                c.uri = normalizeJsonLdId(c.uri);
             });
         }
         this.collectionMap = new Map<String, Partition[]>();
     }
 
-    async getCollectionByIRI(iri: string) {
-        const normalizeIRI = normalizeJsonLdId(iri);
-        const partIndex = normalizeIRI.indexOf(PARTITION_PATH);
-        let collection: Collection;
-        let partitionKey: PartitionKey;
-        if (partIndex < 0) {
-            collection = this.getCollection(normalizeIRI, true);
-        } else {
-            const prefix = normalizeIRI.substring(0, partIndex - 1); // exclude ending /
-            collection = this.getCollection(prefix, true);
+    isCollectionURI(uri: string) {
+        for (const collection of this.collections) {
+            if (collection.uri === uri) {
+                return true;
+            }
         }
-        if (collection && partIndex >= 0) {
-            const partitionKeyStr = normalizeIRI.substring(partIndex + PARTITION_PATH.length + 1);
-            partitionKey = this.decodePartitionKey(partitionKeyStr);
-        }
+        return false;
+    }
+
+    async queryCollection(uri: URI) {
+        const collection: Collection = this.getCollection(uri.path, true);
         if (!collection) {
             return null;
         }
-
+        let partitionKey = null;
+        if (uri.query) {
+            partitionKey = {};
+            for (const name of Array.from(uri.query.keys())) {
+                partitionKey[name] = uri.query.get(name);
+            }
+        }
         const partitions = await this.build(collection);
         if (!collection.groupBy) {
-            const listIRI = this.getCollectionPageUrl(collection[JSONLD_ID]);
-            return this.serializeItemList(collection, listIRI, partitions[0].feed);
+            const listUri = this.getCollectionPageUri(collection.uri);
+            return this.serializeItemList(listUri, partitions[0].feed);
         } else if (partitionKey) {
             const keyStrToMatch = this.stringifyKey(partitionKey);
             for (const partition of partitions) {
                 if (this.stringifyKey(partition.groupBy) === keyStrToMatch) {
-                    const listIRI = this.getCollectionPageUrl(collection[JSONLD_ID], partition.groupBy);
-                    return this.serializeItemList(collection, listIRI, partition.feed);
+                    const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy);
+                    return this.serializeItemList(listUri, partition.feed);
                 }
             }
         }
-        throw new Error(`No collection found for ${iri}`);
+        throw new Error(`No collection found for ${uri.path}`);
     }
 
-    async getCollectionPages(collectionIRI: string, pageSize: number) {
-        const normalizeIRI = normalizeJsonLdId(collectionIRI);
-        const collection = this.getCollection(normalizeIRI);
+    async getCollectionPages(collectionUri: string, pageSize: number) {
+        const normalizeUri = normalizeJsonLdId(collectionUri);
+        const collection = this.getCollection(normalizeUri);
         const partitions = await this.build(collection);
 
         let partitionPages = [];
@@ -93,9 +91,9 @@ export default class CollectionBuilder {
         return partitionPages;
     }
 
-    async getPartitionPages(collectionIRI: string, partitionKey: PartitionKey, pageSize: number) {
-        const normalizeIRI = normalizeJsonLdId(collectionIRI);
-        const collection = this.getCollection(normalizeIRI);
+    async getPartitionPages(collectionUri: string, partitionKey: PartitionKey, pageSize: number) {
+        const normalizeUri = normalizeJsonLdId(collectionUri);
+        const collection = this.getCollection(normalizeUri);
         const partitions = await this.build(collection);
 
         const keyStrToMatch = this.stringifyKey(partitionKey);
@@ -108,10 +106,6 @@ export default class CollectionBuilder {
             }
         }
         return null;
-    }
-
-    set graph(graph: Graph) {
-        this.siteGraph = graph;
     }
 
     private async paginatePartition(collection: Collection, partition: Partition, pageSize: number) {
@@ -132,18 +126,19 @@ export default class CollectionBuilder {
                 currentIndex = end;
             }
         }
+        /*
         for (const page of pages) {
             await this.siteGraph.load(page);
-        }
+        }*/
         return pages;
     }
 
     private serializeListItem(collection: Collection, partition: Partition, slice: IndexItem[], prevItem: any, position: number) {
-        const listIRI = this.getCollectionPageUrl(collection[JSONLD_ID], partition.groupBy, position);
+        const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy, position);
         const item: any = {
-            [JSONLD_ID]: `${listIRI}/container`,
+            [JSONLD_ID]: `${listUri}/container`,
             [JSONLD_TYPE]: "ListItem",
-            item: this.serializeItemList(collection, listIRI, slice),
+            item: this.serializeItemList(listUri, slice),
             position: position
         };
         if (prevItem) {
@@ -157,29 +152,18 @@ export default class CollectionBuilder {
         return item;
     }
 
-    private serializeItemList(collection: Collection, listIRI: string, list: IndexItem[]) {
-        const listType = collection[JSONLD_TYPE] ? collection[JSONLD_TYPE] : "ItemList";
-        switch(listType.toLowerCase()) {
-            case "sitenavigationelement":
-                return list.map(d => ({
-                    [JSONLD_TYPE]: "SiteNavigationElement",
-                    mainEntity: {
-                        [JSONLD_ID]: d[JSONLD_ID]
-                    }
-                }));
-            default:
-                return {
-                    [JSONLD_ID]: listIRI,
-                    [JSONLD_TYPE]: "ItemList",
-                    itemListElement: list.map(d => ({
-                        [JSONLD_ID]: d[JSONLD_ID]
-                    }))
-                };
-        }
+    private serializeItemList(listIRI: string, list: IndexItem[]) {
+        return {
+            [JSONLD_ID]: listIRI,
+            [JSONLD_TYPE]: "ItemList",
+            itemListElement: list.map(d => ({
+                [JSONLD_ID]: d[JSONLD_ID]
+            }))
+        };
     }
 
-    private getCollectionPageUrl(collectionIRI: string, partitionKey?: PartitionKey, pageIndex?: number) {
-        const paths = [collectionIRI];
+    private getCollectionPageUri(collectionUri: string, partitionKey?: PartitionKey, pageIndex?: number) {
+        const paths = [collectionUri];
         const params: any = partitionKey ? partitionKey : {};
         let queries = [];
         const fieldNames = Object.keys(params);
@@ -198,49 +182,31 @@ export default class CollectionBuilder {
         return paths.join("/");
     }
 
-    private decodePartitionKey(pathStr: string) {
-        const partitionKey: any = {};
-        const entries = pathStr.split("&");
-        for (const entry of entries) {
-            const keyValuePair = entry.split("=");
-            if (keyValuePair.length === 2) {
-                partitionKey[decodeURIComponent(keyValuePair[0])] = decodeURIComponent(keyValuePair[1]);
-            }
-        }
-        return partitionKey;
-    }
-
     private async build(collection: Collection) {
-        if (this.collectionMap.has(collection[JSONLD_ID])) {
-            return this.collectionMap.get(collection[JSONLD_ID]);
+        if (this.collectionMap.has(collection.uri)) {
+            return this.collectionMap.get(collection.uri);
         }
 
-        const matches = searchLocalFiles(collection.src);
+        const matches = searchFiles(PAGES_FOLDER, collection.src);
         let partitions: Partition[];
         if (collection.groupBy) {
             partitions = await this.addToPartitionedList(collection, matches);
         } else {
-            partitions = await this.addToSingleList(collection, matches);
+            partitions = await this.addToSingleList(matches);
         }
 
-        if (collection.sortBy) {
-            this.sortFeeds(partitions, collection.sortBy);
+        if (collection.sort) {
+            this.sortFeeds(partitions, collection.sort);
         }
-        this.collectionMap.set(collection[JSONLD_ID], partitions);
+        this.collectionMap.set(collection.uri, partitions);
         return partitions;
     }
 
-    /*
-    private isCollectionIriUnique(collectionIRI: string) {
-        const files = searchLocalFiles([`${collectionIRI}.*`, `${collectionIRI}\\**\\*`]);
-        return files.length === 0;
-    }*/
-
-    private async addToSingleList(collection: Collection, filePaths: string[]) {
+    private async addToSingleList(filePaths: string[]) {
         const feed: IndexList = [];
         for (const filePath of filePaths) {
-            const mainEntity = await this.siteGraph.load(filePath);
-            feed.push(this.getFeedItem(mainEntity, collection.sortBy));
+            const mainEntity = await this.graph.load(filePath);
+            feed.push(mainEntity);
         }
         return [{
             feed: feed
@@ -250,16 +216,16 @@ export default class CollectionBuilder {
     private async addToPartitionedList(collection: Collection, filePaths: string[]) {
         const partitionMap = new Map<string, Partition>();
         for (const filePath of filePaths) {
-            const mainEntity = await this.siteGraph.load(filePath);
+            const mainEntity = await this.graph.load(filePath);
             const partitions = collection.groupBy(mainEntity);
             if (Array.isArray(partitions)) {
                 for (const partitionKey of partitions) {
                     const partition = this.getPartition(partitionMap, partitionKey);
-                    partition.feed.push(this.getFeedItem(mainEntity, collection.sortBy));
+                    partition.feed.push(mainEntity);
                 }
             } else if (isObjectLiteral(partitions)) {
                 const partition = this.getPartition(partitionMap, partitions);
-                partition.feed.push(this.getFeedItem(mainEntity, collection.sortBy));
+                partition.feed.push(mainEntity);
             } else {
                 throw new Error(`Invalid partition key: ${partitions}`);
             }
@@ -281,45 +247,17 @@ export default class CollectionBuilder {
         }
         return partition;
     }
-
-    private getFeedItem(jsonld: any, sortBy?: SortBy) {
-        const item: IndexItem = { [JSONLD_ID]: jsonld[JSONLD_ID] };
-        if (sortBy) {
-            item.sortValue = getSortKey(jsonld, sortBy.prop);
-        }
-        return item;
-    }
  
-    private sortFeeds(partitions: Partition[], sortBy: SortBy) {
+    private sortFeeds(partitions: Partition[], sort: (a, b) => number) {
         for (const partition of partitions) {
-            partition.feed.sort((a, b) => this.compare(a.sortValue, b.sortValue, sortBy.order));
+            partition.feed.sort(sort);
         }
     }
 
-    private compare(aValue: any, bValue: any, order: string) {
-        if (isNullOrUndefined(aValue) && isNullOrUndefined(bValue)) {
-            return 0;
-        } else if (isNullOrUndefined(aValue)) {
-            return 1;
-        } else if (isNullOrUndefined(bValue)) {
-            return -1;
-        }
-        return this.compareNonNullValues(aValue, bValue, order);
-    }
-
-    private compareNonNullValues(aValue: any, bValue: any, order: string) {
-        if (isJsDate(aValue) && isJsDate(bValue)) {
-            return order === SORT_ASC ? (aValue.getTime() - bValue.getTime()) : (bValue.getTime() - aValue.getTime());
-        } else if (typeof(aValue) === "number" && typeof(bValue) === "number") {
-            return order === SORT_ASC ? (aValue - bValue) : (bValue - aValue);
-        }
-        return order === SORT_ASC ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
-    }
-
-    private getCollection(collectionIRI: string, suppressError: boolean = false) {
-        const collection = this.collections.find(d => d[JSONLD_ID] === collectionIRI);
+    private getCollection(collectionUri: string, suppressError: boolean = false) {
+        const collection = this.collections.find(c => c.uri === collectionUri);
         if (!collection && !suppressError) {
-            throw new Error(`collection ${collectionIRI} not found`);
+            throw new Error(`collection ${collectionUri} not found`);
         }
         return collection;
     }

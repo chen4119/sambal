@@ -8,42 +8,21 @@ import {
     isJsonLdRef
 } from "sambal-jsonld";
 import { isObjectLiteral, writeText } from "./helpers/util";
-import { OUTPUT_FOLDER } from "./helpers/constant";
-import Media from "./Media";
-import Links from "./Links";
-import CollectionBuilder from "./CollectionBuilder";
-import { 
-    isExternalSource,
-    isImageFile,
-    loadRemoteFile,
-    loadLocalFile,
-    getLocalFilePath,
-    isSupportedFile,
+import {
     normalizeJsonLdId
 } from "./helpers/data"; 
+import UriResolver from "./UriResolver";
 
-
-const IMAGE_OBJECT = "imageobject";
-const SITE_NAV_ELEMENT = "sitenavigationelement";
 const MAX_DEPTH = 100;
 
 export default class Graph {
-    private objectCache: Map<string, unknown>;
-    private siteNavs: any[];
     private blankNodeIndex: number;
 
-    constructor(
-        // private baseUrl: string,
-        private media: Media,
-        private links: Links,
-        private collectionBuilder: CollectionBuilder
-    ) {
-        this.objectCache = new Map<string, unknown>();
-        this.siteNavs = [];
+    constructor(private uriResolver: UriResolver) {
         this.blankNodeIndex = 1;
-        this.collectionBuilder.graph = this;
     }
 
+    /*
     async serialize(baseUrl: string) {
         const graph = [];
         for (const iri of Array.from(this.objectCache.keys())) {
@@ -61,19 +40,16 @@ export default class Graph {
                 ...jsonld as object
             }, null, 4));
         }
-    }
+    }*/
 
+    /*
     getIncomingLinks(iri: string) {
         return this.links.getIncomingLinks(iri);
     }
 
     getOutgoingLinks(iri: string) {
         return this.links.getOutgoingLinks(iri);
-    }
-
-    get siteNavElements() {
-        return this.siteNavs;
-    }
+    }*/
 
     async load(src: any) {
         let jsonld = src;
@@ -86,53 +62,19 @@ export default class Graph {
     }
 
     private async loadJsonLdPath(src: string) {
-        const idFromSrc = normalizeJsonLdId(src);
-        if (this.objectCache.has(idFromSrc)) {
-            return this.objectCache.get(idFromSrc);
-        }
-
-        let jsonld;
-        // need this because url can be image
-        if (isImageFile(src)) {
-            jsonld = await this.media.loadImagePath(src);
-        } else if (isExternalSource(src)) {
-            jsonld = await loadRemoteFile(src);
-        } else {
-            jsonld = await this.tryLoadingLocalFile(src);
-            if (!jsonld) {
-                jsonld = await this.collectionBuilder.getCollectionByIRI(src);
-            }
-        }
-        if (!jsonld) {
-            throw new Error(`Unable to resolve ${src}`);
-        }
-        await this.ensureJsonLd(jsonld, idFromSrc);
+        const uri = normalizeJsonLdId(src);
+        const jsonld = await this.uriResolver.resolveUri(uri);
+        await this.ensureJsonLd(jsonld, uri);
         return jsonld;
-    }
-    
-    private async tryLoadingLocalFile(src: string) {
-        try {
-            let filePath = src;
-            // Most likely no file extension specified
-            if (!isSupportedFile(filePath)) {
-                filePath = getLocalFilePath(src);
-            }
-            if (isImageFile(filePath)) {
-                return await this.media.loadImagePath(filePath);
-            }
-            return await loadLocalFile(filePath);
-        } catch (e) {
-            return null;
-        }
     }
 
     // all data need @id and @type
     private async ensureJsonLd(jsonld: any, impliedId?: string) {
+        if (Array.isArray(jsonld)) {
+            return;
+        }
         if (!jsonld[JSONLD_ID]) {
             jsonld[JSONLD_ID] = impliedId ? impliedId : `_:${this.blankNodeIndex++}`;
-        }
-        if (!jsonld[JSONLD_TYPE]) {
-            jsonld[JSONLD_TYPE] = "Thing"; // root type
         }
     }
 
@@ -172,12 +114,8 @@ export default class Graph {
             );
         } else if (isObjectLiteral(target)) {
             await this.ensureJsonLd(target);
-            this.links.add(subjectIRI, predicateIRI, target[JSONLD_ID]);
-
-            if (!this.objectCache.has(target[JSONLD_ID])) {
-                this.objectCache.set(target[JSONLD_ID], target);
-                await this.iterateObjectKeys(target, nextLevel, graph);
-            }
+            // this.links.add(subjectIRI, predicateIRI, target[JSONLD_ID]);
+            await this.iterateObjectKeys(target, nextLevel, graph);
         }
         return target;
     }
@@ -187,14 +125,10 @@ export default class Graph {
         level: number,
         graph?: Map<string, unknown>
     ) {
+        /*
         if (target[JSONLD_TYPE].toLowerCase() === IMAGE_OBJECT) {
             await this.media.loadImageObject(target);
-        } else if (target[JSONLD_TYPE].toLowerCase() === SITE_NAV_ELEMENT) {
-            // No need to process SiteNavigationElement.  Router will do it.
-            this.siteNavs.push(target);
-            return;
-        }
-
+        }*/
         let objectGraph = null;
         for (const fieldName of Object.keys(target)) {
             if (fieldName !== JSONLD_ID && fieldName !== JSONLD_TYPE && fieldName !== JSONLD_CONTEXT) {
@@ -204,7 +138,7 @@ export default class Graph {
                 }
                 target[fieldName] = await this.hydrate(
                     target[JSONLD_ID],
-                    `schema:${fieldName}`, // TODO: may not always be schema
+                    fieldName,
                     fieldValue,
                     level,
                     objectGraph ? objectGraph : graph

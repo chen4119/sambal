@@ -1,14 +1,12 @@
-import path from "path";
 import sharp, { OutputInfo, Sharp } from "sharp";
 import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
 import {
     isExternalSource,
-    loadRemoteFile,
-    loadLocalFile,
-    normalizeRelativePath
+    normalizeJsonLdId
 } from "./helpers/data";
+import { PAGES_FOLDER, DATA_FOLDER } from "./helpers/constant";
 import { formatSize, getMimeType, isObjectLiteral, writeBuffer } from "./helpers/util";
-import { searchLocalFiles } from "./helpers/data";
+import { searchFiles } from "./helpers/data";
 import { log } from "./helpers/log";
 import { URL } from "url";
 
@@ -17,11 +15,17 @@ type ImageTransform = {
     width?: number,
     height?: number,
     encodingFormat?: string
-    thumbnail?: {
+    thumbnails?: {
         name: string,
         width?: number,
         height?: number
     }[]
+};
+
+type SharpTransform = {
+    width?: number,
+    height?: number,
+    encodingFormat?: string
 };
 
 export default class Media {
@@ -29,104 +33,99 @@ export default class Media {
     private cachedJsonldMap: Map<string, unknown>;
     private publishedMediaPaths: Set<string>;
 
-    constructor(private outputFolder: string, imageTransforms: ImageTransform[]) {
+    constructor(
+        private outputFolder: string,
+        imageTransforms: ImageTransform[])
+    {
         this.imageTransformMap = new Map<string, ImageTransform>();
         this.cachedJsonldMap = new Map<string, unknown>();
         this.publishedMediaPaths = new Set<string>();
         for (const transform of imageTransforms) {
-            const matches = searchLocalFiles(transform.src);
-            matches.forEach(filePath => this.imageTransformMap.set(normalizeRelativePath(filePath), transform));
+            const matches = [
+                ...searchFiles(PAGES_FOLDER, transform.src),
+                ...searchFiles(DATA_FOLDER, transform.src)
+            ];
+            matches.forEach(filePath => this.imageTransformMap.set(normalizeJsonLdId(filePath), transform));
         }
     }
 
-    // src can be either URL or relative path
-    async loadImagePath(src: string) {
-        const normalSrc = normalizeRelativePath(src);
-        // src will have image file extension
-        if (this.cachedJsonldMap.has(normalSrc)) {
-            return this.cachedJsonldMap.get(normalSrc);
+    async loadImageUrl(uri: string, imageBuf: Buffer) {
+        if (this.cachedJsonldMap.has(uri)) {
+            return this.cachedJsonldMap.get(uri);
         }
 
-        const imageObj = this.newImageObject(normalSrc);
-
-        if (this.imageTransformMap.has(normalSrc)) {
-            await this.transform(normalSrc, imageObj, this.imageTransformMap.get(normalSrc));
+        const imageJsonLd = this.newImageObject(uri); 
+        if (this.imageTransformMap.has(uri)) {
+            await this.transform(imageJsonLd, imageBuf, this.imageTransformMap.get(uri));
         } else {
-            await this.transform(normalSrc, imageObj);
+            const output = await this.hydrateImage(imageJsonLd, imageBuf);
+            if (!isExternalSource(uri)) {
+                imageJsonLd.contentUrl = this.toLocalContentUrl(uri, output.info.format);
+                await this.writeImage(imageJsonLd.contentUrl, output.buffer);
+            }
         }
-
-        this.cachedJsonldMap.set(normalSrc, imageObj);
-        return imageObj;
+        this.cachedJsonldMap.set(uri, imageJsonLd);
+        return imageJsonLd;
     }
 
-    async loadImageObject(imageObj: any) {
-        // @id does not have image file extension
-        if (this.cachedJsonldMap.has(imageObj[JSONLD_ID])) {
-            return this.cachedJsonldMap.get(imageObj[JSONLD_ID]);
+    private async transform(imageJsonLd: any, imageBuf: Buffer, imageTransform: ImageTransform) {
+        const output = await this.hydrateImage(imageJsonLd, imageBuf, {
+            width: imageTransform.width,
+            height: imageTransform.height,
+            encodingFormat: imageTransform.encodingFormat
+        });
+        imageJsonLd.contentUrl = this.toLocalContentUrl(imageJsonLd.contentUrl, output.info.format);
+        await this.writeImage(imageJsonLd.contentUrl, output.buffer);
+        if (imageTransform.thumbnails) {
+            const thumbnailJsonLds = [];
+            for (const thumbnail of imageTransform.thumbnails) {
+                const thumbnailUrl = this.toLocalContentUrl(imageJsonLd.contentUrl, output.info.format, thumbnail.name);
+                const thumbnailJsonLd = await this.generateThumbnail(thumbnailUrl, imageBuf, {
+                    width: thumbnail.width,
+                    height: thumbnail.height,
+                    encodingFormat: imageTransform.encodingFormat
+                });
+                thumbnailJsonLds.push(thumbnailJsonLd);
+            }
+            imageJsonLd.thumbnail = thumbnailJsonLds;
         }
-        if (!imageObj.contentUrl) {
-            log.warn(`Image ${imageObj[JSONLD_ID]} does not have a contentUrl`);
-        } else {
-            imageObj.contentUrl = normalizeRelativePath(imageObj.contentUrl);
-            await this.transform(
-                imageObj.contentUrl,
-                imageObj,
-                imageObj
-            );
-        }
-        
-        return imageObj;
     }
 
-    private newImageObject(imageUrl: string) {
+    private async generateThumbnail(thumbnailUrl: string, imageBuf: Buffer, transform: SharpTransform) {
+        const thumbnailJsonLd = this.newImageObject(thumbnailUrl);
+        const output = await this.hydrateImage(thumbnailJsonLd, imageBuf, transform);
+        await this.writeImage(thumbnailUrl, output.buffer);
+        return thumbnailJsonLd;
+    }
+
+    private newImageObject(contentUrl: string): any {
         return {
             [JSONLD_TYPE]: "ImageObject",
-            contentUrl: imageUrl
+            contentUrl: contentUrl
         };
     }
 
-    private async transform(filePath: string, imageObj: any, transform?: ImageTransform) {
-        const output = await this.loadImage(filePath, transform);
-        imageObj.encodingFormat = getMimeType(output.info.format);
-        imageObj.width = output.info.width;
-        imageObj.height = output.info.height;
-        imageObj.contentSize = formatSize(output.info.size);
-        if (output.isTransformed) {
-            imageObj.contentUrl = this.updateContentUrlType(imageObj.contentUrl, output.info.format);
-            if (this.publishedMediaPaths.has(imageObj.contentUrl)) {
-                log.warn(`Duplicate ${imageObj.contentUrl}`);
-            }
-            this.publishedMediaPaths.add(imageObj.contentUrl);
-            await writeBuffer(`${this.outputFolder}${imageObj.contentUrl}`, output.buffer);
+    private async hydrateImage(imageJsonLd: any, imageBuf: Buffer, transform?: SharpTransform) {
+        const output = await this.loadImage(imageBuf, transform);
+        imageJsonLd.encodingFormat = getMimeType(output.info.format);
+        imageJsonLd.width = output.info.width;
+        imageJsonLd.height = output.info.height;
+        imageJsonLd.contentSize = formatSize(output.info.size);
+        return output;
+    }
+
+    private async writeImage(contentUrl: string, imageBuf: Buffer) {
+        if (this.publishedMediaPaths.has(contentUrl)) {
+            log.warn(`Duplicate ${contentUrl}`);
         }
-        const thumbnails = this.getThumbnails(transform);
-        if (thumbnails.length > 0) {
-            const thumbnailJsonLds = [];
-            for (const thumbnail of thumbnails) {
-                const thumbnailUrl = this.getThumbnailContentUrl(filePath, thumbnail.name, output.info.format);
-                const thumbnailJsonLd = this.newImageObject(thumbnailUrl);
-                thumbnailJsonLds.push(await this.transform(filePath, thumbnailJsonLd, {
-                    src: filePath,
-                    width: thumbnail.width,
-                    height: thumbnail.height
-                }));
-            }
-            imageObj.thumbnail = thumbnailJsonLds;
-        }
-        return imageObj;
+        this.publishedMediaPaths.add(contentUrl);
+        await writeBuffer(`${this.outputFolder}${contentUrl}`, imageBuf);
     }
     
-    
-    private async loadImage(filePath: string, transform?: ImageTransform): Promise<{info: OutputInfo, buffer: Buffer, isTransformed: boolean}> {
+    private async loadImage(imageBuf: Buffer, transform?: SharpTransform): Promise<{info: OutputInfo, buffer: Buffer}> {
         return new Promise(async (resolve, reject) => {
             try {
-                let instance;
-                if (isExternalSource(filePath)) {
-                    instance = sharp(await loadRemoteFile(filePath));
-                } else {
-                    instance = sharp(await loadLocalFile(filePath));
-                }
-                let isTransformed = false;
+                const instance = sharp(imageBuf);
                 if (transform) {
                     if (transform.width || transform.height) {
                         const options = {
@@ -134,11 +133,9 @@ export default class Media {
                             height: transform.height
                         };
                         instance.resize(options);
-                        isTransformed = true;
                     }
                     if (transform.encodingFormat) {
                         this.transformImage(instance, transform.encodingFormat);
-                        isTransformed = true;
                     }
                 }
 
@@ -149,8 +146,7 @@ export default class Media {
                     } else {
                         resolve({
                             buffer: buffer,
-                            info: info,
-                            isTransformed: isTransformed
+                            info: info
                         });
                     }
                 });
@@ -160,28 +156,24 @@ export default class Media {
             }
         });
     }
-    
-    private getThumbnails(transform?: ImageTransform) {
-        if (transform && transform.thumbnail) {
-            if (Array.isArray(transform.thumbnail)) {
-                return transform.thumbnail;
-            } else if (isObjectLiteral(transform.thumbnail)) {
-                return [transform.thumbnail];
+
+    // change filename and file extension, remove protocal if absolute url
+    private toLocalContentUrl(contentUrl: string, ext: string, fileName?: string) {
+        let localPath = contentUrl;
+        const splitted = localPath.split("/");
+        if (fileName) {
+            splitted[splitted.length - 1] = `${fileName}.${ext}`;
+            localPath = splitted.join("/");
+        } else {
+            const filename = splitted[splitted.length - 1];
+            const index = filename.lastIndexOf(".");
+            if (index >= 0) {
+                splitted[splitted.length - 1] = `${filename.substring(0, index)}.${ext}`;
+            } else {
+                splitted[splitted.length - 1] = `${filename}.${ext}`;
             }
         }
-        return [];
-    }
-    private getThumbnailContentUrl(contentUrl: string, thumbnailName: string, ext: string) {
-        return `${path.dirname(contentUrl)}/${thumbnailName}.${ext}`;
-    }
-
-    // change file extension to match mime-type, remove protocal if absolute url
-    private updateContentUrlType(contentUrl: string, ext: string) {
-        let localPath = contentUrl;
-        const index = localPath.lastIndexOf(".");
-        if (index >= 0) {
-            localPath = `${localPath.substring(0, index)}.${ext}`;
-        }
+        localPath = splitted.join("/");
         if (isExternalSource(contentUrl)) {
             const myUrl = new URL(contentUrl);
             localPath = `/${localPath.substring(myUrl.protocol.length + 2)}`;

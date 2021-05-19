@@ -1,5 +1,4 @@
 import shelljs from "shelljs";
-import Graph from "./Graph";
 import ReactSerializer from "./ui/ReactSerializer";
 import WebpackListenerPlugin from "./WebpackListenerPlugin";
 import { replaceScriptSrc } from "./helpers/html";
@@ -13,7 +12,8 @@ import {
     getAbsFilePath,
     isObjectLiteral,
     getMimeType,
-    readFileAsBuffer
+    readFileAsBuffer,
+    getFileExt
 } from "./helpers/util";
 import {
     CACHE_FOLDER,
@@ -54,8 +54,7 @@ export default class Renderer {
 
     constructor(
         private entryFile: string,
-        private theme: string | Theme,
-        private siteGraph: Graph) {
+        private theme: string | Theme) {
         this.serializer = new ReactSerializer();
         if (theme) {
             if (typeof(theme) === "string") {
@@ -187,7 +186,7 @@ export default class Renderer {
 
     async getThemeFile(filePath: string) {
         return {
-            mime: getMimeType(filePath),
+            mime: getMimeType(getFileExt(filePath)),
             data: await readFileAsBuffer(getAbsFilePath(`${this.themeFolder}/dist/client/${filePath}`))
         }
     }

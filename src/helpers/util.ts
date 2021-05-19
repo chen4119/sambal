@@ -10,9 +10,10 @@ export function isJsDate(value) {
     return typeof(value) === "object" && Object.getPrototypeOf(value) === Date.prototype;
 }
 
+/*
 export function isNullOrUndefined(val: any) {
     return typeof(val) === "undefined" || val === null;
-}
+}*/
 
 export function getAbsFilePath(src: string) {
     return path.normalize(`${process.cwd()}/${src}`);

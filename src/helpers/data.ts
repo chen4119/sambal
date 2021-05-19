@@ -11,6 +11,7 @@ import {
     safeParseJson,
     getFileExt
 } from "./util";
+import { ROUTES_FILE, PAGE_FILE } from "./constant";
 
 enum SUPPORTED_CONTENT_TYPE {
     yaml,
@@ -19,16 +20,10 @@ enum SUPPORTED_CONTENT_TYPE {
     image
 }
 
-const LINKED_DATA_ROOT_DIR = "content";
-
-const globOption = {
-    cwd: `${process.cwd()}/${LINKED_DATA_ROOT_DIR}`
-}
-
-export function searchLocalFiles(query: string | string[]): string[] {
+export function searchFiles(baseFolder: string, query: string | string[], allFiles: boolean = false): string[] {
     if (Array.isArray(query)) {
         const matchSet = query.reduce((accumulator, value) => {
-            searchLocalFiles(value).forEach(m => accumulator.add(m));
+            searchFiles(baseFolder, value).forEach(m => accumulator.add(m));
             return accumulator;
         }, new Set<string>());
         return Array.from(matchSet);
@@ -37,14 +32,21 @@ export function searchLocalFiles(query: string | string[]): string[] {
     if (isExternalSource(query)) {
         return [query];
     }
-    const matches = glob.sync(query, globOption);
+    const matches = glob.sync(query, {
+        cwd: `${process.cwd()}/${baseFolder}`
+    });
     return matches
-    .filter(m => isDataFileExist(m));
+        .filter(m => (allFiles || !isSambalReservedFile(m)) &&
+        isDataFileExist(baseFolder, m));
+}
+
+function isSambalReservedFile(filePath: string) {
+    return filePath.endsWith(ROUTES_FILE) || filePath.endsWith(PAGE_FILE);
 }
 
 export function normalizeRelativePath(src: string) {
     if (isExternalSource(src)) {
-        return src;
+        return encodeURI(src);
     }
     let normalSrc = src;
     if (normalSrc.endsWith("/")) {
@@ -58,30 +60,38 @@ export function normalizeRelativePath(src: string) {
 
 export function normalizeJsonLdId(src: string) {
     if (isExternalSource(src)) {
-        return src;
+        return encodeURI(src);
     }
-    let normalSrc = normalizeRelativePath(src);
+
+    let normalSrc = src;
+    // let queryString = "";
+    const qIndex = src.indexOf("?");
+    if (qIndex >= 0) {
+        normalSrc = src.substring(0, qIndex);
+        // queryString = src.substring(qIndex);
+    }
+    normalSrc = normalizeRelativePath(normalSrc);
     if (isSupportedFile(normalSrc)) {
         normalSrc = normalSrc.substring(0, normalSrc.lastIndexOf("."));
+    }
+    if (normalSrc === "/index") {
+        return "/";
+    }
+    if (normalSrc.endsWith("/index")) {
+        normalSrc = normalSrc.substring(0, normalSrc.length - 6);
     }
     return encodeURI(normalSrc);
 }
 
-export function getLocalFilePath(src: string) {
-    const files = glob.sync(`${src}.+(yml|yaml|json|md|jpg|jpeg|gif|png|webp)`, globOption);
-    if (files.length === 1 && isDataFileExist(files[0])) {
-        return files[0];
-    }
-
-    if (files.length === 0) {
-        throw new Error(`No file found at ${src}`);
-    } else if (files.length > 1) {
-        throw new Error(`Ambiguous ${src}, more than one file found ${files}`);
-    }
+function isDataFileExist(baseFolder: string, filePath: string) {
+    return shelljs.test('-f', getAbsFilePath(`${baseFolder}/${filePath}`));
 }
 
-function isDataFileExist(filePath: string) {
-    return shelljs.test('-f', getAbsFilePath(`${LINKED_DATA_ROOT_DIR}/${filePath}`));
+export async function loadUri(uri: string) {
+    if (isExternalSource(uri)) {
+        return await loadRemoteFile(uri);
+    }
+    return await loadLocalFile(uri);
 }
 
 export async function loadLocalFile(src: string) {
@@ -92,9 +102,9 @@ export async function loadLocalFile(src: string) {
     const contentType = getLocalFileContentType(src);
     let content;
     if (contentType === SUPPORTED_CONTENT_TYPE.image) {
-        content = await readFileAsBuffer(`${LINKED_DATA_ROOT_DIR}/${src}`);
+        content = await readFileAsBuffer(`${process.cwd()}/${src}`);
     } else {
-        content = await readTextFile(`${LINKED_DATA_ROOT_DIR}/${src}`);
+        content = await readTextFile(`${process.cwd()}/${src}`);
     }
     return parseContent(content, contentType);
 }
@@ -176,7 +186,8 @@ function parseContent(content: any, contentType: SUPPORTED_CONTENT_TYPE) {
                     encodingFormat: "text/markdown"
                 }
             case SUPPORTED_CONTENT_TYPE.image:
-                return Buffer.from(content, 'binary');
+                return content;
+                // return Buffer.from(content, 'binary');
             default:
                 throw `Unsupported content type ${contentType}.  Expecting yaml, json or markdown`;
         }

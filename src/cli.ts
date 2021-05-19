@@ -4,9 +4,12 @@ import {
     OUTPUT_FOLDER,
     SAMBAL_ENTRY_FILE,
     SAMBAL_SITE_FILE,
-    CACHE_FOLDER
+    CACHE_FOLDER,
+    DATA_FOLDER,
+    PAGES_FOLDER
 } from "./helpers/constant";
 import { getAbsFilePath, writeText } from "./helpers/util";
+import { searchFiles } from "./helpers/data";
 import { bundleSambalFile, bundleBrowserPackage } from "./helpers/bundler";
 import Renderer from "./Renderer";
 import SiteGenerator from "./SiteGenerator";
@@ -16,6 +19,9 @@ import Graph from "./Graph";
 import Media from "./Media";
 import Router from "./Router";
 import Links from "./Links";
+import UriResolver from "./UriResolver";
+import FileSystemResolver from "./resolvers/FileSystemResolver";
+import HttpResolver from "./resolvers/HttpResolver";
 import {
     makeVariableStatement,
     makeStringLiteral,
@@ -39,7 +45,6 @@ import { log } from "./helpers/log";
 
 const siteFile = getAbsFilePath(SAMBAL_SITE_FILE);
 let entryFile = getAbsFilePath(SAMBAL_ENTRY_FILE);
-let siteGraph: Graph;
 let baseUrl: string = "";
 let theme = null;
 
@@ -72,16 +77,24 @@ async function initSite(outputFolder: string) {
             throw new Error("No sambal.entry.js file found and no theme specified");
         }
 
+        // const links = new Links();
+        const pages = searchFiles(PAGES_FOLDER, "**/*", true);
+        const data = searchFiles(DATA_FOLDER, "**/*", true);
+        const uriResolver = new UriResolver();
+        const graph = new Graph(uriResolver);
+
         const imageTransforms = module.siteConfig.imageTransforms ? module.siteConfig.imageTransforms : [];
         const media = new Media(outputFolder, imageTransforms);
         const collections = module.siteConfig.collections ? module.siteConfig.collections : [];
-        const collectionBuilder = new CollectionBuilder(collections);
-        const links = new Links();
+        const collectionBuilder = new CollectionBuilder(collections, graph);
 
-        siteGraph = new Graph(media, links, collectionBuilder);
+        const fsResolver = new FileSystemResolver(pages, data, media, collectionBuilder);
+        const httpResolver = new HttpResolver(media);
+        uriResolver.fsResolver = fsResolver;
+        uriResolver.httpResolver = httpResolver;
 
-        const router = new Router(baseUrl, siteGraph, collectionBuilder);
-        module.siteMap(router.instance);
+        const router = new Router(pages, data, graph);
+        // module.siteMap(router.instance);
         log.info("Getting all routes...");
         return await router.getRoutes();
     } else {
@@ -91,6 +104,9 @@ async function initSite(outputFolder: string) {
     return [];
 }
 
+function initUriResolver(pages: string[], data: string[]) {
+    
+}
 async function serve() {
     log.info("Cleaning cache folder");
     clean(`./${CACHE_FOLDER}`);
@@ -98,7 +114,7 @@ async function serve() {
     try {
         const pages = await initSite(CACHE_FOLDER);
 
-        const renderer = new Renderer(entryFile, theme, siteGraph);
+        const renderer = new Renderer(entryFile, theme);
         await renderer.initTheme();
 
         const server = new DevServer(renderer, 3000);
@@ -117,7 +133,7 @@ async function build() {
     try {
         const pages = await initSite(OUTPUT_FOLDER);
 
-        const renderer = new Renderer(entryFile, theme, siteGraph);
+        const renderer = new Renderer(entryFile, theme);
         await renderer.build(publicPath);
 
         const builder = new SiteGenerator(publicPath, renderer);

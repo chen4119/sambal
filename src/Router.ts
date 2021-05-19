@@ -1,256 +1,143 @@
 import Graph from "./Graph";
-import CollectionBuilder from "./CollectionBuilder";
-import { searchLocalFiles, normalizeRelativePath } from "./helpers/data";
-import { JSONLD_ID, JSONLD_TYPE, isJsonLdRef } from "sambal-jsonld";
+import { JSONLD_TYPE, isJsonLdRef, JSONLD_ID } from "sambal-jsonld";
+import { PAGES_FOLDER, ROUTES_FILE, PAGE_FILE, WebPage } from "./helpers/constant";
+import { normalizeJsonLdId, loadLocalFile } from "./helpers/data";
 import { log } from "./helpers/log";
-import { PartitionKey, WebPage } from "./helpers/constant";
 
-type EntityType = string | unknown | Promise<unknown>;
-type CallbackResult = string | {path: string, options: RouteOption};
-type getRouteFn = (mainEntity: unknown, partitionKey?: unknown) => CallbackResult;
-type RouteOption = {
-    canonical?: boolean,
-    page?: EntityType
+type RouteNode = {
+    path: string,
+    files: Set<string>,
+    hasPage: boolean,
+    children: Map<string, RouteNode>
 }
-
-type Route = {
-    pageType: string,
-    mainEntity: EntityType,
-    options?: RouteOption
-}
-
-type RouteGenerator = {
-    type: string,
-    args: any,
-    getRoute: getRouteFn
-}
-
-export const Page = {
-    // About: "AboutPage",
-    // Collection: "CollectionPage",
-    // Contact: "ContactPage",
-    // Item: "ItemPage",
-    // Landing: "sambal:Landing",
-    NotFound: "sambal:NotFound",
-    WebPage: "WebPage"
-    // Profile: "ProfilePage"
-};
 
 export default class Router {
-    private routeMap: Map<string, Route>;
-    private entities: EntityType[];
-    private routeGenerators: RouteGenerator[];
-    constructor(private baseUrl: string, private graph: Graph, private collections: CollectionBuilder) {
-        this.routeMap = new Map<string, Route>();
-        this.routeGenerators = [];
-        this.entities = [];
+    private root: RouteNode;
+    private routeMap: Map<string, WebPage>;
+
+    constructor(private pages: string[], private data: string[], private graph: Graph) {
+        this.root = this.newRouteNode("/");
+        this.routeMap = new Map<string, WebPage>();
+        pages.sort();
+        pages.forEach(d => this.addPathToTree(d));
     }
-    
-    get instance() {
-        const setRoute = (path: string, pageType: string, mainEntity: EntityType, options?: RouteOption) => {
-            this.setRouteHelper(path, pageType, mainEntity, options);
-            return closure;
-        };
 
-        const setGenerator = (type: string, args: any, getRoute: getRouteFn) => {
-            this.routeGenerators.push({
-                type,
-                args,
-                getRoute
-            });
-            return closure;
-        };
-
-        const closure = {
-            page: (path: string, mainEntity: EntityType, options?: RouteOption) => { 
-                return setRoute(path, Page.WebPage, mainEntity, options);
-            },
-            jsonLd: (mainEntity: EntityType) => { 
-                this.entities.push(mainEntity);
-            },
-            notFoundPage: (path: string) => {
-                return setRoute(path, Page.NotFound, null, null);
-            },
-            multiplePages: (src: string | string[], getRoute: getRouteFn) => {
-                return setGenerator("multiplePages", src, getRoute);
-            },
-            multipleJsonLds: (src: string | string[]) => {
-                return setGenerator("multipleJsonLds", src, null);
-            },
-            paginateCollection(collectionIRI: string, pageSize: number, getRoute: getRouteFn) {
-                return setGenerator("paginateCollection", {
-                    collectionIRI,
-                    pageSize
-                }, getRoute);
-            },
-            paginatePartition(collectionIRI: string, partitionKey: PartitionKey, pageSize: number, getRoute: getRouteFn) {
-                return setGenerator("paginatePartition", {
-                    collectionIRI,
-                    partitionKey,
-                    pageSize
-                }, getRoute);
+    async getPage(uri: string) {
+        const segments = uri.split("/");
+        let currentNode = this.root;
+        let routePath = [];
+        let pageProps = {};
+        // i start at 1 because 0 is always empty string
+        for (let i = 1; i < segments.length; i++) {
+            if (currentNode.hasPage) {
+                pageProps = await this.loadPageProps(routePath);
             }
-        };
-        return closure;
-    }
-
-    async getRoutes() {
-        // load user defined routes before running generators to avoid duplicate loading
-        for (const path of Array.from(this.routeMap.keys())) {
-            const route = this.routeMap.get(path);
-            log.debug(`Route: ${path}`);
-            route.mainEntity = await this.loadEntity(route.mainEntity);
-            if (route.options.page) {
-                route.options.page = await this.loadEntity(route.options.page);
-            }
-        }
-        for (const generator of this.routeGenerators) {
-            if (generator.type === "paginateCollection") {
-                await this.paginateCollection(
-                    generator.args.collectionIRI,
-                    generator.args.pageSize,
-                    generator.getRoute
-                );
-            } else if (generator.type === "paginatePartition") {
-                await this.paginatePartition(
-                    generator.args.collectionIRI,
-                    generator.args.partitionKey,
-                    generator.args.pageSize,
-                    generator.getRoute
-                );
-            } else if (generator.type === "multiplePages") {
-                await this.multiplePages(generator.args, generator.getRoute);
-            } else if (generator.type === "multipleJsonLds") {
-                await this.multipleJsonLds(generator.args);
-            }
-        }
-        for (const entity of this.entities) {
-            await this.loadEntity(entity);
-        }
-        const pages = await this.createRoutePages();
-        await this.verifySiteNavigation();
-        return pages;
-    }
-
-    private async verifySiteNavigation() {
-        for (const nav of this.graph.siteNavElements) {
-            if (isJsonLdRef(nav.mainEntity)) {
-                const iri = nav.mainEntity[JSONLD_ID];
-                const jsonld = await this.loadEntity(iri);
-                delete nav.mainEntity;
-                nav.name = jsonld.name ? jsonld.name : jsonld.headline;
-                nav.url = jsonld.mainEntityOfPage;
-                if (!nav.url) {
-                    log.warn(`Invalid site nav: ${iri} does not have a url`);
-                    // throw new Error(`Invalid site nav link: ${iri} does not have a url`);
-                }
-            }
-        }
-    }
-
-    private async loadEntity(entity: EntityType) {
-        return await this.graph.load(await entity); // entity maybe a promise
-    }
-
-    private setRouteHelper(path: string, pageType: string, mainEntity: EntityType, options?: RouteOption) {
-        this.routeMap.set(normalizeRelativePath(path), {
-            pageType: pageType,
-            mainEntity: mainEntity,
-            options: options ? options : {}
-        });
-    }
-
-    private async getRouteHelper(getRoute: getRouteFn, pageType: string, mainEntity: any, partitionKey?: object) {
-        const route = getRoute(mainEntity, partitionKey);
-        if (typeof(route) === "string") {
-            log.debug(`Route: ${route}`);
-            this.setRouteHelper(route, pageType, mainEntity);
-        } else {
-            log.debug(`Route: ${route.path}`);
-            if (route.options.page) {
-                route.options.page = await this.loadEntity(route.options.page);
-            }
-            this.setRouteHelper(route.path, pageType, mainEntity, route.options);
-        }
-    }
-
-    private async multiplePages(src: string | string[], getRoute: getRouteFn) {
-        const matches = searchLocalFiles(src);
-        for (const srcPath of matches) {
-            const data = await this.graph.load(srcPath);
-            await this.getRouteHelper(getRoute, Page.WebPage, data);
-        }
-    }
-
-    private async multipleJsonLds(src: string | string[]) {
-        const matches = searchLocalFiles(src);
-        for (const srcPath of matches) {
-            this.entities.push(srcPath);
-        }
-    }
-
-    private async paginateCollection(collectionIRI: string, pageSize: number, getRoute: getRouteFn) {
-        const partitions = await this.collections.getCollectionPages(collectionIRI, pageSize);
-        for (const partition of partitions) {
-            for (const page of partition.pages) {
-                await this.getRouteHelper(getRoute, Page.WebPage, page, partition.key);
-            }
-        }
-    }
-
-    private async paginatePartition(collectionIRI: string, partitionKey: PartitionKey, pageSize: number, getRoute: getRouteFn) {
-        const partition = await this.collections.getPartitionPages(collectionIRI, partitionKey, pageSize);
-        if (partition) {
-            for (const page of partition.pages) {
-                await this.getRouteHelper(getRoute, Page.WebPage, page, partition.key);
-            }
-        }
-    }
-
-    private async createRoutePages() {
-        const pages: WebPage[] = [];
-        const paths: string[] = Array.from(this.routeMap.keys());
-
-        for (const path of paths) {
-            const pageJsonLd = this.getPageJsonLd(path, this.routeMap.get(path));
-            await this.graph.load(pageJsonLd);
-            pages.push(pageJsonLd);
-        }
-
-        // set mainEntityOfPage url
-        for (const page of pages) {
-            page.mainEntity.mainEntityOfPage = page.url;
-
-            const incomingLinks = this.graph.getIncomingLinks(page.mainEntity[JSONLD_ID]);
-            const mainEntityLinks = incomingLinks.filter(l => l.predicate === "schema:mainEntity");
-            if (mainEntityLinks.length > 1) {
-                log.debug("Multiple mainEntity links found %s", mainEntityLinks.map(l => l.subject));
-                for (const link of mainEntityLinks) {
-                    const relativePath = link.subject.substring(this.baseUrl.length);
-                    const route = this.routeMap.get(relativePath);
-                    if (route && route.options.canonical) {
-                        page.mainEntity.mainEntityOfPage = relativePath;
+            if (i === segments.length - 1) {
+                for (const fileName of Array.from(currentNode.files)) {
+                    const testUri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
+                    if (uri === testUri) {
+                        return await this.loadMainEntity(uri, pageProps);
                     }
                 }
-                if (!page.mainEntity.mainEntityOfPage) {
-                    log.warn(`${page.mainEntity[JSONLD_ID]} is the mainEntity of multiple pages.  Specify which one is canonical`);
-                    // throw new Error(`${page.mainEntity[JSONLD_ID]} is the mainEntity of multiple pages ${mainEntityLinks.map(l => l.subject)}.  Specify which one is canonical`);
+                return null;
+            }
+
+            if (currentNode.children.has(segments[i])) {
+                currentNode = currentNode.children.get(segments[i]);
+                routePath.push(currentNode.path);
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    getRouteIterator() {
+        const rootNode = this.root;
+        const self = this;
+        const iterator = async function* generator() {
+            const stack: RouteNode[] = [rootNode];
+            const pageProps: any[] = [];
+            let currentNode: RouteNode;
+            let currentPageProps = {};
+            let routePath = [];
+
+            while (stack.length > 0) {
+                currentNode = stack.shift();
+                if (currentNode.path !== "/") {
+                    routePath.push(currentNode.path);
+                }
+                if (currentNode.hasPage) {
+                    pageProps.unshift(currentPageProps);
+                    currentPageProps = self.loadPageProps(routePath);
+                }
+                for (const fileName of Array.from(currentNode.files)) {
+                    const uri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
+                    yield await self.loadMainEntity(uri, pageProps);
+                }
+                for(const childNode of Array.from(currentNode.children.values())) {
+                    stack.unshift(childNode);
+                }
+                routePath.pop();
+                if (currentNode.hasPage) {
+                    currentPageProps = pageProps.shift();
+                }
+            }
+        };
+        return iterator;
+    }
+
+    private async loadMainEntity(uri: string, pageProps: any) {
+        if (this.routeMap.has(uri)) {
+            return this.routeMap.get(uri);
+        }
+
+        const mainEntity = await this.graph.load(uri);
+        const webpage: WebPage = {
+            ...pageProps,
+            [JSONLD_TYPE]: "WebPage",
+            url: mainEntity[JSONLD_ID],
+            mainEntity: mainEntity
+        };
+        this.routeMap.set(uri, webpage);
+        return webpage;
+    }
+
+    private async loadPageProps(routePath: string[]) {
+        return await loadLocalFile(`${PAGES_FOLDER}/${routePath.join("/")}/${PAGE_FILE}`);
+    }
+
+    private addPathToTree(pagePath: string) {
+        const segments = pagePath.split("/");
+        let currentNode = this.root;
+        if (segments.length > 1) {
+            for (let i = 0; i < segments.length - 1; i++) {
+                const pathSegment = segments[i];
+                if (currentNode.children.has(pathSegment)) {
+                    currentNode = currentNode.children.get(pathSegment);
+                } else {
+                    const newNode = this.newRouteNode(pathSegment);
+                    currentNode.children.set(pathSegment, newNode);
+                    currentNode = newNode;
                 }
             }
         }
-        return pages;
+        const fileName = segments[segments.length - 1];
+        if (fileName === PAGE_FILE) {
+            currentNode.hasPage = true;
+        } else if (fileName === ROUTES_FILE) {
+            
+        } else {
+            currentNode.files.add(fileName);
+        }
     }
 
-    private getPageJsonLd(path: string, route: Route) {
-        const page: WebPage = {
-            ...route.options.page ? route.options.page as object : {},
-            [JSONLD_ID]: `${this.baseUrl}${path}`,
-            [JSONLD_TYPE]: route.pageType,
-            url: path,
-            mainEntity: route.mainEntity,
+    private newRouteNode(path: string): RouteNode {
+        return {
+            path: path,
+            files: new Set<string>(),
+            hasPage: false,
+            children: new Map<string, RouteNode>()
         };
-        
-        return page;
     }
-
 }

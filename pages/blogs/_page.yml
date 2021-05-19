@@ -1,0 +1,4 @@
+hasPart:
+  - "@type": "SiteNavigationElement"
+    name: About
+    url: /about

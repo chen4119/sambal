@@ -27,10 +27,7 @@ describe("Renderer", () => {
     ];
 
     beforeAll(async () => {
-        links = new Links();
-        collectionBuilder = new CollectionBuilder([]);
-        graph = new Graph(new Media(CACHE_FOLDER, []), links, collectionBuilder);
-        renderer = new Renderer(null, "mock-theme", graph);
+        renderer = new Renderer(null, "mock-theme");
         await renderer.initTheme();
         server = new DevServer(renderer, 3000);
         server.start(pages);

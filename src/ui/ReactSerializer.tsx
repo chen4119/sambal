@@ -10,7 +10,7 @@ export default class ReactSerializer implements IHtmlSerializer {
         
     }
 
-    toHtml(renderResult: unknown) {
+    toHtml(renderResult: unknown): string {
         return ReactDOMServer.renderToString(
             <>
                 {renderResult}

@@ -1,23 +1,13 @@
 import shelljs from "shelljs";
 import Renderer from "../src/Renderer";
-import CollectionBuilder from "../src/CollectionBuilder";
-import Graph from "../src/Graph";
-import Media from "../src/Media";
-import Links from "../src/Links";
 import { OUTPUT_FOLDER } from "../src/helpers/constant";
 
 describe("Renderer", () => {
     const baseUrl = "https://example.com";
     let renderer: Renderer;
-    let graph: Graph;
-    let links: Links;
-    let collectionBuilder: CollectionBuilder;
 
     beforeEach(async () => {
-        links = new Links();
-        collectionBuilder = new CollectionBuilder([]);
-        graph = new Graph(new Media(OUTPUT_FOLDER, []), links, collectionBuilder);
-        renderer = new Renderer(null, "mock-theme", graph);
+        renderer = new Renderer(null, "mock-theme");
     });
 
     afterEach(async () => {

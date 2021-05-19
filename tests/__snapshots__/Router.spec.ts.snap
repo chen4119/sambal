@@ -1,0 +1,90 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Router get / 1`] = `
+Object {
+  "@type": "WebPage",
+  "hasPart": Object {
+    "@id": "header",
+  },
+  "mainEntity": Object {
+    "@id": "/",
+    "@type": "SoftwareSourceCode",
+    "description": "A linked data static site generator",
+    "headline": "A linked data static site generator",
+    "name": "Sambal",
+  },
+  "url": "/",
+}
+`;
+
+exports[`Router get /alias/blog1 1`] = `
+Object {
+  "@type": "WebPage",
+  "hasPart": Object {
+    "@id": "header",
+  },
+  "mainEntity": Object {
+    "@id": "/blogs/blog1",
+    "@type": "BlogPosting",
+    "author": Object {
+      "@id": "/johnsmith",
+      "@type": "Person",
+      "email": "smitty123@hotmail.com",
+      "familyName": "Smith",
+      "givenName": "John",
+      "name": "John Smith",
+    },
+    "dateCreated": 2019-10-26T00:00:00.000Z,
+    "dateModified": 2019-10-26T00:00:00.000Z,
+    "encodingFormat": "text/markdown",
+    "headline": "My first blog",
+    "keywords": Array [
+      "rxjs",
+      "java script",
+    ],
+    "position": 1,
+    "text": "
+
+Hello world",
+  },
+  "url": "/blogs/blog1",
+}
+`;
+
+exports[`Router get /blogs/blog1 1`] = `
+Object {
+  "@type": "WebPage",
+  "hasPart": Array [
+    Object {
+      "@type": "SiteNavigationElement",
+      "name": "About",
+      "url": "/about",
+    },
+  ],
+  "mainEntity": Object {
+    "@id": "/blogs/blog1",
+    "@type": "BlogPosting",
+    "author": Object {
+      "@id": "/johnsmith",
+      "@type": "Person",
+      "email": "smitty123@hotmail.com",
+      "familyName": "Smith",
+      "givenName": "John",
+      "name": "John Smith",
+    },
+    "dateCreated": 2019-10-26T00:00:00.000Z,
+    "dateModified": 2019-10-26T00:00:00.000Z,
+    "encodingFormat": "text/markdown",
+    "headline": "My first blog",
+    "keywords": Array [
+      "rxjs",
+      "java script",
+    ],
+    "position": 1,
+    "text": "
+
+Hello world",
+  },
+  "url": "/blogs/blog1",
+}
+`;

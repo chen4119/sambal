@@ -1,0 +1,12 @@
+"@type": WPHeader
+headline: Sambal
+hasPart:
+  - "@type": SiteNavigationElement
+    name: About
+    url: /about
+  - "@type": SiteNavigationElement
+    name: Docs
+    url: /get-started
+potentialAction:
+  - "@type": "DownloadAction"
+    target: https://github.com/chen4119/sambal
