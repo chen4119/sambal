@@ -123,7 +123,7 @@ export default class UriResolver {
     async hydrateUri(uri: string) {
         let jsonld = await this.resolveUri(uri);
         this.ensureJsonLd(jsonld, normalizeJsonLdId(uri));
-        jsonld = await this.hydrate(jsonld, 1);
+        jsonld = await this.hydrate(jsonld);
         return jsonld;
     }
 
@@ -137,15 +137,14 @@ export default class UriResolver {
         }
     }
 
-    private async hydrate(
+    async hydrate(
         target: unknown,
-        level: number,
+        level: number = 1,
         graph?: Map<string, unknown>
     ) {
         if (level > MAX_DEPTH) {
             throw new Error("Hydrating jsonld exceeded max depth level");
         }
-
         const nextLevel = level + 1;
         if (Array.isArray(target)) {
             const resolvedArr = [];
@@ -165,11 +164,11 @@ export default class UriResolver {
             }
             return await this.hydrate(
                 nextTarget,
-                level,
+                nextLevel,
                 graph
             );
         } else if (isObjectLiteral(target)) {
-            await this.ensureJsonLd(target);
+            this.ensureJsonLd(target);
             await this.iterateObjectKeys(target, nextLevel, graph);
         }
         return target;

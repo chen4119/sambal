@@ -127,6 +127,7 @@ export default class CollectionResolver implements IResolver {
     private serialize(listUri: string, pages: WebPage[], nav: boolean) {
         if (nav) {
             return pages.map(page => ({
+                [JSONLD_TYPE]: "SiteNavigationElement",
                 name: page.mainEntity.name ? page.mainEntity.name : page.mainEntity.headline,
                 url: page.url
             }));
@@ -207,7 +208,7 @@ export default class CollectionResolver implements IResolver {
     private async addToSingleList(routes: string[]) {
         const feed = [];
         for (const route of routes) {
-            const page = await this.router.getPage(route);
+            const page = await this.router.getPage(route, false);
             feed.push(page);
         }
         return [{
@@ -218,7 +219,7 @@ export default class CollectionResolver implements IResolver {
     private async addToPartitionedList(collection: Collection, routes: string[]) {
         const partitionMap = new Map<string, Partition>();
         for (const route of routes) {
-            const page = await this.router.getPage(route);
+            const page = await this.router.getPage(route, false);
             const partitions = collection.groupBy(page.mainEntity);
             if (Array.isArray(partitions)) {
                 for (const partitionKey of partitions) {

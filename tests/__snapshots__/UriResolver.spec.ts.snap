@@ -51,3 +51,73 @@ Object {
   "name": "John Smith",
 }
 `;
+
+exports[`UriResolver hydrate blog1 1`] = `
+Object {
+  "@id": "/blogs/blog1",
+  "@type": "BlogPosting",
+  "author": Object {
+    "@id": "/johnsmith",
+    "@type": "Person",
+    "email": "smitty123@hotmail.com",
+    "familyName": "Smith",
+    "givenName": "John",
+    "name": "John Smith",
+  },
+  "dateCreated": 2019-10-26T00:00:00.000Z,
+  "dateModified": 2019-10-26T00:00:00.000Z,
+  "encodingFormat": "text/markdown",
+  "headline": "My first blog",
+  "keywords": Array [
+    "rxjs",
+    "java script",
+  ],
+  "position": 1,
+  "text": "
+
+Hello world",
+}
+`;
+
+exports[`UriResolver hydrate header 1`] = `
+Object {
+  "@id": "/header",
+  "@type": "WPHeader",
+  "hasPart": Array [
+    Object {
+      "@id": "_:1",
+      "@type": "SiteNavigationElement",
+      "name": "About",
+      "url": "/about",
+    },
+    Object {
+      "@id": "_:2",
+      "@type": "SiteNavigationElement",
+      "name": "Docs",
+      "url": "/get-started",
+    },
+    Array [
+      Object {
+        "@id": "_:3",
+        "@type": "SiteNavigationElement",
+        "name": "My first blog",
+        "url": "/blogs/blog1",
+      },
+      Object {
+        "@id": "_:4",
+        "@type": "SiteNavigationElement",
+        "name": "My second blog",
+        "url": "/blogs/blog2",
+      },
+    ],
+  ],
+  "headline": "Sambal",
+  "potentialAction": Array [
+    Object {
+      "@id": "_:5",
+      "@type": "DownloadAction",
+      "target": "https://github.com/chen4119/sambal",
+    },
+  ],
+}
+`;

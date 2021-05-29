@@ -50,7 +50,7 @@ export default class Router {
         );
     }
 
-    async getPage(uri: string) {
+    async getPage(uri: string, withPageProps: boolean = true) {
         if (this.routeMap.has(uri)) {
             return this.routeMap.get(uri);
         }
@@ -58,16 +58,18 @@ export default class Router {
         const segments = uri.split("/");
         let currentNode = this.root;
         let routePath = [];
-        let pageProps = {};
+        const stack: string[][] = [];
+
         // i start at 1 because 0 is always empty string
         for (let i = 1; i < segments.length; i++) {
             if (currentNode.hasPage) {
-                pageProps = await this.loadPageProps(routePath);
+                stack.unshift([...routePath]);
             }
             if (i === segments.length - 1) {
                 for (const fileName of Array.from(currentNode.files)) {
                     const testUri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
                     if (uri === testUri) {
+                        const pageProps = withPageProps ? await this.loadPageProps(stack.shift()) : {};
                         return await this.loadWebPage(uri, pageProps);
                     }
                 }
@@ -159,7 +161,8 @@ export default class Router {
     }
 
     private async loadPageProps(routePath: string[]) {
-        return await loadLocalFile(`${PAGES_FOLDER}/${routePath.join("/")}/${PAGE_FILE}`);
+        const json = await loadLocalFile(`${PAGES_FOLDER}/${routePath.join("/")}/${PAGE_FILE}`);
+        return await this.uriResolver.hydrate(json);
     }
 
     private collectRoutes() {

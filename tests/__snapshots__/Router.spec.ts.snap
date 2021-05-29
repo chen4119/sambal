@@ -2,9 +2,47 @@
 
 exports[`Router get / 1`] = `
 Object {
+  "@id": "_:1",
   "@type": "WebPage",
   "hasPart": Object {
-    "@id": "header",
+    "@id": "/header",
+    "@type": "WPHeader",
+    "hasPart": Array [
+      Object {
+        "@id": "_:2",
+        "@type": "SiteNavigationElement",
+        "name": "About",
+        "url": "/about",
+      },
+      Object {
+        "@id": "_:3",
+        "@type": "SiteNavigationElement",
+        "name": "Docs",
+        "url": "/get-started",
+      },
+      Array [
+        Object {
+          "@id": "_:4",
+          "@type": "SiteNavigationElement",
+          "name": "My first blog",
+          "url": "/blogs/blog1",
+        },
+        Object {
+          "@id": "_:5",
+          "@type": "SiteNavigationElement",
+          "name": "My second blog",
+          "url": "/blogs/blog2",
+        },
+      ],
+    ],
+    "headline": "Sambal",
+    "potentialAction": Array [
+      Object {
+        "@id": "_:6",
+        "@type": "DownloadAction",
+        "target": "https://github.com/chen4119/sambal",
+      },
+    ],
   },
   "mainEntity": Object {
     "@id": "/",
@@ -19,9 +57,47 @@ Object {
 
 exports[`Router get /alias/blog1 1`] = `
 Object {
+  "@id": "_:1",
   "@type": "WebPage",
   "hasPart": Object {
-    "@id": "header",
+    "@id": "/header",
+    "@type": "WPHeader",
+    "hasPart": Array [
+      Object {
+        "@id": "_:2",
+        "@type": "SiteNavigationElement",
+        "name": "About",
+        "url": "/about",
+      },
+      Object {
+        "@id": "_:3",
+        "@type": "SiteNavigationElement",
+        "name": "Docs",
+        "url": "/get-started",
+      },
+      Array [
+        Object {
+          "@id": "_:4",
+          "@type": "SiteNavigationElement",
+          "name": "My first blog",
+          "url": "/blogs/blog1",
+        },
+        Object {
+          "@id": "_:5",
+          "@type": "SiteNavigationElement",
+          "name": "My second blog",
+          "url": "/blogs/blog2",
+        },
+      ],
+    ],
+    "headline": "Sambal",
+    "potentialAction": Array [
+      Object {
+        "@id": "_:6",
+        "@type": "DownloadAction",
+        "target": "https://github.com/chen4119/sambal",
+      },
+    ],
   },
   "mainEntity": Object {
     "@id": "/blogs/blog1",
@@ -53,9 +129,11 @@ Hello world",
 
 exports[`Router get /blogs/blog1 1`] = `
 Object {
+  "@id": "_:1",
   "@type": "WebPage",
   "hasPart": Array [
     Object {
+      "@id": "_:2",
       "@type": "SiteNavigationElement",
       "name": "About",
       "url": "/about",

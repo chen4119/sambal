@@ -1,39 +1,11 @@
 import Router from "../src/Router";
 import { init } from "./setup";
-import { Collection } from "../src/helpers/constant";
 
 describe("Router", () => {
     let router: Router;
 
-    const collections: Collection[] = [
-        {
-            uri: "/collections/tags",
-            match: ["/blogs/**/*"],
-            groupBy: (mainEntity) => {
-                return mainEntity.keywords.map(tag => ({
-                    tag: tag
-                }));
-            },
-            sort: (a, b) => {
-                return a.position - b.position;
-            }
-        },
-        {
-            uri: "/collections/year",
-            match: ["/blogs/**/*"],
-            groupBy: (mainEntity) => {
-                return {
-                    year: mainEntity.dateCreated.getFullYear()
-                }
-            },
-            sort: (a, b) => {
-                return a.dateModified.getTime() - b.dateModified.getTime();
-            }
-        }
-    ];
-
     beforeEach(async () => {
-        const classes = init(collections, []);
+        const classes = init();
         router = classes.router;
     });
 

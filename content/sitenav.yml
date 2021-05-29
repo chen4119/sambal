@@ -1,5 +1,0 @@
-"@type": "ItemList"
-itemListElement:
-  - "@type": "SiteNavigationElement"
-    name: About
-    url: /about

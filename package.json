@@ -26,7 +26,7 @@
     "scripts": {
         "init": "ts-node src/cli.ts init",
         "start": "ts-node src/cli.ts build",
-        "test": "jest tests/UriResolver.spec.ts",
+        "test": "jest",
         "test:coverage": "jest --coverage",
         "build": "npm run clean && tsc",
         "clean": "rimraf ./dist",
