@@ -9,6 +9,7 @@ import {
     readTextFile,
     frontMatter,
     safeParseJson,
+    getPathnameAndQuery,
     getFileExt
 } from "./util";
 import { ROUTES_FILE, PAGE_FILE } from "./constant";
@@ -63,14 +64,8 @@ export function normalizeJsonLdId(src: string) {
         return encodeURI(src);
     }
 
-    let normalSrc = src;
-    // let queryString = "";
-    const qIndex = src.indexOf("?");
-    if (qIndex >= 0) {
-        normalSrc = src.substring(0, qIndex);
-        // queryString = src.substring(qIndex);
-    }
-    normalSrc = normalizeRelativePath(normalSrc);
+    const pathAndQuery = getPathnameAndQuery(src);
+    let normalSrc = normalizeRelativePath(pathAndQuery.pathname);
     if (isSupportedFile(normalSrc)) {
         normalSrc = normalSrc.substring(0, normalSrc.lastIndexOf("."));
     }
@@ -80,18 +75,11 @@ export function normalizeJsonLdId(src: string) {
     if (normalSrc.endsWith("/index")) {
         normalSrc = normalSrc.substring(0, normalSrc.length - 6);
     }
-    return encodeURI(normalSrc);
+    return `${encodeURI(normalSrc)}${pathAndQuery.query ? `?${pathAndQuery.query.toString()}` : ""}`;
 }
 
 function isDataFileExist(baseFolder: string, filePath: string) {
     return shelljs.test('-f', getAbsFilePath(`${baseFolder}/${filePath}`));
-}
-
-export async function loadUri(uri: string) {
-    if (isExternalSource(uri)) {
-        return await loadRemoteFile(uri);
-    }
-    return await loadLocalFile(uri);
 }
 
 export async function loadLocalFile(src: string) {

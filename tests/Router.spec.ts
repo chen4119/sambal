@@ -1,35 +1,46 @@
 import Router from "../src/Router";
-import CollectionBuilder from "../src/CollectionBuilder";
-import Graph from "../src/Graph";
-import Media from "../src/Media";
-import UriResolver from "../src/UriResolver";
-import FileSystemResolver from "../src/resolvers/FileSystemResolver";
-import HttpResolver from "../src/resolvers/HttpResolver";
-import { CACHE_FOLDER, PAGES_FOLDER, DATA_FOLDER } from "../src/helpers/constant";
-import { searchFiles } from "../src/helpers/data";
+import { init } from "./setup";
+import { Collection } from "../src/helpers/constant";
 
 describe("Router", () => {
     let router: Router;
 
-    const pages = searchFiles(PAGES_FOLDER, "**/*", true);
-    const data = searchFiles(DATA_FOLDER, "**/*", true);
+    const collections: Collection[] = [
+        {
+            uri: "/collections/tags",
+            match: ["/blogs/**/*"],
+            groupBy: (mainEntity) => {
+                return mainEntity.keywords.map(tag => ({
+                    tag: tag
+                }));
+            },
+            sort: (a, b) => {
+                return a.position - b.position;
+            }
+        },
+        {
+            uri: "/collections/year",
+            match: ["/blogs/**/*"],
+            groupBy: (mainEntity) => {
+                return {
+                    year: mainEntity.dateCreated.getFullYear()
+                }
+            },
+            sort: (a, b) => {
+                return a.dateModified.getTime() - b.dateModified.getTime();
+            }
+        }
+    ];
 
     beforeEach(async () => {
-        const uriResolver = new UriResolver();
-        const graph = new Graph(uriResolver);
-        const media = new Media(CACHE_FOLDER, []);
-        const collections = new CollectionBuilder([], graph);
-        const fsResolver = new FileSystemResolver(pages, data, media, collections);
-        const httpResolver = new HttpResolver(media);
-        uriResolver.fsResolver = fsResolver;
-        uriResolver.httpResolver = httpResolver;
-        router = new Router(pages, data, graph);
+        const classes = init(collections, []);
+        router = classes.router;
     });
 
     it('iterate routes', async () => {
-        const routeIterator = router.getRouteIterator();
+        const routeIterator = router.getPageIterator();
         let count = 0;
-        for await (const route of routeIterator()) {
+        for await (const route of routeIterator) {
             count ++;
         }
         expect(count).toBe(4);

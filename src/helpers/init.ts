@@ -33,10 +33,6 @@ export const defaultOptions = {
 
 export function initSambalSite(): string {
     return`
-export function siteMap(router) {
-    router.page("/", "blogs/blog1");
-}
-
 export const siteConfig = {
     baseUrl: "https://example.com",
     collections: [

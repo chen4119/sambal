@@ -7,30 +7,23 @@ import {
 import {
     normalizeJsonLdId,
     loadLocalFile,
-    loadUri,
     isImageFile
 } from "../helpers/data";
 import { log } from "../helpers/log";
-import Media from "../Media";
-import CollectionBuilder from "../CollectionBuilder";
-import { isSchemaType } from "sambal-jsonld";
-
-const IMAGE_OBJECT = "imageobject";
 
 export default class FileSystemResolver implements IResolver {
     private localFileMap: Map<string, string>; // map uri to file path
     private objectCache: Map<string, unknown>;
 
-    constructor(
-        pages: string[],
-        data: string[],
-        private media: Media,
-        private collections: CollectionBuilder) {
-
+    constructor(pages: string[], data: string[]) {
         this.localFileMap = new Map<string, string>(); 
         this.objectCache = new Map<string, unknown>();
         this.indexFilePaths(PAGES_FOLDER, pages);
         this.indexFilePaths(DATA_FOLDER, data);   
+    }
+
+    isLocalImageFile(uriStr: string) {
+        return this.localFileMap.has(uriStr) && isImageFile(this.localFileMap.get(uriStr));
     }
 
     async resolveUri(uri: URI) {
@@ -41,21 +34,10 @@ export default class FileSystemResolver implements IResolver {
 
         if (this.localFileMap.has(uriStr)) {
             const filePath = this.localFileMap.get(uriStr);
-            let jsonld;
-            if (isImageFile(filePath)) {
-                const image = await loadLocalFile(filePath);
-                jsonld = await this.media.loadImageUrl(uriStr, image);
-            } else {
-                jsonld = await loadLocalFile(filePath);
-                if (isSchemaType(jsonld, IMAGE_OBJECT, false)) {
-                    const image = await loadUri(jsonld.contentUrl);
-                    jsonld = await this.media.loadImageUrl(uriStr, image);
-                }
-            }
+            const jsonld = await loadLocalFile(filePath);
             this.objectCache.set(uriStr, jsonld);
             return jsonld;
         }
-        // TODO: load collection
         throw new Error(`Unable to resolve ${uriStr}`);
     }
 

@@ -1,8 +1,23 @@
-import Graph from "./Graph";
-import { JSONLD_TYPE, isJsonLdRef, JSONLD_ID } from "sambal-jsonld";
-import { PAGES_FOLDER, ROUTES_FILE, PAGE_FILE, WebPage } from "./helpers/constant";
+import {
+    JSONLD_TYPE,
+    JSONLD_CONTEXT,
+    SCHEMA_CONTEXT,
+    JSONLD_ID,
+    isJsonLdRef
+} from "sambal-jsonld";
+import {
+    PAGES_FOLDER,
+    ROUTES_FILE,
+    PAGE_FILE,
+    Collection,
+    WebPage,
+    FS_PROTO
+} from "./helpers/constant";
 import { normalizeJsonLdId, loadLocalFile } from "./helpers/data";
 import { log } from "./helpers/log";
+import UriResolver from "./UriResolver";
+import mm from "micromatch";
+import CollectionResolver from "./resolvers/CollectionResolver";
 
 type RouteNode = {
     path: string,
@@ -14,15 +29,32 @@ type RouteNode = {
 export default class Router {
     private root: RouteNode;
     private routeMap: Map<string, WebPage>;
+    private collectionRoutes: Map<string, string[]>;
+    private collectionResolver: CollectionResolver;
 
-    constructor(private pages: string[], private data: string[], private graph: Graph) {
+    constructor(
+        private pages: string[],
+        private data: string[],
+        private collections: Collection[],
+        private uriResolver: UriResolver) {
         this.root = this.newRouteNode("/");
         this.routeMap = new Map<string, WebPage>();
-        pages.sort();
+        this.collectionRoutes = new Map<string, string[]>();
+        // pages.sort();
         pages.forEach(d => this.addPathToTree(d));
+        this.collectRoutes();
+        this.collectionResolver = new CollectionResolver(collections, this.collectionRoutes, this);
+        this.uriResolver.addResolver(
+            {protocol: FS_PROTO, path: collections.map(c => c.uri)},
+            this.collectionResolver
+        );
     }
 
     async getPage(uri: string) {
+        if (this.routeMap.has(uri)) {
+            return this.routeMap.get(uri);
+        }
+
         const segments = uri.split("/");
         let currentNode = this.root;
         let routePath = [];
@@ -36,7 +68,7 @@ export default class Router {
                 for (const fileName of Array.from(currentNode.files)) {
                     const testUri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
                     if (uri === testUri) {
-                        return await this.loadMainEntity(uri, pageProps);
+                        return await this.loadWebPage(uri, pageProps);
                     }
                 }
                 return null;
@@ -52,7 +84,7 @@ export default class Router {
         return null;
     }
 
-    getRouteIterator() {
+    getPageIterator() {
         const rootNode = this.root;
         const self = this;
         const iterator = async function* generator() {
@@ -73,7 +105,8 @@ export default class Router {
                 }
                 for (const fileName of Array.from(currentNode.files)) {
                     const uri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
-                    yield await self.loadMainEntity(uri, pageProps);
+                    log.debug(`Route: ${uri}`);
+                    yield await self.loadWebPage(uri, pageProps);
                 }
                 for(const childNode of Array.from(currentNode.children.values())) {
                     stack.unshift(childNode);
@@ -84,15 +117,37 @@ export default class Router {
                 }
             }
         };
-        return iterator;
+        return iterator();
     }
 
-    private async loadMainEntity(uri: string, pageProps: any) {
-        if (this.routeMap.has(uri)) {
-            return this.routeMap.get(uri);
-        }
+    getJsonLdIterator(baseUrl: string) {
+        const self = this;
+        const iterator = async function* generator() {
+            const localFiles = [...self.pages, ...self.data];
+            for (const filePath of localFiles) {
+                if (filePath.endsWith(PAGE_FILE) || filePath.endsWith(ROUTES_FILE)) {
+                    continue;
+                }
+                
+                const uri = normalizeJsonLdId(filePath);
+                const jsonld = await self.uriResolver.resolveUri(uri);
+                if (!isJsonLdRef(jsonld)) {
+                    yield {
+                        [JSONLD_ID]: uri,
+                        [JSONLD_CONTEXT]: {
+                            "@vocab": SCHEMA_CONTEXT,
+                            "@base": baseUrl
+                        },
+                        ...jsonld
+                    }
+                }
+            }
+        };
+        return iterator();
+    }
 
-        const mainEntity = await this.graph.load(uri);
+    private async loadWebPage(uri: string, pageProps: any) {
+        const mainEntity = await this.uriResolver.hydrateUri(uri);
         const webpage: WebPage = {
             ...pageProps,
             [JSONLD_TYPE]: "WebPage",
@@ -105,6 +160,26 @@ export default class Router {
 
     private async loadPageProps(routePath: string[]) {
         return await loadLocalFile(`${PAGES_FOLDER}/${routePath.join("/")}/${PAGE_FILE}`);
+    }
+
+    private collectRoutes() {
+        const routes = [];
+        this.flattenRoutes(this.root, "", routes);
+        for (const collection of this.collections) {
+            const matches = mm(routes, collection.match);
+            this.collectionRoutes.set(collection.uri, matches);
+        }
+    }
+
+    private flattenRoutes(node: RouteNode, prefix: string, routes: string[]) {
+        const currentPrefix = node.path === "/" ? "" : `${prefix}${node.path}/`;
+        for (const fileName of Array.from(node.files)) {
+            routes.push(normalizeJsonLdId(`/${currentPrefix}${fileName}`));
+        }
+        for (const segment of Array.from(node.children.keys())) {
+            const childNode = node.children.get(segment);
+            this.flattenRoutes(childNode, currentPrefix, routes);
+        }
     }
 
     private addPathToTree(pagePath: string) {

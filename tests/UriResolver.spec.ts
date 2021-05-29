@@ -1,11 +1,7 @@
 import shelljs from "shelljs";
 import UriResolver from "../src/UriResolver";
-import FileSystemResolver from "../src/resolvers/FileSystemResolver";
-import HttpResolver from "../src/resolvers/HttpResolver";
-import Media from "../src/Media";
-import CollectionBuilder from "../src/CollectionBuilder";
-import { CACHE_FOLDER } from "../src/helpers/constant";
-import Graph from "../src/Graph";
+import { CACHE_FOLDER, Collection } from "../src/helpers/constant";
+import { init } from "./setup";
 
 describe("UriResolver", () => {
     let uriResolver: UriResolver;
@@ -22,25 +18,37 @@ describe("UriResolver", () => {
             ]
         }
     ];
-    
-    const pages = [
-        "blogs/blog1.md"
-    ];
 
-    const data = [
-        "johnsmith.yml",
-        "images/image2.jpg"
+    const collections: Collection[] = [
+        {
+            uri: "/collections/tags",
+            match: ["/blogs/**/*"],
+            groupBy: (mainEntity) => {
+                return mainEntity.keywords.map(tag => ({
+                    tag: tag
+                }));
+            },
+            sort: (a, b) => {
+                return a.position - b.position;
+            }
+        },
+        {
+            uri: "/collections/year",
+            match: ["/blogs/**/*"],
+            groupBy: (mainEntity) => {
+                return {
+                    year: mainEntity.dateCreated.getFullYear()
+                }
+            },
+            sort: (a, b) => {
+                return a.dateModified.getTime() - b.dateModified.getTime();
+            }
+        }
     ];
 
     beforeEach(async () => {
-        uriResolver = new UriResolver();
-        const graph = new Graph(uriResolver);
-        const media = new Media(CACHE_FOLDER, transforms);
-        const collections = new CollectionBuilder([], graph);
-        const fsResolver = new FileSystemResolver(pages, data, media, collections);
-        const httpResolver = new HttpResolver(media);
-        uriResolver.fsResolver = fsResolver;
-        uriResolver.httpResolver = httpResolver;
+        const classes = init(collections, transforms);
+        uriResolver = classes.uriResolver
     });
 
     afterEach(async () => {
@@ -62,6 +70,12 @@ describe("UriResolver", () => {
         expect(result).toMatchSnapshot();
         expect(shelljs.test('-f', `${CACHE_FOLDER}/images/image2.webp`)).toBeTruthy();
         expect(shelljs.test('-f', `${CACHE_FOLDER}/images/image2-50.webp`)).toBeTruthy();
+    });
+
+    it('get collections/tags', async () => {
+        const collection = await uriResolver.resolveUri("collections/tags?tag=java%20script");
+        expect(collection["@id"]).toBe("/collections/tags/_part/tag=java%20script");
+        expect(collection.itemListElement.length).toBe(2);
     });
 
 });

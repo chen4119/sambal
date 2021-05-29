@@ -9,19 +9,14 @@ import {
     PAGES_FOLDER
 } from "./helpers/constant";
 import { getAbsFilePath, writeText } from "./helpers/util";
-import { searchFiles } from "./helpers/data";
+import { searchFiles, normalizeJsonLdId } from "./helpers/data";
 import { bundleSambalFile, bundleBrowserPackage } from "./helpers/bundler";
 import Renderer from "./Renderer";
 import SiteGenerator from "./SiteGenerator";
 import DevServer from "./DevServer";
-import CollectionBuilder from "./CollectionBuilder";
-import Graph from "./Graph";
 import Media from "./Media";
 import Router from "./Router";
-import Links from "./Links";
 import UriResolver from "./UriResolver";
-import FileSystemResolver from "./resolvers/FileSystemResolver";
-import HttpResolver from "./resolvers/HttpResolver";
 import {
     makeVariableStatement,
     makeStringLiteral,
@@ -80,45 +75,32 @@ async function initSite(outputFolder: string) {
         // const links = new Links();
         const pages = searchFiles(PAGES_FOLDER, "**/*", true);
         const data = searchFiles(DATA_FOLDER, "**/*", true);
-        const uriResolver = new UriResolver();
-        const graph = new Graph(uriResolver);
 
         const imageTransforms = module.siteConfig.imageTransforms ? module.siteConfig.imageTransforms : [];
         const media = new Media(outputFolder, imageTransforms);
         const collections = module.siteConfig.collections ? module.siteConfig.collections : [];
-        const collectionBuilder = new CollectionBuilder(collections, graph);
+        collections.forEach(c => {
+            c.uri = normalizeJsonLdId(c.uri);
+        });
 
-        const fsResolver = new FileSystemResolver(pages, data, media, collectionBuilder);
-        const httpResolver = new HttpResolver(media);
-        uriResolver.fsResolver = fsResolver;
-        uriResolver.httpResolver = httpResolver;
-
-        const router = new Router(pages, data, graph);
-        // module.siteMap(router.instance);
-        log.info("Getting all routes...");
-        return await router.getRoutes();
-    } else {
-        throw new Error("No sambal.site.js file found");
+        const uriResolver = new UriResolver(pages, data, media);
+        return new Router(pages, data, collections, uriResolver);
     }
-
-    return [];
+    throw new Error("No sambal.site.js file found");
 }
 
-function initUriResolver(pages: string[], data: string[]) {
-    
-}
 async function serve() {
     log.info("Cleaning cache folder");
     clean(`./${CACHE_FOLDER}`);
 
     try {
-        const pages = await initSite(CACHE_FOLDER);
+        const router = await initSite(CACHE_FOLDER);
 
         const renderer = new Renderer(entryFile, theme);
         await renderer.initTheme();
 
-        const server = new DevServer(renderer, 3000);
-        server.start(pages);
+        const server = new DevServer(router, renderer, 3000);
+        server.start();
     } catch(e) {
         log.error(e);
     }
@@ -131,16 +113,16 @@ async function build() {
     const publicPath = `/js`;
     
     try {
-        const pages = await initSite(OUTPUT_FOLDER);
+        const router = await initSite(OUTPUT_FOLDER);
 
         const renderer = new Renderer(entryFile, theme);
         await renderer.build(publicPath);
 
-        const builder = new SiteGenerator(publicPath, renderer);
-        await builder.start(pages);
+        const builder = new SiteGenerator(router, renderer);
+        await builder.buildPages(publicPath);
 
         log.info("Writing schema.org json-lds");
-        await siteGraph.serialize(baseUrl);
+        await builder.buildJsonLds(baseUrl);
     } catch(e) {
         log.error(e);
     }
@@ -194,9 +176,8 @@ async function publishTheme() {
 }
 
 async function init() {
-    const contentFolder = "content";
-    await writeText(getAbsFilePath(`${contentFolder}/blogs/blog1.md`), initBlogpost("author"));
-    await writeText(getAbsFilePath(`${contentFolder}/author.yml`), initPerson());
+    await writeText(getAbsFilePath(`${PAGES_FOLDER}/blogs/blog1.md`), initBlogpost("author"));
+    await writeText(getAbsFilePath(`${DATA_FOLDER}/author.yml`), initPerson());
     await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());
     await writeText(getAbsFilePath(SAMBAL_ENTRY_FILE), initSambalEntry());
 }

@@ -1,81 +1,75 @@
 import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
 import {
+    IResolver,
     Collection,
     PartitionKey,
-    PAGES_FOLDER,
-    URI
-} from "./helpers/constant";
+    URI,
+    WebPage
+} from "../helpers/constant";
 import {
     isJsDate,
     isObjectLiteral
-} from "./helpers/util";
-import { searchFiles, normalizeJsonLdId } from "./helpers/data";
-import Graph from "./Graph";
+} from "../helpers/util";
+import Router from "../Router";
 
+/*
 type IndexItem = {
     [JSONLD_ID]: string,
     [key: string]: any
 };
 
-type IndexList = IndexItem[];
+type IndexList = IndexItem[];*/
 
 type Partition = {
     groupBy?: PartitionKey,
-    feed: IndexList
+    feed: WebPage[]
 };
 
 const PARTITION_PATH = "_part";
 const PAGE_PATH = "_page";
 
-export default class CollectionBuilder {
+export default class CollectionResolver implements IResolver {
     private collectionMap: Map<String, Partition[]>;
 
-    constructor(private collections: Collection[], private graph: Graph) {
-        if (collections) {
-            collections.forEach(c => {
-                c.uri = normalizeJsonLdId(c.uri);
-            });
-        }
+    constructor(
+        private collections: Collection[],
+        private collectionRoutes: Map<string, string[]>,
+        private router: Router) {
         this.collectionMap = new Map<String, Partition[]>();
     }
 
-    isCollectionURI(uri: string) {
-        for (const collection of this.collections) {
-            if (collection.uri === uri) {
-                return true;
-            }
-        }
-        return false;
-    }
 
-    async queryCollection(uri: URI) {
-        const collection: Collection = this.getCollection(uri.path, true);
-        if (!collection) {
-            return null;
-        }
-        let partitionKey = null;
+    async resolveUri(uri: URI) {
+        const collection: Collection = this.getCollection(uri.path);
+        let partitionKey = {};
+        // let pageSize = -1;
+        let nav = false;
         if (uri.query) {
-            partitionKey = {};
             for (const name of Array.from(uri.query.keys())) {
-                partitionKey[name] = uri.query.get(name);
+                if (name === "output" && uri.query.get(name) === "sitenav") {
+                    nav = true;
+                } else {
+                    partitionKey[name] = uri.query.get(name);
+                }
             }
         }
         const partitions = await this.build(collection);
         if (!collection.groupBy) {
             const listUri = this.getCollectionPageUri(collection.uri);
-            return this.serializeItemList(listUri, partitions[0].feed);
+            return this.serialize(listUri, partitions[0].feed, nav);
         } else if (partitionKey) {
             const keyStrToMatch = this.stringifyKey(partitionKey);
             for (const partition of partitions) {
                 if (this.stringifyKey(partition.groupBy) === keyStrToMatch) {
                     const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy);
-                    return this.serializeItemList(listUri, partition.feed);
+                    return this.serialize(listUri, partition.feed, nav);
                 }
             }
         }
-        throw new Error(`No collection found for ${uri.path}`);
+        throw new Error(`No partition found for ${uri.path}?${uri.query.toString()}`);
     }
 
+    /*
     async getCollectionPages(collectionUri: string, pageSize: number) {
         const normalizeUri = normalizeJsonLdId(collectionUri);
         const collection = this.getCollection(normalizeUri);
@@ -91,6 +85,7 @@ export default class CollectionBuilder {
         return partitionPages;
     }
 
+    
     async getPartitionPages(collectionUri: string, partitionKey: PartitionKey, pageSize: number) {
         const normalizeUri = normalizeJsonLdId(collectionUri);
         const collection = this.getCollection(normalizeUri);
@@ -106,7 +101,7 @@ export default class CollectionBuilder {
             }
         }
         return null;
-    }
+    }*/
 
     private async paginatePartition(collection: Collection, partition: Partition, pageSize: number) {
         const pages = [];
@@ -126,14 +121,20 @@ export default class CollectionBuilder {
                 currentIndex = end;
             }
         }
-        /*
-        for (const page of pages) {
-            await this.siteGraph.load(page);
-        }*/
         return pages;
     }
 
-    private serializeListItem(collection: Collection, partition: Partition, slice: IndexItem[], prevItem: any, position: number) {
+    private serialize(listUri: string, pages: WebPage[], nav: boolean) {
+        if (nav) {
+            return pages.map(page => ({
+                name: page.mainEntity.name ? page.mainEntity.name : page.mainEntity.headline,
+                url: page.url
+            }));
+        }
+        return this.serializeItemList(listUri, pages);
+    }
+
+    private serializeListItem(collection: Collection, partition: Partition, slice: WebPage[], prevItem: any, position: number) {
         const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy, position);
         const item: any = {
             [JSONLD_ID]: `${listUri}/container`,
@@ -152,12 +153,12 @@ export default class CollectionBuilder {
         return item;
     }
 
-    private serializeItemList(listIRI: string, list: IndexItem[]) {
+    private serializeItemList(listUri: string, pages: WebPage[]) {
         return {
-            [JSONLD_ID]: listIRI,
+            [JSONLD_ID]: listUri,
             [JSONLD_TYPE]: "ItemList",
-            itemListElement: list.map(d => ({
-                [JSONLD_ID]: d[JSONLD_ID]
+            itemListElement: pages.map(p => ({
+                [JSONLD_ID]: p.url
             }))
         };
     }
@@ -187,12 +188,13 @@ export default class CollectionBuilder {
             return this.collectionMap.get(collection.uri);
         }
 
-        const matches = searchFiles(PAGES_FOLDER, collection.src);
+        // const matches = searchFiles(PAGES_FOLDER, collection.src);
+        const routes = this.collectionRoutes.get(collection.uri);
         let partitions: Partition[];
         if (collection.groupBy) {
-            partitions = await this.addToPartitionedList(collection, matches);
+            partitions = await this.addToPartitionedList(collection, routes);
         } else {
-            partitions = await this.addToSingleList(matches);
+            partitions = await this.addToSingleList(routes);
         }
 
         if (collection.sort) {
@@ -202,30 +204,30 @@ export default class CollectionBuilder {
         return partitions;
     }
 
-    private async addToSingleList(filePaths: string[]) {
-        const feed: IndexList = [];
-        for (const filePath of filePaths) {
-            const mainEntity = await this.graph.load(filePath);
-            feed.push(mainEntity);
+    private async addToSingleList(routes: string[]) {
+        const feed = [];
+        for (const route of routes) {
+            const page = await this.router.getPage(route);
+            feed.push(page);
         }
         return [{
             feed: feed
         }];
     }
 
-    private async addToPartitionedList(collection: Collection, filePaths: string[]) {
+    private async addToPartitionedList(collection: Collection, routes: string[]) {
         const partitionMap = new Map<string, Partition>();
-        for (const filePath of filePaths) {
-            const mainEntity = await this.graph.load(filePath);
-            const partitions = collection.groupBy(mainEntity);
+        for (const route of routes) {
+            const page = await this.router.getPage(route);
+            const partitions = collection.groupBy(page.mainEntity);
             if (Array.isArray(partitions)) {
                 for (const partitionKey of partitions) {
                     const partition = this.getPartition(partitionMap, partitionKey);
-                    partition.feed.push(mainEntity);
+                    partition.feed.push(page);
                 }
             } else if (isObjectLiteral(partitions)) {
                 const partition = this.getPartition(partitionMap, partitions);
-                partition.feed.push(mainEntity);
+                partition.feed.push(page);
             } else {
                 throw new Error(`Invalid partition key: ${partitions}`);
             }
@@ -250,13 +252,13 @@ export default class CollectionBuilder {
  
     private sortFeeds(partitions: Partition[], sort: (a, b) => number) {
         for (const partition of partitions) {
-            partition.feed.sort(sort);
+            partition.feed.sort((pageA, pageB) => sort(pageA.mainEntity, pageB.mainEntity));
         }
     }
 
-    private getCollection(collectionUri: string, suppressError: boolean = false) {
+    private getCollection(collectionUri: string) {
         const collection = this.collections.find(c => c.uri === collectionUri);
-        if (!collection && !suppressError) {
+        if (!collection) {
             throw new Error(`collection ${collectionUri} not found`);
         }
         return collection;
@@ -276,5 +278,6 @@ export default class CollectionBuilder {
         }
         return keyStr;
     }
+
 
 }

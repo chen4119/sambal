@@ -39,7 +39,7 @@ export type Theme = {
 export type PartitionKey = {[key: string]: string | number | Date};
 export type Collection = {
     uri: string,
-    src: string | string[],
+    match: string | string[],
     groupBy?: (mainEntity: any) => PartitionKey | PartitionKey[],
     sort?: (a: any, b: any) => number
 }

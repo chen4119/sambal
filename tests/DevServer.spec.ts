@@ -1,36 +1,18 @@
 import axios, { AxiosResponse } from "axios";
 import Renderer from "../src/Renderer";
-import CollectionBuilder from "../src/CollectionBuilder";
-import Graph from "../src/Graph";
-import Media from "../src/Media";
-import Links from "../src/Links";
+import { init } from "./setup";
 import DevServer from "../src/DevServer";
-import { WebPage, CACHE_FOLDER } from "../src/helpers/constant";
 
 describe("Renderer", () => {
-    const baseUrl = "https://example.com";
     let renderer: Renderer;
-    let graph: Graph;
-    let links: Links;
-    let collectionBuilder: CollectionBuilder;
     let server: DevServer;
 
-    const pages: WebPage[] = [
-        {
-            "@id": "https://example.com",
-            "@type": "WebSite",
-            url: "/",
-            mainEntity: {
-                headline: "hello worlds"
-            }
-        }
-    ];
-
     beforeAll(async () => {
+        const classes = init([], []);
         renderer = new Renderer(null, "mock-theme");
         await renderer.initTheme();
-        server = new DevServer(renderer, 3000);
-        server.start(pages);
+        server = new DevServer(classes.router, renderer, 3000);
+        server.start();
     });
 
     afterAll(() => {

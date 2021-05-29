@@ -4,22 +4,22 @@ import webpackDevMiddleware from "webpack-dev-middleware";
 import Renderer from "./Renderer";
 import { WebPage, THEME_PUBLIC_PATH, DEV_PUBLIC_PATH } from "./helpers/constant";
 import { log } from "./helpers/log";
+import Router from "./Router";
 
 export default class DevServer {
     private expressApp;
     private server;
     // private watchEntryFile: Watching;
-    private routeMap: Map<string, WebPage>;
     
-    constructor(private renderer: Renderer, private port: Number) {
-        this.routeMap = new Map<string, WebPage>();
+    constructor(private router: Router, private renderer: Renderer, private port: Number) {
+        
     }
     
-    start(pages: WebPage[]) {
+    start() {
         this.renderer.watchForEntryChange((isError) => {
             log.info("sambal.entry.js compiled");
             if (!isError && !this.expressApp) {
-                this.startDevServer(pages);
+                this.startDevServer();
             }
         });
     }
@@ -28,14 +28,11 @@ export default class DevServer {
         this.server.close();
     }
     
-    private startDevServer(pages: WebPage[]) {
+    private startDevServer() {
         this.expressApp = express();
         this.addBrowserBundleMiddleware();
         this.expressApp.get(`${THEME_PUBLIC_PATH}/*`, this.getThemeFile.bind(this));
-        for (const page of pages) {
-            this.routeMap.set(page.url, page);
-            this.expressApp.get(page.url, this.route.bind(this));
-        }
+        this.expressApp.get("*", this.route.bind(this));
         this.server = this.expressApp.listen(this.port, () => {
             log.info(`Dev server started on port ${this.port}`);
         });
@@ -68,9 +65,9 @@ export default class DevServer {
     }
 
     private async route(req, res) {
-        const route = this.routeMap.get(req.path);
-        if (route) {
-            let html = await this.renderer.renderPage(route);
+        const page = await this.router.getPage(req.path);
+        if (page) {
+            let html = await this.renderer.renderPage(page);
             res.send(html);
         } else {
             res.status(404).end();
