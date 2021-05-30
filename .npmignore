@@ -4,7 +4,8 @@ tsconfig.json
 .sambal/
 public/
 js/
-content/
+data/
+pages/
 *.yml
 *.css
 *.md
