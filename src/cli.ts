@@ -55,9 +55,6 @@ async function initSite(outputFolder: string) {
         if (!module.siteConfig.baseUrl) {
             throw new Error("Required baseUrl not found in siteConfig in sambal.site.js");
         }
-        if (!module.siteMap) {
-            throw new Error("Required siteMap function not exported from sambal.site.js");
-        }
         if (!shelljs.test('-f', entryFile)) {
             entryFile = null;  // optional
         }
@@ -209,7 +206,7 @@ program
 program
 .command('*')
 .action(function(env){
-    // log.error('Unrecognized command.  sambal --help for more info');
+    log.error('Unrecognized command.  sambal --help for more info');
 });
 
 program
