@@ -65,6 +65,7 @@ export default class DevServer {
     }
 
     private async route(req, res) {
+        log.debug(`Get path uri: ${req.path}`);
         const page = await this.router.getPage(req.path);
         if (page) {
             let html = await this.renderer.renderPage(page);

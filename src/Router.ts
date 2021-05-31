@@ -26,6 +26,16 @@ type RouteNode = {
     children: Map<string, RouteNode>
 }
 
+type NodePair = {
+    parent?: RouteNode,
+    node: RouteNode
+};
+
+type PageProps = {
+    route: string[],
+    props: any
+};
+
 export default class Router {
     private root: RouteNode;
     private routeMap: Map<string, WebPage>;
@@ -70,7 +80,8 @@ export default class Router {
                     const testUri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
                     if (uri === testUri) {
                         const pageProps = withPageProps ? await this.loadPageProps(stack.shift()) : {};
-                        return await this.loadWebPage(uri, pageProps);
+                        // don't cache if loading web page without page props
+                        return await this.loadWebPage(uri, pageProps, withPageProps);
                     }
                 }
                 return null;
@@ -90,36 +101,52 @@ export default class Router {
         const rootNode = this.root;
         const self = this;
         const iterator = async function* generator() {
-            const stack: RouteNode[] = [rootNode];
-            const pageProps: any[] = [];
-            let currentNode: RouteNode;
-            let currentPageProps = {};
+            const stack: NodePair[] = [{node: rootNode}];
+            const pagePropsStack: PageProps[] = [];
+            let current: NodePair;
+            let prevNode: RouteNode;
+            let currentPageProps: PageProps = {route: [], props: {}};
             let routePath = [];
 
             while (stack.length > 0) {
-                currentNode = stack.shift();
-                if (currentNode.path !== "/") {
-                    routePath.push(currentNode.path);
+                current = stack.shift();
+                if (current.parent !== prevNode) {
+                    routePath.pop();
                 }
-                if (currentNode.hasPage) {
-                    pageProps.unshift(currentPageProps);
-                    currentPageProps = self.loadPageProps(routePath);
+                if (current.node.path !== "/") {
+                    routePath.push(current.node.path);
                 }
-                for (const fileName of Array.from(currentNode.files)) {
+                const currentRoutePath = `/${routePath.join("/")}`;
+                currentPageProps = self.getClosestPageProps(currentRoutePath, currentPageProps, pagePropsStack);
+                if (current.node.hasPage) {
+                    pagePropsStack.unshift(currentPageProps);
+                    currentPageProps = {
+                        route: [...routePath],
+                        props: await self.loadPageProps(routePath)
+                    };
+                }
+                for (const fileName of Array.from(current.node.files)) {
                     const uri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
                     log.debug(`Route: ${uri}`);
-                    yield await self.loadWebPage(uri, pageProps);
+                    yield await self.loadWebPage(uri, currentPageProps.props);
                 }
-                for(const childNode of Array.from(currentNode.children.values())) {
-                    stack.unshift(childNode);
+                for(const childNode of Array.from(current.node.children.values())) {
+                    stack.unshift({parent: current.node, node: childNode});
                 }
-                routePath.pop();
-                if (currentNode.hasPage) {
-                    currentPageProps = pageProps.shift();
-                }
+                prevNode = current.node;
             }
         };
         return iterator();
+    }
+
+    private getClosestPageProps(routePath: string, currentPageProps: PageProps, pagePropsStack: PageProps[]) {
+        let closestPageProps = currentPageProps;
+        let currentPagePropsRoute = `/${closestPageProps.route.join("/")}`;
+        while (routePath.indexOf(currentPagePropsRoute) !== 0) {
+            closestPageProps = pagePropsStack.shift();
+            currentPagePropsRoute = `/${closestPageProps.route.join("/")}`;
+        }
+        return closestPageProps;
     }
 
     getJsonLdIterator(baseUrl: string) {
@@ -148,15 +175,18 @@ export default class Router {
         return iterator();
     }
 
-    private async loadWebPage(uri: string, pageProps: any) {
+    private async loadWebPage(uri: string, pageProps: any, isCache: boolean = true) {
         const mainEntity = await this.uriResolver.hydrateUri(uri);
         const webpage: WebPage = {
             ...pageProps,
             [JSONLD_TYPE]: "WebPage",
-            url: mainEntity[JSONLD_ID],
-            mainEntity: mainEntity
+            url: uri,
+            mainEntity: mainEntity,
+            mainEntityOfPage: mainEntity[JSONLD_ID]
         };
-        this.routeMap.set(uri, webpage);
+        if (isCache) {
+            this.routeMap.set(uri, webpage);
+        }
         return webpage;
     }
 

@@ -19,7 +19,7 @@ export default class FileSystemResolver implements IResolver {
         this.localFileMap = new Map<string, string>(); 
         this.objectCache = new Map<string, unknown>();
         this.indexFilePaths(PAGES_FOLDER, pages);
-        this.indexFilePaths(DATA_FOLDER, data);   
+        this.indexFilePaths(DATA_FOLDER, data);
     }
 
     isLocalImageFile(uriStr: string) {

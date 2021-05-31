@@ -10,12 +10,13 @@ describe("Router", () => {
     });
 
     it('iterate routes', async () => {
-        const routeIterator = router.getPageIterator();
-        let count = 0;
-        for await (const route of routeIterator) {
-            count ++;
+        const pageIterator = router.getPageIterator();
+        const pages = [];
+        for await (const page of pageIterator) {
+            pages.push(page);
         }
-        expect(count).toBe(4);
+        expect(pages.length).toBe(4);
+        expect(pages).toMatchSnapshot();
     });
 
     it('get /', async () => {
@@ -28,8 +29,8 @@ describe("Router", () => {
         expect(page).toMatchSnapshot();
     });
 
-    it('get /alias/blog1', async () => {
-        const page = await router.getPage("/alias/blog1");
+    it('get /alias/subfolder/blog1', async () => {
+        const page = await router.getPage("/alias/subfolder/blog1");
         expect(page).toMatchSnapshot();
     });
 
