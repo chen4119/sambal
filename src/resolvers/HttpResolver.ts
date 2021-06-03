@@ -20,5 +20,9 @@ export default class HttpResolver implements IResolver {
         return jsonld;
     }
 
+    clearCache() {
+        // do nothing
+    }
+
 
 }

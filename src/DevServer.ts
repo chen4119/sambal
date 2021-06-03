@@ -2,13 +2,18 @@ import express from "express";
 // import { Watching } from "webpack";
 import webpackDevMiddleware from "webpack-dev-middleware";
 import Renderer from "./Renderer";
-import { WebPage, THEME_PUBLIC_PATH, DEV_PUBLIC_PATH } from "./helpers/constant";
+import { THEME_PUBLIC_PATH, DEV_PUBLIC_PATH } from "./helpers/constant";
 import { log } from "./helpers/log";
 import Router from "./Router";
+import { Server, OPEN } from "ws";
+
+const WEBSOCKET_ADDR = "ws://localhost:3001/";
+const CMD_REFRESH = "refresh";
 
 export default class DevServer {
     private expressApp;
     private server;
+    private webSocketServer: Server;
     // private watchEntryFile: Watching;
     
     constructor(private router: Router, private renderer: Renderer, private port: Number) {
@@ -19,7 +24,13 @@ export default class DevServer {
         this.renderer.watchForEntryChange((isError) => {
             log.info("sambal.entry.js compiled");
             if (!isError && !this.expressApp) {
+                this.router.watchForFileChange((type, path) => {
+                    this.refreshBrowser();
+                });
+                this.startWebSocket();
                 this.startDevServer();
+            } else {
+                this.refreshBrowser();
             }
         });
     }
@@ -38,6 +49,22 @@ export default class DevServer {
         });
     }
 
+    private startWebSocket() {
+        this.webSocketServer = new Server({
+            port: 3001
+        });
+    }
+
+    private refreshBrowser() {
+        if (this.webSocketServer) {
+            this.webSocketServer.clients.forEach(client => {
+                if (client.readyState === OPEN) {
+                    client.send(CMD_REFRESH);
+                }
+            });
+        }
+    }
+
     private addBrowserBundleMiddleware() {
         const compiler = this.renderer.watchForBrowserBundleChange(this.onBrowserBundleChanged.bind(this));
         if (compiler) {
@@ -51,6 +78,7 @@ export default class DevServer {
 
     private onBrowserBundleChanged(isError, entry) {
         log.info("Browser bundle compiled");
+        this.refreshBrowser();
     }
 
     private async getThemeFile(req, res) {
@@ -69,9 +97,39 @@ export default class DevServer {
         const page = await this.router.getPage(req.path);
         if (page) {
             let html = await this.renderer.renderPage(page);
-            res.send(html);
+            res.send(this.addBrowserSyncScript(html));
         } else {
             res.status(404).end();
         }
+    }
+
+    private addBrowserSyncScript(html: string) {
+        const browserSync = `
+        <script>
+            function openSocket() {
+                const sambalws = new WebSocket("${WEBSOCKET_ADDR}");
+                sambalws.onopen = function() {
+                    console.log('Sambal dev server connected');
+                };
+                
+                sambalws.onmessage = function(e) {
+                    if (e.data === "${CMD_REFRESH}") {
+                        console.log('Reloading...');
+                        window.location.reload();
+                    }
+                }
+    
+                sambalws.onclose = function(e) {
+                    console.log("Sambal dev server disconnected");
+                    setTimeout(() => {
+                        openSocket();
+                    }, 2000);
+                };
+            }
+            openSocket();
+        </script>`;
+
+        const index = html.indexOf("</body>");
+        return html.substring(0, index) + browserSync + html.substring(index);
     }
 }

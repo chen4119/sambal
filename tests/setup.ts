@@ -59,3 +59,11 @@ export function init() {
         router
     };
 }
+
+export async function wait() {
+    return new Promise<void>((resolve, reject) => {
+        setTimeout(() => {
+            resolve();
+        }, 1000);
+    });
+}

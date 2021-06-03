@@ -1,4 +1,3 @@
-import { URLSearchParams } from "url";
 import { 
     IResolver,
     LOCALHOST,
@@ -38,7 +37,11 @@ const MAX_DEPTH = 100;
 export default class UriResolver {
     private blankNodeIndex: number;
     private fsResolver: FileSystemResolver;
-    private resolvers: {matcher: UriMatcher, resolve: (uri: URI) => Promise<any>}[];
+    private httpResolver: HttpResolver;
+    private resolvers: {
+        matcher: UriMatcher,
+        resolver: IResolver
+    }[];
 
     constructor(
         pages: string[],
@@ -47,15 +50,15 @@ export default class UriResolver {
     ) {
         this.blankNodeIndex = 1;
         this.fsResolver = new FileSystemResolver(pages, data);
-        const httpResolver = new HttpResolver();
+        this.httpResolver = new HttpResolver();
         this.resolvers = [
             {
                 matcher: {protocol: FS_PROTO},
-                resolve: this.fsResolver.resolveUri.bind(this.fsResolver)
+                resolver: this.fsResolver
             },
             {
                 matcher: {protocol: ["https", "http"]},
-                resolve: httpResolver.resolveUri.bind(httpResolver)
+                resolver: this.httpResolver
             }
         ];
     }
@@ -63,8 +66,14 @@ export default class UriResolver {
     addResolver(matcher: UriMatcher, resolver: IResolver) {
         this.resolvers.unshift({
             matcher,
-            resolve: resolver.resolveUri.bind(resolver)
+            resolver
         });
+    }
+
+    clearCache() {
+        for (const instance of this.resolvers) {
+            instance.resolver.clearCache();
+        }
     }
 
     async resolveUri(uriStr: string) {
@@ -89,9 +98,9 @@ export default class UriResolver {
             };
         }
         let data;
-        for (const resolver of this.resolvers) {
-            if (this.isMatch(resolver.matcher, uri)) {
-                data = await resolver.resolve(uri);
+        for (const instance of this.resolvers) {
+            if (this.isMatch(instance.matcher, uri)) {
+                data = await instance.resolver.resolveUri(uri);
                 break;
             }
         }

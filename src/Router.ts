@@ -11,13 +11,16 @@ import {
     PAGE_FILE,
     Collection,
     WebPage,
-    FS_PROTO
+    FS_PROTO,
+    DATA_FOLDER
 } from "./helpers/constant";
 import { normalizeJsonLdId, loadLocalFile } from "./helpers/data";
 import { log } from "./helpers/log";
 import UriResolver from "./UriResolver";
 import mm from "micromatch";
 import CollectionResolver from "./resolvers/CollectionResolver";
+import chokidar, { FSWatcher } from "chokidar";
+import { getAbsFilePath } from "./helpers/util";
 
 type RouteNode = {
     path: string,
@@ -60,6 +63,25 @@ export default class Router {
         );
     }
 
+    async watchForFileChange(onChange: (type: string, path: string) => void) {
+        return new Promise<FSWatcher>((resolve, reject) => {
+            const watcher = chokidar.watch([getAbsFilePath(PAGES_FOLDER), getAbsFilePath(DATA_FOLDER)]);
+            watcher.on("ready", () => {
+                /*
+                watcher.on("add", (path) => {
+                    log.info(`New file: ${path}`);
+                    // console.log(stats);
+                });*/
+                watcher.on("change", (path) => {
+                    log.info(`File changed: ${path}`);
+                    this.uriResolver.clearCache();
+                    onChange("change", path);
+                });
+                resolve(watcher);
+            });
+        });
+    }
+
     async getPage(uri: string, withPageProps: boolean = true) {
         if (this.routeMap.has(uri)) {
             return this.routeMap.get(uri);
@@ -68,18 +90,19 @@ export default class Router {
         const segments = uri.split("/");
         let currentNode = this.root;
         let routePath = [];
-        const stack: string[][] = [];
+        let currentPagePropsRoute: string[];
 
         // i start at 1 because 0 is always empty string
         for (let i = 1; i < segments.length; i++) {
             if (currentNode.hasPage) {
-                stack.unshift([...routePath]);
+                currentPagePropsRoute = [...routePath];
             }
             if (i === segments.length - 1) {
                 for (const fileName of Array.from(currentNode.files)) {
                     const testUri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
                     if (uri === testUri) {
-                        const pageProps = withPageProps ? await this.loadPageProps(stack.shift()) : {};
+                        const pageProps = (withPageProps && currentPagePropsRoute) ?
+                            await this.loadPageProps(currentPagePropsRoute) : {};
                         // don't cache if loading web page without page props
                         return await this.loadWebPage(uri, pageProps, withPageProps);
                     }
@@ -127,7 +150,6 @@ export default class Router {
                 }
                 for (const fileName of Array.from(current.node.files)) {
                     const uri = normalizeJsonLdId(`${routePath.join("/")}/${fileName}`);
-                    log.debug(`Route: ${uri}`);
                     yield await self.loadWebPage(uri, currentPageProps.props);
                 }
                 for(const childNode of Array.from(current.node.children.values())) {

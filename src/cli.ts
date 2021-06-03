@@ -173,7 +173,7 @@ async function publishTheme() {
 }
 
 async function init() {
-    await writeText(getAbsFilePath(`${PAGES_FOLDER}/blogs/blog1.md`), initBlogpost("author"));
+    await writeText(getAbsFilePath(`${PAGES_FOLDER}/index.md`), initBlogpost("author"));
     await writeText(getAbsFilePath(`${DATA_FOLDER}/author.yml`), initPerson());
     await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());
     await writeText(getAbsFilePath(SAMBAL_ENTRY_FILE), initSambalEntry());

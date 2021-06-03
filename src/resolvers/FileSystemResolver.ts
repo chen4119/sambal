@@ -41,6 +41,10 @@ export default class FileSystemResolver implements IResolver {
         throw new Error(`Unable to resolve ${uriStr}`);
     }
 
+    clearCache() {
+        this.objectCache.clear();
+    }
+
     private indexFilePaths(baseFolder: string, paths: string[]) {
         for (const filePath of paths) {
             const uri = normalizeJsonLdId(filePath);

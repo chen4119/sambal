@@ -68,6 +68,7 @@ export type URI = {
 
 export interface IResolver {
     resolveUri(uri: URI): Promise<any>;
+    clearCache(): void;
 }
 
 export const CACHE_FOLDER = ".sambal";
@@ -76,7 +77,6 @@ export const PAGES_FOLDER = "pages";
 export const DATA_FOLDER = "data";
 export const SAMBAL_ENTRY_FILE = "sambal.entry.js";
 export const SAMBAL_SITE_FILE = "sambal.site.js";
-export const WEBSOCKET_ADDR = "ws://localhost:3001/";
 
 export const ROUTES_FILE = "_routes.yml";
 export const PAGE_FILE = "_page.yml";

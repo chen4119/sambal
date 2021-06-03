@@ -69,6 +69,10 @@ export default class CollectionResolver implements IResolver {
         throw new Error(`No partition found for ${uri.path}?${uri.query.toString()}`);
     }
 
+    clearCache() {
+        this.collectionMap.clear();
+    }
+    
     /*
     async getCollectionPages(collectionUri: string, pageSize: number) {
         const normalizeUri = normalizeJsonLdId(collectionUri);

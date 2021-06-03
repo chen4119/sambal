@@ -10,7 +10,30 @@ exports[`Renderer render html 1`] = `
                     </head>
                     <body>
                         <h1>Hello from mock theme</h1>
-                    </body>
+                    
+        <script>
+            function openSocket() {
+                const sambalws = new WebSocket(\\"ws://localhost:3001/\\");
+                sambalws.onopen = function() {
+                    console.log('Sambal dev server connected');
+                };
+                
+                sambalws.onmessage = function(e) {
+                    if (e.data === \\"refresh\\") {
+                        console.log('Reloading...');
+                        window.location.reload();
+                    }
+                }
+    
+                sambalws.onclose = function(e) {
+                    console.log(\\"Sambal dev server disconnected\\");
+                    setTimeout(() => {
+                        openSocket();
+                    }, 2000);
+                };
+            }
+            openSocket();
+        </script></body>
                 </html>
             "
 `;

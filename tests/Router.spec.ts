@@ -1,5 +1,7 @@
+import shelljs from "shelljs";
+import { getAbsFilePath } from "../src/helpers/util";
 import Router from "../src/Router";
-import { init } from "./setup";
+import { init, wait } from "./setup";
 
 describe("Router", () => {
     let router: Router;
@@ -7,6 +9,10 @@ describe("Router", () => {
     beforeEach(async () => {
         const classes = init();
         router = classes.router;
+    });
+
+    afterEach(() => {
+        shelljs.rm("-rf", getAbsFilePath("pages/unittest.md"));
     });
 
     it('iterate routes', async () => {
@@ -37,5 +43,17 @@ describe("Router", () => {
     it('get /bogus return null', async () => {
         const page = await router.getPage("/bogus");
         expect(page).toBeNull();
+    });
+
+    it('watch for file change', async () => {
+        const mockOnChange = jest.fn();
+        const watcher = await router.watchForFileChange(mockOnChange);
+        await wait();
+        shelljs.touch("pages/unittest.md");
+        await wait();
+        shelljs.touch("pages/unittest.md");
+        await wait();
+        await watcher.close();
+        expect(mockOnChange).toHaveBeenCalledWith("change", getAbsFilePath("pages/unittest.md"));
     });
 });
