@@ -8,7 +8,7 @@ describe("Renderer", () => {
     let server: DevServer;
 
     beforeAll(async () => {
-        const classes = init();
+        const classes = await init();
         renderer = new Renderer(null, "mock-theme");
         await renderer.initTheme();
         server = new DevServer(classes.router, renderer, 3000);

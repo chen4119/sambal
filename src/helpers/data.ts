@@ -12,7 +12,7 @@ import {
     getPathnameAndQuery,
     getFileExt
 } from "./util";
-import { ROUTES_FILE, PAGE_FILE } from "./constant";
+import { MOUNT_FILE, PAGE_FILE } from "./constant";
 
 enum SUPPORTED_CONTENT_TYPE {
     yaml,
@@ -42,7 +42,7 @@ export function searchFiles(baseFolder: string, query: string | string[], allFil
 }
 
 function isSambalReservedFile(filePath: string) {
-    return filePath.endsWith(ROUTES_FILE) || filePath.endsWith(PAGE_FILE);
+    return filePath.endsWith(MOUNT_FILE) || filePath.endsWith(PAGE_FILE);
 }
 
 export function normalizeRelativePath(src: string) {

@@ -9,6 +9,7 @@ import {
     loadLocalFile,
     isImageFile
 } from "../helpers/data";
+import { deepClone } from "../helpers/util";
 import { log } from "../helpers/log";
 
 export default class FileSystemResolver implements IResolver {
@@ -29,14 +30,15 @@ export default class FileSystemResolver implements IResolver {
     async resolveUri(uri: URI) {
         const uriStr = uri.path;
         if (this.objectCache.has(uriStr)) {
-            return this.objectCache.get(uriStr);
+            return deepClone(this.objectCache.get(uriStr));
         }
 
         if (this.localFileMap.has(uriStr)) {
             const filePath = this.localFileMap.get(uriStr);
             const jsonld = await loadLocalFile(filePath);
             this.objectCache.set(uriStr, jsonld);
-            return jsonld;
+            // return clone otherwise obj will be modified when hydrated
+            return deepClone(jsonld);
         }
         throw new Error(`Unable to resolve ${uriStr}`);
     }

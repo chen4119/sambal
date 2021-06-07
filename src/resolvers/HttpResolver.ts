@@ -2,6 +2,7 @@ import { IResolver, URI } from "../helpers/constant";
 import {
     loadRemoteFile
 } from "../helpers/data";
+import { deepClone } from "../helpers/util";
 
 export default class HttpResolver implements IResolver {
     private objectCache: Map<string, unknown>;
@@ -13,11 +14,12 @@ export default class HttpResolver implements IResolver {
         const absUrl = `${uri.protocol}//${uri.host}/${uri.path}`;
 
         if (this.objectCache.has(absUrl)) {
-            return this.objectCache.get(absUrl);
+            return deepClone(this.objectCache.get(absUrl));
         }
         const jsonld = await loadRemoteFile(absUrl);
+        // cache an original clone otherwise obj will be modified when hydrated
         this.objectCache.set(absUrl, jsonld);
-        return jsonld;
+        return deepClone(jsonld);
     }
 
     clearCache() {

@@ -1,5 +1,30 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`UriResolver get background 1`] = `
+Object {
+  "@type": "ImageObject",
+  "author": Object {
+    "@id": "johnsmith",
+  },
+  "contentSize": "51 kB",
+  "contentUrl": "/images/image2.webp",
+  "encodingFormat": "image/webp",
+  "height": 333,
+  "name": "My background",
+  "thumbnail": Array [
+    Object {
+      "@type": "ImageObject",
+      "contentSize": "1 kB",
+      "contentUrl": "/images/image2-50.webp",
+      "encodingFormat": "image/webp",
+      "height": 50,
+      "width": 75,
+    },
+  ],
+  "width": 500,
+}
+`;
+
 exports[`UriResolver get blog1 1`] = `
 Object {
   "@type": "BlogPosting",
@@ -49,6 +74,38 @@ Object {
   "familyName": "Smith",
   "givenName": "John",
   "name": "John Smith",
+}
+`;
+
+exports[`UriResolver hydrate background 1`] = `
+Object {
+  "@id": "/background",
+  "@type": "ImageObject",
+  "author": Object {
+    "@id": "/johnsmith",
+    "@type": "Person",
+    "email": "smitty123@hotmail.com",
+    "familyName": "Smith",
+    "givenName": "John",
+    "name": "John Smith",
+  },
+  "contentSize": "51 kB",
+  "contentUrl": "/images/image2.webp",
+  "encodingFormat": "image/webp",
+  "height": 333,
+  "name": "My background",
+  "thumbnail": Array [
+    Object {
+      "@id": "_:1",
+      "@type": "ImageObject",
+      "contentSize": "1 kB",
+      "contentUrl": "/images/image2-50.webp",
+      "encodingFormat": "image/webp",
+      "height": 50,
+      "width": 75,
+    },
+  ],
+  "width": 500,
 }
 `;
 

@@ -8,7 +8,7 @@ describe("SiteGenerator", () => {
 
 
     beforeEach(async () => {
-        const classes = init();
+        const classes = await init();
         const renderer = new Renderer(null, "mock-theme");
         siteGenerator = new SiteGenerator(classes.router, renderer);
     });

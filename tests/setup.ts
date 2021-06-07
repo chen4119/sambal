@@ -48,10 +48,11 @@ const collections: Collection[] = [
 const pages = searchFiles(PAGES_FOLDER, "**/*", true);
 const data = searchFiles(DATA_FOLDER, "**/*", true);
 
-export function init() {
+export async function init() {
     const media = new Media(CACHE_FOLDER, imageTransforms);
     const uriResolver = new UriResolver(pages, data, media);
-    const router = new Router(pages, data, collections, uriResolver);
+    const router = new Router(pages, data, uriResolver);
+    await router.collectRoutes(collections);
     
     return {
         uriResolver,

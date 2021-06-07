@@ -11,6 +11,20 @@ export function isJsDate(value) {
     return typeof(value) === "object" && Object.getPrototypeOf(value) === Date.prototype;
 }
 
+export function deepClone(obj: any) {
+    if (Array.isArray(obj)) {
+        return obj.map(d => deepClone(d));
+    } else if (isObjectLiteral(obj)) {
+        const newObj = {};
+        for (const fieldName of Object.keys(obj)) {
+            const value = obj[fieldName];
+            newObj[fieldName] = deepClone(value);
+        }
+        return newObj;
+    }
+    return obj;
+}
+
 /*
 export function isNullOrUndefined(val: any) {
     return typeof(val) === "undefined" || val === null;

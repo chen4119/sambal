@@ -81,7 +81,9 @@ async function initSite(outputFolder: string) {
         });
 
         const uriResolver = new UriResolver(pages, data, media);
-        return new Router(pages, data, collections, uriResolver);
+        const router = new Router(pages, data, uriResolver);
+        await router.collectRoutes(collections);
+        return router;
     }
     throw new Error("No sambal.site.js file found");
 }

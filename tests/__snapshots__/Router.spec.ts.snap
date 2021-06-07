@@ -90,6 +90,89 @@ Hello world",
 }
 `;
 
+exports[`Router get /archive/2017/1 1`] = `
+Object {
+  "@id": "_:1",
+  "@type": "WebPage",
+  "hasPart": Object {
+    "@id": "/header",
+    "@type": "WPHeader",
+    "hasPart": Array [
+      Object {
+        "@id": "_:2",
+        "@type": "SiteNavigationElement",
+        "name": "About",
+        "url": "/about",
+      },
+      Object {
+        "@id": "_:3",
+        "@type": "SiteNavigationElement",
+        "name": "Docs",
+        "url": "/get-started",
+      },
+      Array [
+        Object {
+          "@id": "_:4",
+          "@type": "SiteNavigationElement",
+          "name": "My first blog",
+          "url": "/blogs/blog1",
+        },
+        Object {
+          "@id": "_:5",
+          "@type": "SiteNavigationElement",
+          "name": "My second blog",
+          "url": "/blogs/blog2",
+        },
+      ],
+    ],
+    "headline": "Sambal",
+    "potentialAction": Array [
+      Object {
+        "@id": "_:6",
+        "@type": "DownloadAction",
+        "target": "https://github.com/chen4119/sambal",
+      },
+    ],
+  },
+  "mainEntity": Object {
+    "@type": "ListItem",
+    "item": Object {
+      "@id": "/collections/year/_part/year=2017/1",
+      "@type": "ItemList",
+      "itemListElement": Array [
+        Object {
+          "@id": "/blogs/blog2",
+          "@type": "BlogPosting",
+          "author": Object {
+            "@id": "/johnsmith",
+            "@type": "Person",
+            "email": "smitty123@hotmail.com",
+            "familyName": "Smith",
+            "givenName": "John",
+            "name": "John Smith",
+          },
+          "dateCreated": 2017-10-26T00:00:00.000Z,
+          "dateModified": 2017-10-26T00:00:00.000Z,
+          "encodingFormat": "text/markdown",
+          "headline": "My second blog",
+          "keywords": Array [
+            "sambal",
+            "java script",
+          ],
+          "position": 2,
+          "text": "
+
+Hello world2",
+        },
+      ],
+    },
+    "position": 0,
+  },
+  "mainEntityOfPage": "/archive/2017/1",
+  "url": "/archive/2017/1",
+}
+`;
+
 exports[`Router get /blogs/blog1 1`] = `
 Object {
   "@id": "_:1",
@@ -261,6 +344,166 @@ Hello world2",
     },
     "mainEntityOfPage": "/blogs/blog2",
     "url": "/blogs/blog2",
+  },
+  Object {
+    "@id": "_:1",
+    "@type": "WebPage",
+    "hasPart": Object {
+      "@id": "/header",
+      "@type": "WPHeader",
+      "hasPart": Array [
+        Object {
+          "@id": "_:2",
+          "@type": "SiteNavigationElement",
+          "name": "About",
+          "url": "/about",
+        },
+        Object {
+          "@id": "_:3",
+          "@type": "SiteNavigationElement",
+          "name": "Docs",
+          "url": "/get-started",
+        },
+        Array [
+          Object {
+            "@id": "_:4",
+            "@type": "SiteNavigationElement",
+            "name": "My first blog",
+            "url": "/blogs/blog1",
+          },
+          Object {
+            "@id": "_:5",
+            "@type": "SiteNavigationElement",
+            "name": "My second blog",
+            "url": "/blogs/blog2",
+          },
+        ],
+      ],
+      "headline": "Sambal",
+      "potentialAction": Array [
+        Object {
+          "@id": "_:6",
+          "@type": "DownloadAction",
+          "target": "https://github.com/chen4119/sambal",
+        },
+      ],
+    },
+    "mainEntity": Object {
+      "@type": "ListItem",
+      "item": Object {
+        "@id": "/collections/year/_part/year=2019/1",
+        "@type": "ItemList",
+        "itemListElement": Array [
+          Object {
+            "@id": "/blogs/blog1",
+            "@type": "BlogPosting",
+            "author": Object {
+              "@id": "/johnsmith",
+              "@type": "Person",
+              "email": "smitty123@hotmail.com",
+              "familyName": "Smith",
+              "givenName": "John",
+              "name": "John Smith",
+            },
+            "dateCreated": 2019-10-26T00:00:00.000Z,
+            "dateModified": 2019-10-26T00:00:00.000Z,
+            "encodingFormat": "text/markdown",
+            "headline": "My first blog",
+            "keywords": Array [
+              "rxjs",
+              "java script",
+            ],
+            "position": 1,
+            "text": "
+
+Hello world",
+          },
+        ],
+      },
+      "position": 0,
+    },
+    "mainEntityOfPage": "/archive/2019/1",
+    "url": "/archive/2019/1",
+  },
+  Object {
+    "@id": "_:1",
+    "@type": "WebPage",
+    "hasPart": Object {
+      "@id": "/header",
+      "@type": "WPHeader",
+      "hasPart": Array [
+        Object {
+          "@id": "_:2",
+          "@type": "SiteNavigationElement",
+          "name": "About",
+          "url": "/about",
+        },
+        Object {
+          "@id": "_:3",
+          "@type": "SiteNavigationElement",
+          "name": "Docs",
+          "url": "/get-started",
+        },
+        Array [
+          Object {
+            "@id": "_:4",
+            "@type": "SiteNavigationElement",
+            "name": "My first blog",
+            "url": "/blogs/blog1",
+          },
+          Object {
+            "@id": "_:5",
+            "@type": "SiteNavigationElement",
+            "name": "My second blog",
+            "url": "/blogs/blog2",
+          },
+        ],
+      ],
+      "headline": "Sambal",
+      "potentialAction": Array [
+        Object {
+          "@id": "_:6",
+          "@type": "DownloadAction",
+          "target": "https://github.com/chen4119/sambal",
+        },
+      ],
+    },
+    "mainEntity": Object {
+      "@type": "ListItem",
+      "item": Object {
+        "@id": "/collections/year/_part/year=2017/1",
+        "@type": "ItemList",
+        "itemListElement": Array [
+          Object {
+            "@id": "/blogs/blog2",
+            "@type": "BlogPosting",
+            "author": Object {
+              "@id": "/johnsmith",
+              "@type": "Person",
+              "email": "smitty123@hotmail.com",
+              "familyName": "Smith",
+              "givenName": "John",
+              "name": "John Smith",
+            },
+            "dateCreated": 2017-10-26T00:00:00.000Z,
+            "dateModified": 2017-10-26T00:00:00.000Z,
+            "encodingFormat": "text/markdown",
+            "headline": "My second blog",
+            "keywords": Array [
+              "sambal",
+              "java script",
+            ],
+            "position": 2,
+            "text": "
+
+Hello world2",
+          },
+        ],
+      },
+      "position": 0,
+    },
+    "mainEntityOfPage": "/archive/2017/1",
+    "url": "/archive/2017/1",
   },
   Object {
     "@id": "_:9",

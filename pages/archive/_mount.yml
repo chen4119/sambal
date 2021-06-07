@@ -1,0 +1,9 @@
+paginateCollection:
+  uri: collections/year
+  path: :year/:pageNum
+  pageSize: 100
+
+
+forEach:
+  uri: s3://testing
+  path: :identifier

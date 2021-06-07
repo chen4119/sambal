@@ -34,7 +34,7 @@ describe("UriResolver", () => {
     ];
 
     beforeEach(async () => {
-        const classes = init();
+        const classes = await init();
         uriResolver = classes.uriResolver
     });
 
@@ -64,6 +64,16 @@ describe("UriResolver", () => {
         expect(shelljs.test('-f', `${CACHE_FOLDER}/images/image2-50.webp`)).toBeTruthy();
     });
 
+    it('get background', async () => {
+        const result = await uriResolver.resolveUri("background");
+        expect(result).toMatchSnapshot();
+    });
+
+    it('hydrate background', async () => {
+        const result = await uriResolver.hydrateUri("background");
+        expect(result).toMatchSnapshot();
+    });
+
     it('hydrate header', async () => {
         const result = await uriResolver.hydrateUri("header");
         expect(result).toMatchSnapshot();
@@ -80,5 +90,6 @@ describe("UriResolver", () => {
         expect(collection[0].url).toBe("/blogs/blog1");
         expect(collection[1].url).toBe("/blogs/blog2");
     });
+
 
 });

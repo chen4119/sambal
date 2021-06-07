@@ -76,7 +76,7 @@ export default class UriResolver {
         }
     }
 
-    async resolveUri(uriStr: string) {
+    parseUri(uriStr: string) {
         const normalizedUriStr = normalizeJsonLdId(uriStr);
         let uri: URI;
 
@@ -97,6 +97,11 @@ export default class UriResolver {
                 query: pathAndQuery.query
             };
         }
+        return uri;
+    }
+
+    async resolveUri(uriStr: string) {
+        let uri: URI = this.parseUri(uriStr);
         let data;
         for (const instance of this.resolvers) {
             if (this.isMatch(instance.matcher, uri)) {
@@ -111,7 +116,10 @@ export default class UriResolver {
             data = await this.media.loadImageUrl(uri.path, data);
         } else if (isSchemaType(data, IMAGE_OBJECT, false)) {
             const image = await this.resolveUri(data.contentUrl);
-            data = await this.media.loadImageUrl(normalizeJsonLdId(data.contentUrl), image);
+            data = {
+                ...data,
+                ...await this.media.loadImageUrl(normalizeJsonLdId(data.contentUrl), image)
+            };
         }
         return data;
     }

@@ -7,7 +7,7 @@ describe("Router", () => {
     let router: Router;
 
     beforeEach(async () => {
-        const classes = init();
+        const classes = await init();
         router = classes.router;
     });
 
@@ -21,7 +21,7 @@ describe("Router", () => {
         for await (const page of pageIterator) {
             pages.push(page);
         }
-        expect(pages.length).toBe(4);
+        expect(pages.length).toBe(6);
         expect(pages).toMatchSnapshot();
     });
 
@@ -40,6 +40,11 @@ describe("Router", () => {
         expect(page).toMatchSnapshot();
     });
 
+    it('get /archive/2017/1', async () => {
+        const page = await router.getPage("/archive/2017/1");
+        expect(page).toMatchSnapshot();
+    });
+    
     it('get /bogus return null', async () => {
         const page = await router.getPage("/bogus");
         expect(page).toBeNull();

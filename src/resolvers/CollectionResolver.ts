@@ -12,14 +12,6 @@ import {
 } from "../helpers/util";
 import Router from "../Router";
 
-/*
-type IndexItem = {
-    [JSONLD_ID]: string,
-    [key: string]: any
-};
-
-type IndexList = IndexItem[];*/
-
 type Partition = {
     groupBy?: PartitionKey,
     feed: WebPage[]
@@ -38,11 +30,36 @@ export default class CollectionResolver implements IResolver {
         this.collectionMap = new Map<String, Partition[]>();
     }
 
+    clearCache() {
+        this.collectionMap.clear();
+    }
 
     async resolveUri(uri: URI) {
         const collection: Collection = this.getCollection(uri.path);
+        const query = this.parseSearchParams(uri);
+
+        const partitions = await this.build(collection);
+        if (Object.keys(query.partitionKey).length > 0) {
+            const keyStrToMatch = this.stringifyKey(query.partitionKey);
+            for (const partition of partitions) {
+                if (this.stringifyKey(partition.groupBy) === keyStrToMatch) {
+                    const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy);
+                    return this.serialize(listUri, partition.feed, query.nav);
+                }
+            }
+            throw new Error(`No partition found for ${uri.path}?${uri.query.toString()}`);
+        }
+        let pages = [];
+        for (const partition of partitions) {
+            const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy);
+            const result = this.serialize(listUri, partition.feed, query.nav);
+            pages.push(result);
+        }
+        return pages;
+    }
+
+    private parseSearchParams(uri: URI) {
         let partitionKey = {};
-        // let pageSize = -1;
         let nav = false;
         if (uri.query) {
             for (const name of Array.from(uri.query.keys())) {
@@ -53,98 +70,75 @@ export default class CollectionResolver implements IResolver {
                 }
             }
         }
+        return {
+            partitionKey,
+            nav
+        };
+    }
+
+    async getCollectionPages(uri: URI, pageSize: number) {
+        const collection: Collection = this.getCollection(uri.path);
+        const query = this.parseSearchParams(uri);
+
         const partitions = await this.build(collection);
-        if (!collection.groupBy) {
-            const listUri = this.getCollectionPageUri(collection.uri);
-            return this.serialize(listUri, partitions[0].feed, nav);
-        } else if (partitionKey) {
-            const keyStrToMatch = this.stringifyKey(partitionKey);
+
+        let pages = [];
+        if (Object.keys(query.partitionKey).length > 0) {
+            const keyStrToMatch = this.stringifyKey(query.partitionKey);
             for (const partition of partitions) {
                 if (this.stringifyKey(partition.groupBy) === keyStrToMatch) {
                     const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy);
-                    return this.serialize(listUri, partition.feed, nav);
+                    pages.push({
+                        key: partition.groupBy,
+                        pages: await this.paginatePartition(listUri, partition.feed, pageSize)
+                    });
                 }
             }
+            throw new Error(`No partition found for ${uri.path}?${uri.query.toString()}`);
         }
-        throw new Error(`No partition found for ${uri.path}?${uri.query.toString()}`);
-    }
-
-    clearCache() {
-        this.collectionMap.clear();
-    }
-    
-    /*
-    async getCollectionPages(collectionUri: string, pageSize: number) {
-        const normalizeUri = normalizeJsonLdId(collectionUri);
-        const collection = this.getCollection(normalizeUri);
-        const partitions = await this.build(collection);
-
-        let partitionPages = [];
         for (const partition of partitions) {
-            partitionPages.push({
+            const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy);
+            pages.push({
                 key: partition.groupBy ? partition.groupBy : null,
-                pages: await this.paginatePartition(collection, partition, pageSize)
+                pages: await this.paginatePartition(listUri, partition.feed, pageSize)
             });
-        }
-        return partitionPages;
-    }
-
-    
-    async getPartitionPages(collectionUri: string, partitionKey: PartitionKey, pageSize: number) {
-        const normalizeUri = normalizeJsonLdId(collectionUri);
-        const collection = this.getCollection(normalizeUri);
-        const partitions = await this.build(collection);
-
-        const keyStrToMatch = this.stringifyKey(partitionKey);
-        for (const partition of partitions) {
-            if (partition.groupBy && this.stringifyKey(partition.groupBy) === keyStrToMatch) {
-                return {
-                    key: partition.groupBy ? partition.groupBy : null,
-                    pages: await this.paginatePartition(collection, partition, pageSize)
-                };
-            }
-        }
-        return null;
-    }*/
-
-    private async paginatePartition(collection: Collection, partition: Partition, pageSize: number) {
-        const pages = [];
-        if (pageSize > partition.feed.length) {
-            pages.push(this.serializeListItem(collection, partition, partition.feed, null, 0));
-        } else {
-            let currentIndex = 0;
-            let prevItem = null;
-            while(currentIndex < partition.feed.length) {
-                const start = currentIndex;
-                const end = Math.min(start + pageSize, partition.feed.length);
-                const position = pages.length;
-                const slice = partition.feed.slice(start, end);
-                const item = this.serializeListItem(collection, partition, slice, prevItem, position);
-                prevItem = item;
-                pages.push(item);
-                currentIndex = end;
-            }
         }
         return pages;
     }
 
-    private serialize(listUri: string, pages: WebPage[], nav: boolean) {
+    private serialize(listUri: string, feed: WebPage[], nav: boolean) {
         if (nav) {
-            return pages.map(page => ({
+            return feed.map(page => ({
                 [JSONLD_TYPE]: "SiteNavigationElement",
                 name: page.mainEntity.name ? page.mainEntity.name : page.mainEntity.headline,
                 url: page.url
             }));
         }
-        return this.serializeItemList(listUri, pages);
+        return this.serializeItemList(listUri, feed);
     }
 
-    private serializeListItem(collection: Collection, partition: Partition, slice: WebPage[], prevItem: any, position: number) {
-        const listUri = this.getCollectionPageUri(collection.uri, partition.groupBy, position);
+    private async paginatePartition(listUri: string, feed: WebPage[], pageSize: number) {
+        const pages = [];
+        let currentIndex = 0;
+        let prevItem = null;
+        while(currentIndex < feed.length) {
+            const start = currentIndex;
+            const end = Math.min(start + pageSize, feed.length);
+            const position = pages.length;
+            const slice = feed.slice(start, end);
+            const item = this.serializeListItem(listUri, slice, prevItem, position);
+            prevItem = item;
+            pages.push(item);
+            currentIndex = end;
+        }
+        return pages;
+    }
+
+    private serializeListItem(listUri: string, slice: WebPage[], prevItem: any, position: number) {
         const item: any = {
-            [JSONLD_ID]: `${listUri}/container`,
+            // [JSONLD_ID]: `${listUri}/container`,
             [JSONLD_TYPE]: "ListItem",
-            item: this.serializeItemList(listUri, slice),
+            item: this.serializeItemList(`${listUri}/${position + 1}`, slice),
             position: position
         };
         if (prevItem) {
@@ -158,13 +152,11 @@ export default class CollectionResolver implements IResolver {
         return item;
     }
 
-    private serializeItemList(listUri: string, pages: WebPage[]) {
+    private serializeItemList(listUri: string, feed: WebPage[]) {
         return {
             [JSONLD_ID]: listUri,
             [JSONLD_TYPE]: "ItemList",
-            itemListElement: pages.map(p => ({
-                [JSONLD_ID]: p.url
-            }))
+            itemListElement: feed.map(page => page.mainEntity)
         };
     }
 
@@ -283,6 +275,4 @@ export default class CollectionResolver implements IResolver {
         }
         return keyStr;
     }
-
-
 }
