@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`template render array 1`] = `
+"
+            <ul>
+                <li>one</li><li>two</li><li>three</li>
+            </ul>
+        "
+`;
+
+exports[`template render async 1`] = `
+"
+            <ul>
+                <li>two</li>
+            </ul>
+        "
+`;
+
+exports[`template render nothing for null 1`] = `
+"
+            <ul>
+                
+            </ul>
+        "
+`;

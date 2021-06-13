@@ -5,7 +5,13 @@ exports[`Renderer render using mock-theme 1`] = `
                 <html>
                     <head> 
                         <script src=\\"/js/mock-theme/client.123.js\\"></script>
-                    </head>
+                    
+        <script type=\\"application/ld+json\\">
+            {
+    \\"@type\\": \\"Person\\",
+    \\"name\\": \\"John Smith\\"
+}
+        </script></head>
                     <body>
                         <h1>Hello from mock theme</h1>
                     </body>

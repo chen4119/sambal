@@ -99,7 +99,7 @@ async function serve() {
         await renderer.initTheme();
 
         const server = new DevServer(router, renderer, 3000);
-        server.start();
+        await server.start();
     } catch(e) {
         log.error(e);
     }

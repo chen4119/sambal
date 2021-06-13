@@ -3,7 +3,7 @@ import Renderer from "../src/Renderer";
 import { init } from "./setup";
 import DevServer from "../src/DevServer";
 
-describe("Renderer", () => {
+describe("DevServer", () => {
     let renderer: Renderer;
     let server: DevServer;
 
@@ -12,11 +12,11 @@ describe("Renderer", () => {
         renderer = new Renderer(null, "mock-theme");
         await renderer.initTheme();
         server = new DevServer(classes.router, renderer, 3000);
-        server.start();
+        await server.start();
     });
 
-    afterAll(() => {
-        server.stop();
+    afterAll(async () => {
+        await server.stop();
     })
 
     it('render html', async () => {

@@ -6,6 +6,7 @@ import { THEME_PUBLIC_PATH, DEV_PUBLIC_PATH } from "./helpers/constant";
 import { log } from "./helpers/log";
 import Router from "./Router";
 import { Server, OPEN } from "ws";
+import { FSWatcher } from "chokidar";
 
 const WEBSOCKET_ADDR = "ws://localhost:3001/";
 const CMD_REFRESH = "refresh";
@@ -14,19 +15,21 @@ export default class DevServer {
     private expressApp;
     private server;
     private webSocketServer: Server;
+    private watcher: FSWatcher;
     // private watchEntryFile: Watching;
     
     constructor(private router: Router, private renderer: Renderer, private port: Number) {
         
     }
     
-    start() {
+    async start() {
+        this.watcher = await this.router.watchForFileChange((type, path) => {
+            this.refreshBrowser();
+        });
+
         this.renderer.watchForEntryChange((isError) => {
             log.info("sambal.entry.js compiled");
             if (!isError && !this.expressApp) {
-                this.router.watchForFileChange((type, path) => {
-                    this.refreshBrowser();
-                });
                 this.startWebSocket();
                 this.startDevServer();
             } else {
@@ -35,8 +38,25 @@ export default class DevServer {
         });
     }
 
-    stop() {
-        this.server.close();
+    async stop() {
+        await this.watcher.close();
+        return new Promise<void>((resolve, reject) => {
+            let numClosed = 2;
+            this.server.close(() => {
+                console.log("server close");
+                numClosed--;
+                if (numClosed === 0) {
+                    resolve();
+                }
+            });
+            this.webSocketServer.close(() => {
+                console.log("ws close");
+                numClosed--;
+                if (numClosed === 0) {
+                    resolve();
+                }
+            });
+        });
     }
     
     private startDevServer() {

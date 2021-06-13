@@ -17,7 +17,11 @@ export default class SiteGenerator {
         for await (const page of iterator) {
             log.info(`Rendering ${page.url}`);
             let html = await this.renderer.renderPage(page, publicPath);
-            html =  prettier.format(html, {parser: "html"});
+            try {
+                html =  prettier.format(html, {parser: "html"});
+            } catch (e) {
+                log.error("Unable to prettify html.  Check if you have unescaped <> characters", e);
+            }
             await this.serializeHtml(`./${OUTPUT_FOLDER}${page.url}`, html);
         }
     }

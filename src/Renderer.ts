@@ -23,7 +23,8 @@ import {
     DEV_PUBLIC_PATH,
     Theme,
     OnBundleChanged,
-    IHtmlSerializer
+    IHtmlSerializer,
+    WebPage
 } from "./helpers/constant";
 import { log } from "./helpers/log";
 
@@ -133,7 +134,7 @@ export default class Renderer {
         return null;
     }
 
-    async renderPage(page: unknown, publicPath?: string) {
+    async renderPage(page: WebPage, publicPath?: string) {
         let renderResult;
         let clientBundle;
         let bundlePrefix;
@@ -165,23 +166,57 @@ export default class Renderer {
             const html = typeof(renderResult) === "string" ? 
                 renderResult :
                 this.serializer.toHtml(renderResult);
-            return await this.postProcessHtml(html, clientBundle, bundlePrefix);
+            return await this.postProcessHtml(page, html, clientBundle, bundlePrefix);
         }
         return null;
     }
 
-    private async postProcessHtml(html: string, bundle: object, prefix: string) {
+    private async postProcessHtml(page: WebPage, html: string, bundle: object, prefix: string) {
         if (!bundle) {
             return html;
         }
-        return await replaceScriptSrc(html, (src) => {
-            for (const entryName of Object.keys(bundle)) {
-                if (src === entryName) {
-                    return `${prefix}/${bundle[entryName]}`;
-                }
+        let hasJsonLd = false;
+        let newHtml = await replaceScriptSrc(html, (name, attribs) => {
+            if (name === "script" && attribs.type === "application/ld+json") {
+                hasJsonLd = true;
             }
-            return src;
+
+            if (name === "script" && attribs.src) {
+                let realSrc = attribs.src;
+                for (const entryName of Object.keys(bundle)) {
+                    if (attribs.src === entryName) {
+                        realSrc = `${prefix}/${bundle[entryName]}`;
+                        break;
+                    }
+                }
+                return {
+                    ...attribs,
+                    src: realSrc
+                };
+            }
+            return attribs;
         });
+        if (!hasJsonLd && page.mainEntity) {
+            return this.addJsonLdScript(newHtml, page.mainEntity);
+        }
+        return newHtml;
+    }
+
+    private addJsonLdScript(html: string, mainEntity: any) {
+        const serializedJsonLd = JSON.stringify(mainEntity, null, 4)
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        const jsonLdScript = `
+        <script type="application/ld+json">
+            ${serializedJsonLd}
+        </script>`;
+
+        const index = html.indexOf("</head>");
+        if (index >= 0) {
+            return html.substring(0, index) + jsonLdScript + html.substring(index);
+        }
+        return html;
     }
 
     async getThemeFile(filePath: string) {

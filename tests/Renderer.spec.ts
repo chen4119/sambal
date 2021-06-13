@@ -21,7 +21,14 @@ describe("Renderer", () => {
 
     it('render using mock-theme', async () => {
         await renderer.build("/js");
-        const result = await renderer.renderPage({}, "/js");
+        const result = await renderer.renderPage({
+            "@type": "WebPage",
+            url: "/dummy",
+            mainEntity: {
+                "@type": "Person",
+                name: "John Smith"
+            },
+        }, "/js");
         expect(result).toMatchSnapshot();
     });
 
