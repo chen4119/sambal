@@ -1,6 +1,6 @@
 import shelljs from "shelljs";
 import UriResolver from "../src/UriResolver";
-import { CACHE_FOLDER, Collection } from "../src/helpers/constant";
+import { CACHE_FOLDER } from "../src/helpers/constant";
 import { init } from "./setup";
 
 describe("UriResolver", () => {

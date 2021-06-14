@@ -51,8 +51,7 @@ describe("template", () => {
                 ${itemFragment}
             </ul>
         `;
-
-        console.log(html);
+        expect(html).toMatchSnapshot();
     });
 
 });

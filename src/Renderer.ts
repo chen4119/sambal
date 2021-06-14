@@ -31,7 +31,6 @@ import { log } from "./helpers/log";
 type UI = {
     renderPage: (props: {
         page: unknown,
-        // siteGraph: unknown,
         options?: unknown
     }) => Promise<unknown>,
     renderComponent: (props: {
@@ -142,7 +141,6 @@ export default class Renderer {
             const defaultOptions = this.getDefaultOptions(this.internalRenderer);
             renderResult = await this.internalRenderer.renderPage({ 
                 page: page,
-                // siteGraph: this.siteGraph,
                 options: defaultOptions
             });
             clientBundle = this.internalBrowserBundleEntry;
@@ -153,7 +151,6 @@ export default class Renderer {
             const defaultOptions = this.getDefaultOptions(this.themeRenderer);
             renderResult = await this.themeRenderer.renderPage({ 
                 page: page,
-                // siteGraph: this.siteGraph,
                 options: {
                     ...defaultOptions,
                     ...this.themeOptions
@@ -225,23 +222,6 @@ export default class Renderer {
             data: await readFileAsBuffer(getAbsFilePath(`${this.themeFolder}/dist/client/${filePath}`))
         }
     }
-
-    /*
-    private async renderComponent(iri: string) {
-        const mainEntity = await this.siteGraph.load(iri);
-        let result;
-        if (this.internalRenderer) {
-            result = await this.internalRenderer.renderComponent({ 
-                mainEntity
-            });
-        }
-        if (!result && this.themeRenderer) {
-            result = await this.themeRenderer.renderComponent({ 
-                mainEntity
-            });
-        }
-        return result;
-    }*/
 
     private getDefaultOptions(renderer: UI) {
         if (renderer.defaultOptions && isObjectLiteral(renderer.defaultOptions)) {

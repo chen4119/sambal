@@ -1,5 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`template nested template 1`] = `
+"
+            <ul>
+                
+            <li>
+                <b>Hello world</b>
+            </li>
+        
+            </ul>
+        "
+`;
+
 exports[`template render array 1`] = `
 "
             <ul>

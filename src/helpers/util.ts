@@ -157,11 +157,3 @@ export function frontMatter(md: string) {
         content: md
     }
 }
-
-/*
-export async function traverseSiteGraph(root: PageNode, callback: (page: PageNode) => void | Promise<void>) {
-    await callback(root);
-    for (const child of root.hasPart) {
-        await traverseSiteGraph(child, callback);
-    }
-}*/

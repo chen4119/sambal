@@ -43,14 +43,12 @@ export default class DevServer {
         return new Promise<void>((resolve, reject) => {
             let numClosed = 2;
             this.server.close(() => {
-                console.log("server close");
                 numClosed--;
                 if (numClosed === 0) {
                     resolve();
                 }
             });
             this.webSocketServer.close(() => {
-                console.log("ws close");
                 numClosed--;
                 if (numClosed === 0) {
                     resolve();

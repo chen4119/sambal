@@ -67,6 +67,7 @@ export default class Router {
                 });*/
                 watcher.on("change", (path) => {
                     log.info(`File changed: ${path}`);
+                    this.routeMap.clear();
                     this.uriResolver.clearCache();
                     onChange("change", path);
                 });
@@ -95,7 +96,6 @@ export default class Router {
                 if (routePath.length > 0) {
                     mountPath = uri.substring(`/${routePath.join("/")}/`.length);
                 }
-                console.log(mountPath);
                 if (currentNode.mount.has(mountPath)) {
                     const pageProps = (withPageProps && currentPagePropsRoute) ?
                         await this.loadPageProps(currentPagePropsRoute) : {};

@@ -12,7 +12,7 @@ describe("Router", () => {
     });
 
     afterEach(() => {
-        shelljs.rm("-rf", getAbsFilePath("pages/unittest.md"));
+        shelljs.rm("-f", getAbsFilePath("pages/unittest.md"));
     });
 
     it('iterate routes', async () => {
