@@ -36,10 +36,13 @@ export function initSambalSite(): string {
 export const siteConfig = {
     baseUrl: "https://example.com",
     collections: [
-        // see doc
+        // For more info - https://www.sambal.dev/docs/core/collection/
     ],
     imageTransforms: [
-        // see doc
+        // For more info - https://www.sambal.dev/docs/core/image/
+    ],
+    resolvers: [
+        // For more info - https://www.sambal.dev/docs/core/uri-resolver/
     ],
     // theme: "sambal-ui-material"
 };

@@ -185,7 +185,6 @@ export default class CollectionResolver implements IResolver {
             return this.collectionMap.get(collection.uri);
         }
 
-        // const matches = searchFiles(PAGES_FOLDER, collection.src);
         const routes = this.collectionRoutes.get(collection.uri);
         let partitions: Partition[];
         if (collection.groupBy) {

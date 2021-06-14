@@ -1,35 +1,4 @@
 import { URLSearchParams } from "url";
-/*
-export const WebElement = {
-    SiteNavigation: "SiteNavigation",
-    AdBlock: "AdBlock",
-    Footer: "Footer",
-    Header: "Header",
-    SideBar: "SideBar",
-    // Table: "Table"
-}
-
-export const Action = {
-    Search: "Search",
-    Review: "Review",
-    Like: "Like",
-    Listen: "Listen",
-    View: "View",
-    Watch: "Watch",
-    Subscribe: "Subscribe",
-    Comment: "Comment",
-    Reply: "Reply",
-    Share: "Share",
-}*/
-
-// export const SORT_ASC = "asc";
-// export const SORT_DESC = "desc";
-
-/*
-export type SortBy = {
-    prop: string,
-    order: "asc" | "desc"
-}*/
 
 export type Theme = {
     name: string,
@@ -37,6 +6,7 @@ export type Theme = {
 };
 
 export type PartitionKey = {[key: string]: string | number | Date};
+
 export type Collection = {
     uri: string,
     match: string | string[],

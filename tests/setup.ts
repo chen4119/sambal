@@ -6,12 +6,12 @@ import { searchFiles } from "../src/helpers/data";
 
 const imageTransforms = [
     {
-        src: "images/image2.jpg",
+        match: "images/image2.jpg",
         width: 500,
         encodingFormat: "image/webp",
         thumbnails: [
             {
-                name: "image2-50",
+                suffix: "50",
                 height: 50
             }
         ]

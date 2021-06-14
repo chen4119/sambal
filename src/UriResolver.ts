@@ -2,8 +2,7 @@ import {
     IResolver,
     LOCALHOST,
     FS_PROTO,
-    URI,
-    Collection
+    URI
 } from "./helpers/constant";
 import { URL } from "url";
 import HttpResolver from "./resolvers/HttpResolver";
@@ -20,7 +19,6 @@ import {
     JSONLD_GRAPH,
     JSONLD_ID,
     JSONLD_TYPE,
-    SCHEMA_CONTEXT,
     isSchemaType,
     isJsonLdRef
 } from "sambal-jsonld";

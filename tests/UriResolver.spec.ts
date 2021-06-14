@@ -6,33 +6,6 @@ import { init } from "./setup";
 describe("UriResolver", () => {
     let uriResolver: UriResolver;
 
-    const collections: Collection[] = [
-        {
-            uri: "/collections/tags",
-            match: ["/blogs/**/*"],
-            groupBy: (mainEntity) => {
-                return mainEntity.keywords.map(tag => ({
-                    tag: tag
-                }));
-            },
-            sort: (a, b) => {
-                return a.position - b.position;
-            }
-        },
-        {
-            uri: "/collections/year",
-            match: ["/blogs/**/*"],
-            groupBy: (mainEntity) => {
-                return {
-                    year: mainEntity.dateCreated.getFullYear()
-                }
-            },
-            sort: (a, b) => {
-                return a.dateModified.getTime() - b.dateModified.getTime();
-            }
-        }
-    ];
-
     beforeEach(async () => {
         const classes = await init();
         uriResolver = classes.uriResolver
@@ -91,5 +64,31 @@ describe("UriResolver", () => {
         expect(collection[1].url).toBe("/blogs/blog2");
     });
 
+    describe("Custom resolver", () => {
+        const exampleBlog = {
+            "@type": "BlogPost",
+            "text": "hello world"
+        };
 
+        const exampleResolver = {
+            resolveUri: async (uri) => {
+                return exampleBlog;
+            }
+        }
+
+        beforeEach(() => {
+            uriResolver.addResolver({host: "example.com"}, {
+                resolveUri: exampleResolver.resolveUri,
+                clearCache: () => {}
+            });
+        });
+
+        it('get example.com/blog1', async () => {
+            const result = await uriResolver.resolveUri("https://example.com/blog1");
+            expect(result).toStrictEqual(exampleBlog);
+        });
+
+
+    
+    });
 });

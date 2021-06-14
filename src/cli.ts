@@ -73,14 +73,27 @@ async function initSite(outputFolder: string) {
         const pages = searchFiles(PAGES_FOLDER, "**/*", true);
         const data = searchFiles(DATA_FOLDER, "**/*", true);
 
-        const imageTransforms = module.siteConfig.imageTransforms ? module.siteConfig.imageTransforms : [];
+        const imageTransforms = Array.isArray(module.siteConfig.imageTransforms) ? module.siteConfig.imageTransforms : [];
         const media = new Media(outputFolder, imageTransforms);
-        const collections = module.siteConfig.collections ? module.siteConfig.collections : [];
+        const collections = Array.isArray(module.siteConfig.collections) ? module.siteConfig.collections : [];
         collections.forEach(c => {
             c.uri = normalizeJsonLdId(c.uri);
         });
 
         const uriResolver = new UriResolver(pages, data, media);
+        const resolvers = Array.isArray(module.siteConfig.resolvers) ? module.siteConfig.resolvers : [];
+        for (const resolver of resolvers) {
+            if (resolver.host && resolver.resolveUri) {
+                uriResolver.addResolver(
+                    {host: resolver.host},
+                    {
+                        resolveUri: resolver.resolveUri,
+                        clearCache: () => {}
+                    }
+                );
+            }
+        }
+        
         const router = new Router(pages, data, uriResolver);
         await router.collectRoutes(collections);
         return router;
@@ -175,10 +188,14 @@ async function publishTheme() {
 }
 
 async function init() {
-    await writeText(getAbsFilePath(`${PAGES_FOLDER}/index.md`), initBlogpost("author"));
-    await writeText(getAbsFilePath(`${DATA_FOLDER}/author.yml`), initPerson());
-    await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());
-    await writeText(getAbsFilePath(SAMBAL_ENTRY_FILE), initSambalEntry());
+    try {
+        await writeText(getAbsFilePath(`${PAGES_FOLDER}/index.md`), initBlogpost("author"));
+        await writeText(getAbsFilePath(`${DATA_FOLDER}/author.yml`), initPerson());
+        await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());
+        await writeText(getAbsFilePath(SAMBAL_ENTRY_FILE), initSambalEntry());
+    } catch(e) {
+        log.error(e);
+    }
 }
 
 function clean(folder: string) {

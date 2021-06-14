@@ -5,18 +5,18 @@ import {
     normalizeJsonLdId
 } from "./helpers/data";
 import { PAGES_FOLDER, DATA_FOLDER } from "./helpers/constant";
-import { formatSize, getMimeType, isObjectLiteral, writeBuffer } from "./helpers/util";
+import { formatSize, getMimeType, writeBuffer } from "./helpers/util";
 import { searchFiles } from "./helpers/data";
 import { log } from "./helpers/log";
 import { URL } from "url";
 
 type ImageTransform = {
-    src: string | string[],
+    match: string | string[],
     width?: number,
     height?: number,
     encodingFormat?: string
     thumbnails?: {
-        name: string,
+        suffix: string,
         width?: number,
         height?: number
     }[]
@@ -42,8 +42,8 @@ export default class Media {
         this.publishedMediaPaths = new Set<string>();
         for (const transform of imageTransforms) {
             const matches = [
-                ...searchFiles(PAGES_FOLDER, transform.src),
-                ...searchFiles(DATA_FOLDER, transform.src)
+                ...searchFiles(PAGES_FOLDER, transform.match),
+                ...searchFiles(DATA_FOLDER, transform.match)
             ];
             matches.forEach(filePath => this.imageTransformMap.set(normalizeJsonLdId(filePath), transform));
         }
@@ -79,7 +79,7 @@ export default class Media {
         if (imageTransform.thumbnails) {
             const thumbnailJsonLds = [];
             for (const thumbnail of imageTransform.thumbnails) {
-                const thumbnailUrl = this.toLocalContentUrl(imageJsonLd.contentUrl, output.info.format, thumbnail.name);
+                const thumbnailUrl = this.toLocalContentUrl(imageJsonLd.contentUrl, output.info.format, thumbnail.suffix);
                 const thumbnailJsonLd = await this.generateThumbnail(thumbnailUrl, imageBuf, {
                     width: thumbnail.width,
                     height: thumbnail.height,
@@ -157,23 +157,24 @@ export default class Media {
         });
     }
 
-    // change filename and file extension, remove protocal if absolute url
-    private toLocalContentUrl(contentUrl: string, ext: string, fileName?: string) {
+    // change filename and file extension, remove protocol if absolute url
+    private toLocalContentUrl(contentUrl: string, ext: string, suffix?: string) {
         let localPath = contentUrl;
         const splitted = localPath.split("/");
-        if (fileName) {
-            splitted[splitted.length - 1] = `${fileName}.${ext}`;
-            localPath = splitted.join("/");
+        const filenameWithExt = splitted[splitted.length - 1];
+        let filename = filenameWithExt;
+        const index = filenameWithExt.lastIndexOf(".");
+        if (index >= 0) {
+            filename = filenameWithExt.substring(0, index);
+        }
+
+        if (suffix) {
+            splitted[splitted.length - 1] = `${filename}-${suffix}.${ext}`;
         } else {
-            const filename = splitted[splitted.length - 1];
-            const index = filename.lastIndexOf(".");
-            if (index >= 0) {
-                splitted[splitted.length - 1] = `${filename.substring(0, index)}.${ext}`;
-            } else {
-                splitted[splitted.length - 1] = `${filename}.${ext}`;
-            }
+            splitted[splitted.length - 1] = `${filename}.${ext}`;
         }
         localPath = splitted.join("/");
+
         if (isExternalSource(contentUrl)) {
             const myUrl = new URL(contentUrl);
             localPath = `/${localPath.substring(myUrl.protocol.length + 2)}`;
