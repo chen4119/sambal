@@ -1,0 +1,68 @@
+import { template } from "../ui/template";
+import { JSONLD_TYPE } from "sambal-jsonld";
+
+export function serializeJsonLd(mainEntity: any) {
+    return JSON.stringify(mainEntity, null, 4)
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+export async function renderSocialMediaMetaTags(baseUrl: string, mainEntity: any) {
+    if (mainEntity[JSONLD_TYPE]) {
+        const meta = mainEntityToMeta(baseUrl, mainEntity);
+        return template`
+            ${HtmlTags(meta)}
+            ${TwitterTags(meta)}
+            ${FbTags(meta)}
+        `;
+    }
+    return "";
+}
+
+function mainEntityToMeta(baseUrl: string, mainEntity: any) {
+    let imageUrls;
+    if (mainEntity.image) {
+        imageUrls = Array.isArray(mainEntity.image) ?
+        mainEntity.image.map(im => getImageUrl(baseUrl, im)) :
+        getImageUrl(baseUrl, mainEntity.image);
+    }
+    return {
+        url: toAbsUrl(baseUrl, mainEntity.mainEntityOfPage),
+        title: mainEntity.headline ? mainEntity.headline : mainEntity.name,
+        description: mainEntity.description,
+        image: imageUrls
+    };
+}
+
+function getImageUrl(baseUrl: string, imageObj: any) {
+    return `${baseUrl}${imageObj.contentUrl}`;
+}
+
+function toAbsUrl(baseUrl: string, path: string) {
+    return `${baseUrl}${path}`;
+}
+
+const HtmlTags = ({ url, title }) => {
+    return template`
+        <link rel="canonical" href="${url}" />
+        ${title ? `<title>${title}</title>` : null}
+    `;
+}
+
+const FbTags = ({ url, title, description, image }) => {
+    return template`
+        <meta name="og:url" content="${url}" />
+        ${title ? `<meta name="og:title" content="${title}" />` : null}
+        ${description ? `<meta name="og:description" content="${description}" />` : null}
+    `;
+}
+
+const TwitterTags = ({ title, description, image }) => {
+    return template`
+        <meta name="twitter:card" content="summary" />
+        ${title ? `<meta name="twitter:title" content="${title}" />` : null}
+        ${description ? `<meta name="twitter:description" content="${description}" />` : null}
+    `;
+}
+
+

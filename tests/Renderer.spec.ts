@@ -7,7 +7,7 @@ describe("Renderer", () => {
     let renderer: Renderer;
 
     beforeEach(async () => {
-        renderer = new Renderer(null, "mock-theme");
+        renderer = new Renderer(baseUrl, null, "mock-theme");
     });
 
     afterEach(async () => {

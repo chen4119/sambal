@@ -27,11 +27,12 @@ Hello world 3 changed!
 describe("DevServer", () => {
     let renderer: Renderer;
     let server: DevServer;
+    const baseUrl = "https://example.com";
     const testFile = getAbsFilePath(`${PAGES_FOLDER}/testblog.md`);
     beforeAll(async () => {
         await writeText(testFile, originalTestBlog);
         const classes = await init(["testblog.md"]);
-        renderer = new Renderer(null, "mock-theme");
+        renderer = new Renderer(baseUrl, null, "mock-theme");
         await renderer.initTheme();
         server = new DevServer(classes.router, renderer, 3000);
         await server.start();

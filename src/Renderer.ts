@@ -26,6 +26,7 @@ import {
     IHtmlSerializer,
     WebPage
 } from "./helpers/constant";
+import { serializeJsonLd, renderSocialMediaMetaTags } from "./helpers/seo";
 import { log } from "./helpers/log";
 
 type UI = {
@@ -53,6 +54,7 @@ export default class Renderer {
     private themeOptions: object;
 
     constructor(
+        private baseUrl: string,
         private entryFile: string,
         private theme: string | Theme) {
         this.serializer = new ReactSerializer();
@@ -173,9 +175,12 @@ export default class Renderer {
             return html;
         }
         let hasJsonLd = false;
-        let newHtml = await replaceScriptSrc(html, (name, attribs) => {
+        let hasSocialMediaMeta = false;
+        let updatedHtml = await replaceScriptSrc(html, (name, attribs) => {
             if (name === "script" && attribs.type === "application/ld+json") {
                 hasJsonLd = true;
+            } else if (name === "meta" && this.isSocialMediaMeta(attribs.name)) {
+                hasSocialMediaMeta = true;
             }
 
             if (name === "script" && attribs.src) {
@@ -193,16 +198,31 @@ export default class Renderer {
             }
             return attribs;
         });
-        if (!hasJsonLd && page.mainEntity) {
-            return this.addJsonLdScript(newHtml, page.mainEntity);
+        if (!hasSocialMediaMeta && page.mainEntity) {
+            updatedHtml = await this.addSocialMediaMeta(updatedHtml, page.mainEntity);
         }
-        return newHtml;
+        if (!hasJsonLd && page.mainEntity) {
+            updatedHtml = this.addJsonLdScript(updatedHtml, page.mainEntity);
+        }
+        return updatedHtml;
+    }
+
+    private isSocialMediaMeta(name: string) {
+        return name.startsWith("og:") || name.startsWith("twitter:");
+    }
+
+    private async addSocialMediaMeta(html: string, mainEntity: any) {
+        const metaTags = await renderSocialMediaMetaTags(this.baseUrl, mainEntity);
+
+        const index = html.indexOf("<head>");
+        if (index >= 0) {
+            return html.substring(0, index + 6) + metaTags + html.substring(index + 6);
+        }
+        return html;
     }
 
     private addJsonLdScript(html: string, mainEntity: any) {
-        const serializedJsonLd = JSON.stringify(mainEntity, null, 4)
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
+        const serializedJsonLd = serializeJsonLd(mainEntity);
 
         const jsonLdScript = `
         <script type="application/ld+json">

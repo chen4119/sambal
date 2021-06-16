@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`seo renderSocialMediaMetaTags article 1`] = `
+"
+            
+        <link rel=\\"canonical\\" href=\\"https://example.com/article\\" />
+        <title>Title of my article</title>
+    
+            
+        <meta name=\\"twitter:card\\" content=\\"summary\\" />
+        <meta name=\\"twitter:title\\" content=\\"Title of my article\\" />
+        <meta name=\\"twitter:description\\" content=\\"Description about my article\\" />
+    
+            
+        <meta name=\\"og:url\\" content=\\"https://example.com/article\\" />
+        <meta name=\\"og:title\\" content=\\"Title of my article\\" />
+        <meta name=\\"og:description\\" content=\\"Description about my article\\" />
+    
+        "
+`;
+
+exports[`seo serializeJsonLd article 1`] = `
+"{
+    \\"@type\\": \\"Article\\",
+    \\"name\\": \\"name field\\",
+    \\"headline\\": \\"Title of my article\\",
+    \\"description\\": \\"Description about my article\\",
+    \\"mainEntityOfPage\\": \\"/article\\",
+    \\"text\\": \\"&lt;have some characters to &lt;escape&gt;&gt;\\",
+    \\"image\\": {
+        \\"@type\\": \\"ImageObject\\",
+        \\"contentSize\\": \\"1 kB\\",
+        \\"contentUrl\\": \\"/images/image2-50.webp\\",
+        \\"encodingFormat\\": \\"image/webp\\",
+        \\"height\\": 50,
+        \\"width\\": 75
+    }
+}"
+`;

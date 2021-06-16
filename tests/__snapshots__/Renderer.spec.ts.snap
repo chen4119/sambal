@@ -3,7 +3,22 @@
 exports[`Renderer render using mock-theme 1`] = `
 "
                 <html>
-                    <head> 
+                    <head>
+            
+        <link rel=\\"canonical\\" href=\\"https://example.comundefined\\" />
+        <title>John Smith</title>
+    
+            
+        <meta name=\\"twitter:card\\" content=\\"summary\\" />
+        <meta name=\\"twitter:title\\" content=\\"John Smith\\" />
+        
+    
+            
+        <meta name=\\"og:url\\" content=\\"https://example.comundefined\\" />
+        <meta name=\\"og:title\\" content=\\"John Smith\\" />
+        
+    
+         
                         <script src=\\"/js/mock-theme/client.123.js\\"></script>
                     
         <script type=\\"application/ld+json\\">

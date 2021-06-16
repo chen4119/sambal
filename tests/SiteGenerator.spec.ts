@@ -9,12 +9,17 @@ describe("SiteGenerator", () => {
 
     beforeEach(async () => {
         const classes = await init();
-        const renderer = new Renderer(null, "mock-theme");
-        siteGenerator = new SiteGenerator(classes.router, renderer);
+        const renderer = new Renderer(baseUrl, null, "mock-theme");
+        siteGenerator = new SiteGenerator(baseUrl, classes.router, renderer);
+    });
+
+    it('build', async () => {
+        await siteGenerator.buildPages("/js");
+        await siteGenerator.generateSiteMap();
     });
 
     it('buildJsonLds', async () => {
-        await siteGenerator.buildJsonLds(baseUrl);
+        await siteGenerator.buildJsonLds();
     });
 
 });

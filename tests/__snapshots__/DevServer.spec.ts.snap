@@ -5,7 +5,22 @@ exports[`DevServer get client bundle 1`] = `"console.log(\\"Hello from client!\\
 exports[`DevServer refresh data on file change 1`] = `
 "
                 <html>
-                    <head> 
+                    <head>
+            
+        <link rel=\\"canonical\\" href=\\"https://example.comundefined\\" />
+        <title>Test blog</title>
+    
+            
+        <meta name=\\"twitter:card\\" content=\\"summary\\" />
+        <meta name=\\"twitter:title\\" content=\\"Test blog\\" />
+        
+    
+            
+        <meta name=\\"og:url\\" content=\\"https://example.comundefined\\" />
+        <meta name=\\"og:title\\" content=\\"Test blog\\" />
+        
+    
+         
                         <script src=\\"/_theme/client.123.js\\"></script>
                     
         <script type=\\"application/ld+json\\">
@@ -50,7 +65,22 @@ exports[`DevServer refresh data on file change 1`] = `
 exports[`DevServer render html 1`] = `
 "
                 <html>
-                    <head> 
+                    <head>
+            
+        <link rel=\\"canonical\\" href=\\"https://example.comundefined\\" />
+        <title>A linked data static site generator</title>
+    
+            
+        <meta name=\\"twitter:card\\" content=\\"summary\\" />
+        <meta name=\\"twitter:title\\" content=\\"A linked data static site generator\\" />
+        <meta name=\\"twitter:description\\" content=\\"A linked data static site generator\\" />
+    
+            
+        <meta name=\\"og:url\\" content=\\"https://example.comundefined\\" />
+        <meta name=\\"og:title\\" content=\\"A linked data static site generator\\" />
+        <meta name=\\"og:description\\" content=\\"A linked data static site generator\\" />
+    
+         
                         <script src=\\"/_theme/client.123.js\\"></script>
                     
         <script type=\\"application/ld+json\\">

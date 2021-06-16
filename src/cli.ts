@@ -108,7 +108,7 @@ async function serve() {
     try {
         const router = await initSite(CACHE_FOLDER);
 
-        const renderer = new Renderer(entryFile, theme);
+        const renderer = new Renderer(baseUrl, entryFile, theme);
         await renderer.initTheme();
 
         const server = new DevServer(router, renderer, 3000);
@@ -127,14 +127,15 @@ async function build() {
     try {
         const router = await initSite(OUTPUT_FOLDER);
 
-        const renderer = new Renderer(entryFile, theme);
+        const renderer = new Renderer(baseUrl, entryFile, theme);
         await renderer.build(publicPath);
 
-        const builder = new SiteGenerator(router, renderer);
+        const builder = new SiteGenerator(baseUrl, router, renderer);
         await builder.buildPages(publicPath);
 
         log.info("Writing schema.org json-lds");
-        await builder.buildJsonLds(baseUrl);
+        await builder.buildJsonLds();
+        await builder.generateSiteMap();
     } catch(e) {
         log.error(e);
     }
