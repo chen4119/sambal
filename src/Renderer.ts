@@ -208,7 +208,7 @@ export default class Renderer {
     }
 
     private isSocialMediaMeta(name: string) {
-        return name.startsWith("og:") || name.startsWith("twitter:");
+        return name && (name.startsWith("og:") || name.startsWith("twitter:"));
     }
 
     private async addSocialMediaMeta(html: string, mainEntity: any) {
