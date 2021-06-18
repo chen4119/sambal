@@ -1,6 +1,6 @@
 {
     "name": "sambal",
-    "version": "0.0.46",
+    "version": "0.0.47",
     "description": "A linked data static site generator",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
