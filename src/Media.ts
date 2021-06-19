@@ -1,5 +1,5 @@
 import sharp, { OutputInfo, Sharp } from "sharp";
-import { JSONLD_ID, JSONLD_TYPE } from "sambal-jsonld";
+import { JSONLD_TYPE } from "sambal-jsonld";
 import {
     isExternalSource,
     normalizeJsonLdId

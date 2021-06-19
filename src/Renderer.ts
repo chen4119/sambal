@@ -171,9 +171,6 @@ export default class Renderer {
     }
 
     private async postProcessHtml(page: WebPage, html: string, bundle: object, prefix: string) {
-        if (!bundle) {
-            return html;
-        }
         let hasJsonLd = false;
         let hasSocialMediaMeta = false;
         let updatedHtml = await replaceScriptSrc(html, (name, attribs) => {
@@ -183,7 +180,7 @@ export default class Renderer {
                 hasSocialMediaMeta = true;
             }
 
-            if (name === "script" && attribs.src) {
+            if (bundle && name === "script" && attribs.src) {
                 let realSrc = attribs.src;
                 for (const entryName of Object.keys(bundle)) {
                     if (attribs.src === entryName) {

@@ -2,33 +2,28 @@
 
 exports[`Router get / 1`] = `
 Object {
-  "@id": "_:1",
   "@type": "WebPage",
   "hasPart": Object {
     "@id": "/header",
     "@type": "WPHeader",
     "hasPart": Array [
       Object {
-        "@id": "_:2",
         "@type": "SiteNavigationElement",
         "name": "About",
         "url": "/about",
       },
       Object {
-        "@id": "_:3",
         "@type": "SiteNavigationElement",
         "name": "Docs",
         "url": "/get-started",
       },
       Array [
         Object {
-          "@id": "_:4",
           "@type": "SiteNavigationElement",
           "name": "My first blog",
           "url": "/blogs/blog1",
         },
         Object {
-          "@id": "_:5",
           "@type": "SiteNavigationElement",
           "name": "My second blog",
           "url": "/blogs/blog2",
@@ -38,7 +33,6 @@ Object {
     "headline": "Sambal",
     "potentialAction": Array [
       Object {
-        "@id": "_:6",
         "@type": "DownloadAction",
         "target": "https://github.com/chen4119/sambal",
       },
@@ -59,7 +53,6 @@ Object {
 
 exports[`Router get /alias/subfolder/blog1 1`] = `
 Object {
-  "@id": "_:1",
   "@type": "WebPage",
   "description": "alias folder",
   "mainEntity": Object {
@@ -93,33 +86,28 @@ Hello world",
 
 exports[`Router get /archive/2017/1 1`] = `
 Object {
-  "@id": "_:1",
   "@type": "WebPage",
   "hasPart": Object {
     "@id": "/header",
     "@type": "WPHeader",
     "hasPart": Array [
       Object {
-        "@id": "_:2",
         "@type": "SiteNavigationElement",
         "name": "About",
         "url": "/about",
       },
       Object {
-        "@id": "_:3",
         "@type": "SiteNavigationElement",
         "name": "Docs",
         "url": "/get-started",
       },
       Array [
         Object {
-          "@id": "_:4",
           "@type": "SiteNavigationElement",
           "name": "My first blog",
           "url": "/blogs/blog1",
         },
         Object {
-          "@id": "_:5",
           "@type": "SiteNavigationElement",
           "name": "My second blog",
           "url": "/blogs/blog2",
@@ -129,7 +117,6 @@ Object {
     "headline": "Sambal",
     "potentialAction": Array [
       Object {
-        "@id": "_:6",
         "@type": "DownloadAction",
         "target": "https://github.com/chen4119/sambal",
       },
@@ -174,13 +161,66 @@ Hello world2",
 }
 `;
 
+exports[`Router get /archive/org-a 1`] = `
+Object {
+  "@type": "WebPage",
+  "hasPart": Object {
+    "@id": "/header",
+    "@type": "WPHeader",
+    "hasPart": Array [
+      Object {
+        "@type": "SiteNavigationElement",
+        "name": "About",
+        "url": "/about",
+      },
+      Object {
+        "@type": "SiteNavigationElement",
+        "name": "Docs",
+        "url": "/get-started",
+      },
+      Array [
+        Object {
+          "@type": "SiteNavigationElement",
+          "name": "My first blog",
+          "url": "/blogs/blog1",
+        },
+        Object {
+          "@type": "SiteNavigationElement",
+          "name": "My second blog",
+          "url": "/blogs/blog2",
+        },
+      ],
+    ],
+    "headline": "Sambal",
+    "potentialAction": Array [
+      Object {
+        "@type": "DownloadAction",
+        "target": "https://github.com/chen4119/sambal",
+      },
+    ],
+  },
+  "mainEntity": Object {
+    "@id": "/archive/org-a",
+    "@type": "Organization",
+    "address": Object {
+      "@type": "PostalAddress",
+      "postalCode": 12345,
+      "streetAddress": "1 main st",
+    },
+    "identifier": "org-a",
+    "name": "org a",
+    "telephone": "123-435-2334",
+  },
+  "mainEntityOfPage": "/archive/org-a",
+  "url": "/archive/org-a",
+}
+`;
+
 exports[`Router get /blogs/blog1 1`] = `
 Object {
-  "@id": "_:1",
   "@type": "WebPage",
   "hasPart": Array [
     Object {
-      "@id": "_:2",
       "@type": "SiteNavigationElement",
       "name": "About",
       "url": "/about",
@@ -218,33 +258,28 @@ Hello world",
 exports[`Router iterate routes 1`] = `
 Array [
   Object {
-    "@id": "_:1",
     "@type": "WebPage",
     "hasPart": Object {
       "@id": "/header",
       "@type": "WPHeader",
       "hasPart": Array [
         Object {
-          "@id": "_:2",
           "@type": "SiteNavigationElement",
           "name": "About",
           "url": "/about",
         },
         Object {
-          "@id": "_:3",
           "@type": "SiteNavigationElement",
           "name": "Docs",
           "url": "/get-started",
         },
         Array [
           Object {
-            "@id": "_:4",
             "@type": "SiteNavigationElement",
             "name": "My first blog",
             "url": "/blogs/blog1",
           },
           Object {
-            "@id": "_:5",
             "@type": "SiteNavigationElement",
             "name": "My second blog",
             "url": "/blogs/blog2",
@@ -254,7 +289,6 @@ Array [
       "headline": "Sambal",
       "potentialAction": Array [
         Object {
-          "@id": "_:6",
           "@type": "DownloadAction",
           "target": "https://github.com/chen4119/sambal",
         },
@@ -272,11 +306,9 @@ Array [
     "url": "/",
   },
   Object {
-    "@id": "_:7",
     "@type": "WebPage",
     "hasPart": Array [
       Object {
-        "@id": "_:8",
         "@type": "SiteNavigationElement",
         "name": "About",
         "url": "/about",
@@ -310,11 +342,9 @@ Hello world",
     "url": "/blogs/blog1",
   },
   Object {
-    "@id": "_:7",
     "@type": "WebPage",
     "hasPart": Array [
       Object {
-        "@id": "_:8",
         "@type": "SiteNavigationElement",
         "name": "About",
         "url": "/about",
@@ -348,33 +378,28 @@ Hello world2",
     "url": "/blogs/blog2",
   },
   Object {
-    "@id": "_:1",
     "@type": "WebPage",
     "hasPart": Object {
       "@id": "/header",
       "@type": "WPHeader",
       "hasPart": Array [
         Object {
-          "@id": "_:2",
           "@type": "SiteNavigationElement",
           "name": "About",
           "url": "/about",
         },
         Object {
-          "@id": "_:3",
           "@type": "SiteNavigationElement",
           "name": "Docs",
           "url": "/get-started",
         },
         Array [
           Object {
-            "@id": "_:4",
             "@type": "SiteNavigationElement",
             "name": "My first blog",
             "url": "/blogs/blog1",
           },
           Object {
-            "@id": "_:5",
             "@type": "SiteNavigationElement",
             "name": "My second blog",
             "url": "/blogs/blog2",
@@ -384,7 +409,105 @@ Hello world2",
       "headline": "Sambal",
       "potentialAction": Array [
         Object {
-          "@id": "_:6",
+          "@type": "DownloadAction",
+          "target": "https://github.com/chen4119/sambal",
+        },
+      ],
+    },
+    "mainEntity": Object {
+      "@id": "/archive/org-a",
+      "@type": "Organization",
+      "address": Object {
+        "@type": "PostalAddress",
+        "postalCode": 12345,
+        "streetAddress": "1 main st",
+      },
+      "identifier": "org-a",
+      "name": "org a",
+      "telephone": "123-435-2334",
+    },
+    "mainEntityOfPage": "/archive/org-a",
+    "url": "/archive/org-a",
+  },
+  Object {
+    "@type": "WebPage",
+    "hasPart": Object {
+      "@id": "/header",
+      "@type": "WPHeader",
+      "hasPart": Array [
+        Object {
+          "@type": "SiteNavigationElement",
+          "name": "About",
+          "url": "/about",
+        },
+        Object {
+          "@type": "SiteNavigationElement",
+          "name": "Docs",
+          "url": "/get-started",
+        },
+        Array [
+          Object {
+            "@type": "SiteNavigationElement",
+            "name": "My first blog",
+            "url": "/blogs/blog1",
+          },
+          Object {
+            "@type": "SiteNavigationElement",
+            "name": "My second blog",
+            "url": "/blogs/blog2",
+          },
+        ],
+      ],
+      "headline": "Sambal",
+      "potentialAction": Array [
+        Object {
+          "@type": "DownloadAction",
+          "target": "https://github.com/chen4119/sambal",
+        },
+      ],
+    },
+    "mainEntity": Object {
+      "@id": "/archive/org-b",
+      "@type": "Organization",
+      "identifier": "org-b",
+      "name": "org b",
+      "telephone": "123-435-1564",
+    },
+    "mainEntityOfPage": "/archive/org-b",
+    "url": "/archive/org-b",
+  },
+  Object {
+    "@type": "WebPage",
+    "hasPart": Object {
+      "@id": "/header",
+      "@type": "WPHeader",
+      "hasPart": Array [
+        Object {
+          "@type": "SiteNavigationElement",
+          "name": "About",
+          "url": "/about",
+        },
+        Object {
+          "@type": "SiteNavigationElement",
+          "name": "Docs",
+          "url": "/get-started",
+        },
+        Array [
+          Object {
+            "@type": "SiteNavigationElement",
+            "name": "My first blog",
+            "url": "/blogs/blog1",
+          },
+          Object {
+            "@type": "SiteNavigationElement",
+            "name": "My second blog",
+            "url": "/blogs/blog2",
+          },
+        ],
+      ],
+      "headline": "Sambal",
+      "potentialAction": Array [
+        Object {
           "@type": "DownloadAction",
           "target": "https://github.com/chen4119/sambal",
         },
@@ -428,33 +551,28 @@ Hello world",
     "url": "/archive/2019/1",
   },
   Object {
-    "@id": "_:1",
     "@type": "WebPage",
     "hasPart": Object {
       "@id": "/header",
       "@type": "WPHeader",
       "hasPart": Array [
         Object {
-          "@id": "_:2",
           "@type": "SiteNavigationElement",
           "name": "About",
           "url": "/about",
         },
         Object {
-          "@id": "_:3",
           "@type": "SiteNavigationElement",
           "name": "Docs",
           "url": "/get-started",
         },
         Array [
           Object {
-            "@id": "_:4",
             "@type": "SiteNavigationElement",
             "name": "My first blog",
             "url": "/blogs/blog1",
           },
           Object {
-            "@id": "_:5",
             "@type": "SiteNavigationElement",
             "name": "My second blog",
             "url": "/blogs/blog2",
@@ -464,7 +582,6 @@ Hello world",
       "headline": "Sambal",
       "potentialAction": Array [
         Object {
-          "@id": "_:6",
           "@type": "DownloadAction",
           "target": "https://github.com/chen4119/sambal",
         },
@@ -508,7 +625,6 @@ Hello world2",
     "url": "/archive/2017/1",
   },
   Object {
-    "@id": "_:9",
     "@type": "WebPage",
     "description": "alias folder",
     "mainEntity": Object {

@@ -11,17 +11,13 @@ describe("Router", () => {
         router = classes.router;
     });
 
-    afterEach(() => {
-        shelljs.rm("-f", getAbsFilePath("pages/unittest.md"));
-    });
-
     it('iterate routes', async () => {
         const pageIterator = router.getPageIterator();
         const pages = [];
         for await (const page of pageIterator) {
             pages.push(page);
         }
-        expect(pages.length).toBe(6);
+        expect(pages.length).toBe(8);
         expect(pages).toMatchSnapshot();
     });
 
@@ -50,15 +46,9 @@ describe("Router", () => {
         expect(page).toBeNull();
     });
 
-    it('watch for file change', async () => {
-        const mockOnChange = jest.fn();
-        const watcher = await router.watchForFileChange(mockOnChange);
-        await wait();
-        shelljs.touch("pages/unittest.md");
-        await wait();
-        shelljs.touch("pages/unittest.md");
-        await wait();
-        await watcher.close();
-        expect(mockOnChange).toHaveBeenCalledWith("change", getAbsFilePath("pages/unittest.md"));
+    it('get /archive/org-a', async () => {
+        const page = await router.getPage("/archive/org-a");
+        expect(page).toMatchSnapshot();
     });
+
 });

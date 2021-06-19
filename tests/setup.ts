@@ -45,6 +45,30 @@ const collections: Collection[] = [
     }
 ];
 
+const customResolver = {
+    resolveUri: async (uri) => {
+        return [
+            {
+                "@type": "Organization",
+                identifier: "org-a",
+                name: "org a",
+                telephone: "123-435-2334",
+                address: {
+                    "@type": "PostalAddress",
+                    streetAddress: "1 main st",
+                    postalCode: 12345
+                }
+            },
+            {
+                "@type": "Organization",
+                identifier: "org-b",
+                name: "org b",
+                telephone: "123-435-1564"
+            }        
+        ];
+    }
+}
+
 const pages = searchFiles(PAGES_FOLDER, "**/*", true);
 const data = searchFiles(DATA_FOLDER, "**/*", true);
 
@@ -53,8 +77,14 @@ export async function init(extraPages = []) {
     const media = new Media(CACHE_FOLDER, imageTransforms);
     const uriResolver = new UriResolver(allPages, data, media);
     const router = new Router(allPages, data, uriResolver);
-    await router.collectRoutes(collections);
+
+    uriResolver.addResolver({host: "custom.com"}, {
+        resolveUri: customResolver.resolveUri,
+        clearCache: () => {}
+    });
     
+    await router.collectRoutes(collections);
+
     return {
         uriResolver,
         media,

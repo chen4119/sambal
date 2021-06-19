@@ -274,7 +274,10 @@ export default class Router {
             currentNode.hasPage = true;
         } else if (fileName === MOUNT_FILE) {
             const data = await loadLocalFile(`${PAGES_FOLDER}/${pagePath}`);
-            // TODO: forEach
+            if (data.forEach) {
+                const pathPrefix = segments.length > 1 ? segments.slice(0, segments.length - 1).join("/") : "";
+                await this.iterateMainEntities(currentNode, pathPrefix, routes, data.forEach);
+            }
             if (data.paginateCollection) {
                 currentNode.paginateCollection = data.paginateCollection;
                 nodeWithPagination.push(currentNode);
@@ -282,6 +285,28 @@ export default class Router {
         } else {
             currentNode.files.add(fileName);
             routes.push(normalizeJsonLdId(pagePath));
+        }
+    }
+
+    private async iterateMainEntities(node: RouteNode, pathPrefix: string, routes: string[], iterator) {
+        if (iterator.uri && iterator.path) {
+            const entityList = await this.uriResolver.hydrateUri(iterator.uri);
+            if (Array.isArray(entityList)) {
+                for (const mainEntity of entityList) {
+                    const uri = this.interpolateUri(iterator.path, mainEntity);
+                    const entityUri = normalizeJsonLdId(`${pathPrefix}/${uri}`);
+                    if (node.mount.has(uri)) {
+                        log.error(`Duplicate url ${uri}`);
+                    }
+                    if (!mainEntity[JSONLD_ID]) {
+                        mainEntity[JSONLD_ID] = entityUri;
+                    }
+                    node.mount.set(uri, mainEntity);
+                    routes.push(entityUri);
+                }
+            }
+        } else {
+            log.error(`Invalid forEach config.  No uri or path %O`, iterator);
         }
     }
 
@@ -312,6 +337,8 @@ export default class Router {
 
                 }
             }
+        } else {
+            log.error(`Invalid paginateCollection config.  No uri or path %O`, paginate);
         }
     }
 

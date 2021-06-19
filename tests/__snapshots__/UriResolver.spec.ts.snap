@@ -96,7 +96,6 @@ Object {
   "name": "My background",
   "thumbnail": Array [
     Object {
-      "@id": "_:1",
       "@type": "ImageObject",
       "contentSize": "1 kB",
       "contentUrl": "/images/image2-50.webp",
@@ -142,26 +141,22 @@ Object {
   "@type": "WPHeader",
   "hasPart": Array [
     Object {
-      "@id": "_:1",
       "@type": "SiteNavigationElement",
       "name": "About",
       "url": "/about",
     },
     Object {
-      "@id": "_:2",
       "@type": "SiteNavigationElement",
       "name": "Docs",
       "url": "/get-started",
     },
     Array [
       Object {
-        "@id": "_:3",
         "@type": "SiteNavigationElement",
         "name": "My first blog",
         "url": "/blogs/blog1",
       },
       Object {
-        "@id": "_:4",
         "@type": "SiteNavigationElement",
         "name": "My second blog",
         "url": "/blogs/blog2",
@@ -171,7 +166,6 @@ Object {
   "headline": "Sambal",
   "potentialAction": Array [
     Object {
-      "@id": "_:5",
       "@type": "DownloadAction",
       "target": "https://github.com/chen4119/sambal",
     },

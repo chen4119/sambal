@@ -5,5 +5,5 @@ paginateCollection:
 
 
 forEach:
-  uri: s3://testing
+  uri: https://custom.com/dummy/uri
   path: :identifier

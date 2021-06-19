@@ -33,7 +33,7 @@ const IMAGE_OBJECT = "imageobject";
 const MAX_DEPTH = 100;
 
 export default class UriResolver {
-    private blankNodeIndex: number;
+    // private blankNodeIndex: number;
     private fsResolver: FileSystemResolver;
     private httpResolver: HttpResolver;
     private resolvers: {
@@ -46,7 +46,7 @@ export default class UriResolver {
         data: string[],
         private media: Media
     ) {
-        this.blankNodeIndex = 1;
+        // this.blankNodeIndex = 1;
         this.fsResolver = new FileSystemResolver(pages, data);
         this.httpResolver = new HttpResolver();
         this.resolvers = [
@@ -55,7 +55,7 @@ export default class UriResolver {
                 resolver: this.fsResolver
             },
             {
-                matcher: {protocol: ["https", "http"]},
+                matcher: {protocol: ["https:", "http:"]},
                 resolver: this.httpResolver
             }
         ];
@@ -143,12 +143,13 @@ export default class UriResolver {
     }
 
     // all data need @id and @type
-    private async ensureJsonLd(jsonld: any, impliedId?: string) {
+    private async ensureJsonLd(jsonld: any, impliedId: string) {
         if (Array.isArray(jsonld)) {
             return;
         }
         if (!jsonld[JSONLD_ID]) {
-            jsonld[JSONLD_ID] = impliedId ? impliedId : `_:${this.blankNodeIndex++}`;
+            // jsonld[JSONLD_ID] = impliedId ? impliedId : `_:${this.blankNodeIndex++}`;
+            jsonld[JSONLD_ID] = impliedId;
         }
     }
 
@@ -183,7 +184,7 @@ export default class UriResolver {
                 graph
             );
         } else if (isObjectLiteral(target)) {
-            this.ensureJsonLd(target);
+            // this.ensureJsonLd(target);
             await this.iterateObjectKeys(target, nextLevel, graph);
         }
         return target;
