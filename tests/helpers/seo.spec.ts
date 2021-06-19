@@ -1,3 +1,4 @@
+import { WebPage } from "../../src/helpers/constant";
 import {
     serializeJsonLd,
     renderSocialMediaMetaTags
@@ -11,7 +12,6 @@ describe("seo", () => {
         name: "name field",
         headline: "Title of my article",
         description: "Description about my article",
-        mainEntityOfPage: "/article",
         text: "<have some characters to <escape>>",
         image: {
             "@type": "ImageObject",
@@ -22,6 +22,12 @@ describe("seo", () => {
             width: 75
         }
     };
+    const page: WebPage = {
+        "@type": "WebPage",
+        url: "/article",
+        mainEntity: article,
+        mainEntityOfPage: "/article"
+    }
 
     describe("serializeJsonLd", () => {
         it('article', () => {
@@ -32,7 +38,7 @@ describe("seo", () => {
 
     describe("renderSocialMediaMetaTags", () => {
         it('article', async () => {
-            const result = await renderSocialMediaMetaTags(baseUrl, article);
+            const result = await renderSocialMediaMetaTags(baseUrl, page);
             expect(result).toMatchSnapshot();
         });
     });

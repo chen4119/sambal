@@ -199,7 +199,7 @@ export default class Renderer {
             return attribs;
         });
         if (!hasSocialMediaMeta && page.mainEntity) {
-            updatedHtml = await this.addSocialMediaMeta(updatedHtml, page.mainEntity);
+            updatedHtml = await this.addSocialMediaMeta(updatedHtml, page);
         }
         if (!hasJsonLd && page.mainEntity) {
             updatedHtml = this.addJsonLdScript(updatedHtml, page.mainEntity);
@@ -211,8 +211,8 @@ export default class Renderer {
         return name && (name.startsWith("og:") || name.startsWith("twitter:"));
     }
 
-    private async addSocialMediaMeta(html: string, mainEntity: any) {
-        const metaTags = await renderSocialMediaMetaTags(this.baseUrl, mainEntity);
+    private async addSocialMediaMeta(html: string, page: WebPage) {
+        const metaTags = await renderSocialMediaMetaTags(this.baseUrl, page);
 
         const index = html.indexOf("<head>");
         if (index >= 0) {

@@ -1,5 +1,6 @@
 import { template } from "../ui/template";
 import { JSONLD_TYPE } from "sambal-jsonld";
+import { WebPage } from "./constant";
 
 export function serializeJsonLd(mainEntity: any) {
     return JSON.stringify(mainEntity, null, 4)
@@ -7,9 +8,9 @@ export function serializeJsonLd(mainEntity: any) {
         .replace(/>/g, "&gt;");
 }
 
-export async function renderSocialMediaMetaTags(baseUrl: string, mainEntity: any) {
-    if (mainEntity[JSONLD_TYPE]) {
-        const meta = mainEntityToMeta(baseUrl, mainEntity);
+export async function renderSocialMediaMetaTags(baseUrl: string, page: WebPage) {
+    if (page.mainEntity[JSONLD_TYPE]) {
+        const meta = mainEntityToMeta(baseUrl, page);
         return template`
             ${HtmlTags(meta)}
             ${TwitterTags(meta)}
@@ -19,7 +20,8 @@ export async function renderSocialMediaMetaTags(baseUrl: string, mainEntity: any
     return "";
 }
 
-function mainEntityToMeta(baseUrl: string, mainEntity: any) {
+function mainEntityToMeta(baseUrl: string, page: any) {
+    const { mainEntity, mainEntityOfPage} = page;
     let imageUrls;
     if (mainEntity.image) {
         imageUrls = Array.isArray(mainEntity.image) ?
@@ -27,7 +29,7 @@ function mainEntityToMeta(baseUrl: string, mainEntity: any) {
         getImageUrl(baseUrl, mainEntity.image);
     }
     return {
-        url: toAbsUrl(baseUrl, mainEntity.mainEntityOfPage),
+        url: toAbsUrl(baseUrl, mainEntityOfPage),
         title: mainEntity.headline ? mainEntity.headline : mainEntity.name,
         description: mainEntity.description,
         image: imageUrls

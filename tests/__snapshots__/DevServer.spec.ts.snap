@@ -7,7 +7,7 @@ exports[`DevServer refresh data on file change 1`] = `
                 <html>
                     <head>
             
-        <link rel=\\"canonical\\" href=\\"https://example.comundefined\\" />
+        <link rel=\\"canonical\\" href=\\"https://example.com/testblog\\" />
         <title>Test blog</title>
     
             
@@ -16,7 +16,7 @@ exports[`DevServer refresh data on file change 1`] = `
         
     
             
-        <meta name=\\"og:url\\" content=\\"https://example.comundefined\\" />
+        <meta name=\\"og:url\\" content=\\"https://example.com/testblog\\" />
         <meta name=\\"og:title\\" content=\\"Test blog\\" />
         
     
@@ -67,7 +67,7 @@ exports[`DevServer render html 1`] = `
                 <html>
                     <head>
             
-        <link rel=\\"canonical\\" href=\\"https://example.comundefined\\" />
+        <link rel=\\"canonical\\" href=\\"https://example.com/\\" />
         <title>A linked data static site generator</title>
     
             
@@ -76,7 +76,7 @@ exports[`DevServer render html 1`] = `
         <meta name=\\"twitter:description\\" content=\\"A linked data static site generator\\" />
     
             
-        <meta name=\\"og:url\\" content=\\"https://example.comundefined\\" />
+        <meta name=\\"og:url\\" content=\\"https://example.com/\\" />
         <meta name=\\"og:title\\" content=\\"A linked data static site generator\\" />
         <meta name=\\"og:description\\" content=\\"A linked data static site generator\\" />
     
