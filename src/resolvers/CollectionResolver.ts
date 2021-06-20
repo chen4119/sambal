@@ -4,17 +4,19 @@ import {
     Collection,
     PartitionKey,
     URI,
-    WebPage
+    EntityUri,
+    EntityType
 } from "../helpers/constant";
 import {
     isJsDate,
     isObjectLiteral
 } from "../helpers/util";
 import Router from "../Router";
+import UriResolver from "../UriResolver";
 
 type Partition = {
     groupBy?: PartitionKey,
-    feed: WebPage[]
+    feed: any[]
 };
 
 const PARTITION_PATH = "_part";
@@ -25,7 +27,8 @@ export default class CollectionResolver implements IResolver {
 
     constructor(
         private collections: Collection[],
-        private collectionRoutes: Map<string, string[]>,
+        private collectionRoutes: Map<string, EntityUri[]>,
+        private uriResolver: UriResolver,
         private router: Router) {
         this.collectionMap = new Map<String, Partition[]>();
     }
@@ -55,7 +58,7 @@ export default class CollectionResolver implements IResolver {
             const result = this.serialize(listUri, partition.feed, query.nav);
             pages.push(result);
         }
-        return pages;
+        return pages.length === 1 ? pages[0] : pages;
     }
 
     private parseSearchParams(uri: URI) {
@@ -106,9 +109,11 @@ export default class CollectionResolver implements IResolver {
         return pages;
     }
 
-    private serialize(listUri: string, feed: WebPage[], nav: boolean) {
+    private serialize(listUri: string, feed: any[], nav: boolean) {
         if (nav) {
-            return feed.map(page => ({
+            return feed
+            .filter(item => item[JSONLD_TYPE] === "WebPage")
+            .map(page => ({
                 [JSONLD_TYPE]: "SiteNavigationElement",
                 name: page.mainEntity.name ? page.mainEntity.name : page.mainEntity.headline,
                 url: page.url
@@ -117,7 +122,7 @@ export default class CollectionResolver implements IResolver {
         return this.serializeItemList(listUri, feed);
     }
 
-    private async paginatePartition(listUri: string, feed: WebPage[], pageSize: number) {
+    private async paginatePartition(listUri: string, feed: any[], pageSize: number) {
         const pages = [];
         let currentIndex = 0;
         let prevItem = null;
@@ -134,7 +139,7 @@ export default class CollectionResolver implements IResolver {
         return pages;
     }
 
-    private serializeListItem(listUri: string, slice: WebPage[], prevItem: any, position: number) {
+    private serializeListItem(listUri: string, slice: any[], prevItem: any, position: number) {
         const item: any = {
             // [JSONLD_ID]: `${listUri}/container`,
             [JSONLD_TYPE]: "ListItem",
@@ -152,11 +157,13 @@ export default class CollectionResolver implements IResolver {
         return item;
     }
 
-    private serializeItemList(listUri: string, feed: WebPage[]) {
+    private serializeItemList(listUri: string, feed: any[]) {
         return {
             [JSONLD_ID]: listUri,
             [JSONLD_TYPE]: "ItemList",
-            itemListElement: feed.map(page => page.mainEntity)
+            itemListElement: feed.map(item => {
+                return item[JSONLD_TYPE] === "WebPage" ? item.mainEntity : item
+            })
         };
     }
 
@@ -185,12 +192,12 @@ export default class CollectionResolver implements IResolver {
             return this.collectionMap.get(collection.uri);
         }
 
-        const routes = this.collectionRoutes.get(collection.uri);
+        const entityUris = this.collectionRoutes.get(collection.uri);
         let partitions: Partition[];
         if (collection.groupBy) {
-            partitions = await this.addToPartitionedList(collection, routes);
+            partitions = await this.addToPartitionedList(collection, entityUris);
         } else {
-            partitions = await this.addToSingleList(routes);
+            partitions = await this.addToSingleList(entityUris);
         }
 
         if (collection.sort) {
@@ -200,30 +207,38 @@ export default class CollectionResolver implements IResolver {
         return partitions;
     }
 
-    private async addToSingleList(routes: string[]) {
+    private async loadEntity(entityUri: EntityUri) {
+        if (entityUri.type === EntityType.Page) {
+            return await this.router.getPage(entityUri.path, false);
+        }
+        return await this.uriResolver.hydrateUri(entityUri.path);
+    }
+
+    private async addToSingleList(entityUris: EntityUri[]) {
         const feed = [];
-        for (const route of routes) {
-            const page = await this.router.getPage(route, false);
-            feed.push(page);
+        for (const entityUri of entityUris) {
+            const item = await this.loadEntity(entityUri);
+            feed.push(item);
         }
         return [{
             feed: feed
         }];
     }
 
-    private async addToPartitionedList(collection: Collection, routes: string[]) {
+    private async addToPartitionedList(collection: Collection, entityUris: EntityUri[]) {
         const partitionMap = new Map<string, Partition>();
-        for (const route of routes) {
-            const page = await this.router.getPage(route, false);
-            const partitions = collection.groupBy(page.mainEntity);
+        for (const entityUri of entityUris) {
+            const item = await this.loadEntity(entityUri);
+            const mainEntity = entityUri.type === EntityType.Page ? item.mainEntity : item;
+            const partitions = collection.groupBy(mainEntity);
             if (Array.isArray(partitions)) {
                 for (const partitionKey of partitions) {
                     const partition = this.getPartition(partitionMap, partitionKey);
-                    partition.feed.push(page);
+                    partition.feed.push(item);
                 }
             } else if (isObjectLiteral(partitions)) {
                 const partition = this.getPartition(partitionMap, partitions);
-                partition.feed.push(page);
+                partition.feed.push(item);
             } else {
                 throw new Error(`Invalid partition key: ${partitions}`);
             }

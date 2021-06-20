@@ -12,7 +12,9 @@ import {
     Collection,
     WebPage,
     FS_PROTO,
-    DATA_FOLDER
+    DATA_FOLDER,
+    EntityUri,
+    EntityType
 } from "./helpers/constant";
 import { normalizeJsonLdId, loadLocalFile } from "./helpers/data";
 import { log } from "./helpers/log";
@@ -232,18 +234,23 @@ export default class Router {
 
     async collectRoutes(collections: Collection[]) {
         const routes: string[] = [];
+        const dataUris = this.data.map(d => normalizeJsonLdId(d));
         const nodeWithPagination: RouteNode[] = [];
         for (const page of this.pages) {
             await this.addPathToTree(page, routes, nodeWithPagination);
         }
 
-        const collectionRoutes = new Map<string, string[]>();
+        const collectionRoutes = new Map<string, EntityUri[]>();
         for (const collection of collections) {
-            const matches = mm(routes, collection.match);
-            collectionRoutes.set(collection.uri, matches);
-        }
+            let entityUris: EntityUri[] = [];
+            const routeMatches = mm(routes, collection.match);
+            entityUris = entityUris.concat(routeMatches.map(m => ({type: EntityType.Page, path: m})));
 
-        this.collectionResolver = new CollectionResolver(collections, collectionRoutes, this);
+            const dataMatches = mm(dataUris, collection.match);
+            entityUris = entityUris.concat(dataMatches.map(m => ({type: EntityType.Data, path: m})));
+            collectionRoutes.set(collection.uri, entityUris);
+        }
+        this.collectionResolver = new CollectionResolver(collections, collectionRoutes, this.uriResolver, this);
         this.uriResolver.addResolver(
             {protocol: FS_PROTO, path: collections.map(c => c.uri)},
             this.collectionResolver

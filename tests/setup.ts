@@ -6,7 +6,7 @@ import { searchFiles } from "../src/helpers/data";
 
 const imageTransforms = [
     {
-        match: "images/image2.jpg",
+        match: "/images/image2",
         width: 500,
         encodingFormat: "image/webp",
         thumbnails: [
@@ -42,6 +42,10 @@ const collections: Collection[] = [
         sort: (a, b) => {
             return a.dateModified.getTime() - b.dateModified.getTime();
         }
+    },
+    {
+        uri: "/collections/images",
+        match: ["/images/**/*"]
     }
 ];
 
@@ -74,7 +78,7 @@ const data = searchFiles(DATA_FOLDER, "**/*", true);
 
 export async function init(extraPages = []) {
     const allPages = [...pages, ...extraPages];
-    const media = new Media(CACHE_FOLDER, imageTransforms);
+    const media = new Media(pages, data, CACHE_FOLDER, imageTransforms);
     const uriResolver = new UriResolver(allPages, data, media);
     const router = new Router(allPages, data, uriResolver);
 

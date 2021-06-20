@@ -64,6 +64,11 @@ describe("UriResolver", () => {
         expect(collection[1].url).toBe("/blogs/blog2");
     });
 
+    it('get collections/images', async () => {
+        const collection = await uriResolver.resolveUri("collections/images");
+        expect(collection.itemListElement[0].contentUrl).toBe("/images/image2.webp");
+    });
+
     describe("Custom resolver", () => {
         const exampleBlog = {
             "@type": "BlogPost",
@@ -87,8 +92,5 @@ describe("UriResolver", () => {
             const result = await uriResolver.resolveUri("https://example.com/blog1");
             expect(result).toStrictEqual(exampleBlog);
         });
-
-
-    
     });
 });

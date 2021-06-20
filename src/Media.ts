@@ -1,12 +1,11 @@
 import sharp, { OutputInfo, Sharp } from "sharp";
+import mm from "micromatch";
 import { JSONLD_TYPE } from "sambal-jsonld";
 import {
     isExternalSource,
     normalizeJsonLdId
 } from "./helpers/data";
-import { PAGES_FOLDER, DATA_FOLDER } from "./helpers/constant";
 import { formatSize, getMimeType, writeBuffer } from "./helpers/util";
-import { searchFiles } from "./helpers/data";
 import { log } from "./helpers/log";
 import { URL } from "url";
 
@@ -34,18 +33,21 @@ export default class Media {
     private publishedMediaPaths: Set<string>;
 
     constructor(
+        pages: string[],
+        data: string[],
         private outputFolder: string,
         imageTransforms: ImageTransform[])
     {
         this.imageTransformMap = new Map<string, ImageTransform>();
         this.cachedJsonldMap = new Map<string, unknown>();
         this.publishedMediaPaths = new Set<string>();
+        const localFileUris = [
+            ...pages.map(p => normalizeJsonLdId(p)),
+            ...data.map(d => normalizeJsonLdId(d))
+        ];
         for (const transform of imageTransforms) {
-            const matches = [
-                ...searchFiles(PAGES_FOLDER, transform.match),
-                ...searchFiles(DATA_FOLDER, transform.match)
-            ];
-            matches.forEach(filePath => this.imageTransformMap.set(normalizeJsonLdId(filePath), transform));
+            const matches = mm(localFileUris, transform.match);
+            matches.forEach(uri => this.imageTransformMap.set(normalizeJsonLdId(uri), transform));
         }
     }
 

@@ -12,34 +12,43 @@ export type Collection = {
     match: string | string[],
     groupBy?: (mainEntity: any) => PartitionKey | PartitionKey[],
     sort?: (a: any, b: any) => number
-}
+};
 
 
 export type WebPage = {
-    // "@id": string,
     "@type": string,
     url: string,
     mainEntity: any,
     [key: string]: any
-}
+};
 
 export type OnBundleChanged = (isError: boolean, entry: any) => void;
 
 export interface IHtmlSerializer {
     toHtml(renderResult: unknown): string;
-}
+};
 
 export type URI = {
     protocol: string,
     host: string,
     path: string,
     query?: URLSearchParams
-}
+};
 
 export interface IResolver {
     resolveUri(uri: URI): Promise<any>;
     clearCache(): void;
-}
+};
+
+export enum EntityType {
+    Page,
+    Data
+};
+
+export type EntityUri = {
+    type: EntityType,
+    path: string
+};
 
 export const CACHE_FOLDER = ".sambal";
 export const OUTPUT_FOLDER = "public";
