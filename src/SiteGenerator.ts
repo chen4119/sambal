@@ -1,17 +1,25 @@
 import path from "path";
 import Renderer from "./Renderer";
 import prettier from "prettier";
-import { writeText, getFileExt } from "./helpers/util";
+import { writeText, getFileExt, isObjectLiteral } from "./helpers/util";
 import { log } from "./helpers/log";
 import { OUTPUT_FOLDER } from "./helpers/constant";
 import Router from "./Router";
-import { JSONLD_ID } from "sambal-jsonld";
 import { template } from "./ui/template";
+import {
+    JSONLD_ID,
+    JSONLD_TYPE,
+    JSONLD_CONTEXT,
+    isJsonLdRef
+} from "sambal-jsonld";
+import { normalizeJsonLdId } from "./helpers/data";
 
 type SiteMapItem = {
     loc: string,
     lastmod?: string
 }
+
+const JSONLD_FILENAME = "schema.json";
 
 export default class SiteGenerator {
     private siteMap: SiteMapItem[];
@@ -40,8 +48,30 @@ export default class SiteGenerator {
         const iterator = this.router.getJsonLdIterator(this.baseUrl);
         for await (const jsonld of iterator) {
             log.info(`Writing ${jsonld[JSONLD_ID]}`);
-            await writeText(`./${OUTPUT_FOLDER}${jsonld[JSONLD_ID]}/schema.json`, JSON.stringify(jsonld, null, 4));
+            const finalJsonLd = this.updateRef(jsonld);
+            await writeText(
+                `./${OUTPUT_FOLDER}${jsonld[JSONLD_ID]}/${JSONLD_FILENAME}`,
+                JSON.stringify(finalJsonLd, null, 4)
+            );
         }
+    }
+
+    private updateRef(jsonld: any) {
+        if (Array.isArray(jsonld)) {
+            return jsonld.map(j => this.updateRef(j));
+        }
+
+        if (isJsonLdRef(jsonld)) {
+            jsonld[JSONLD_ID] = `${normalizeJsonLdId(jsonld[JSONLD_ID])}/${JSONLD_FILENAME}`;
+        } else if (isObjectLiteral(jsonld)) {
+            for (const fieldName of Object.keys(jsonld)) {
+                if (fieldName !== JSONLD_ID && fieldName !== JSONLD_TYPE && fieldName !== JSONLD_CONTEXT) {
+                    const fieldValue = jsonld[fieldName];
+                    jsonld[fieldName] = this.updateRef(fieldValue);
+                }
+            }
+        }
+        return jsonld;
     }
 
     async generateSiteMap() {

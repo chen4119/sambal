@@ -20,8 +20,9 @@ describe("SiteGenerator", () => {
         await siteGenerator.generateSiteMap();
     });
 
+    /*
     it('buildJsonLds', async () => {
         await siteGenerator.buildJsonLds();
-    });
+    });*/
 
 });

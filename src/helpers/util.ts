@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import shelljs from "shelljs";
-import { URLSearchParams } from "url";
 
 export function isObjectLiteral(obj) {
     return obj !== null && typeof(obj) === "object" && Object.getPrototypeOf(obj) === Object.prototype;
@@ -82,21 +81,6 @@ export function writeBuffer(output: string, content: Buffer): Promise<void> {
             }
         });
     });
-}
-
-// meant for relative path
-export function getPathnameAndQuery(uri: string) {
-    let pathname = uri;
-    let query = null;
-    let qIndex = uri.indexOf("?");
-    if (qIndex >= 0) {
-        pathname = uri.substring(0, qIndex);
-        query = new URLSearchParams(uri.substring(qIndex)); 
-    }
-    return {
-        pathname,
-        query
-    };
 }
 
 export function getFileExt(filePath: string) {

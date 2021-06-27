@@ -22,9 +22,14 @@ describe("data", () => {
             expect(result).toBe("/blogs/blog1");
         });
 
-        it('encode uri', async () => {
+        it('encode relative uri', async () => {
             const result = normalizeJsonLdId("/blogs/blog 1");
             expect(result).toBe("/blogs/blog%201");
+        });
+
+        it('encode abs uri', async () => {
+            const result = normalizeJsonLdId("https://sambal.dev/blogs/blog 1");
+            expect(result).toBe("https://sambal.dev/blogs/blog%201");
         });
     });
 

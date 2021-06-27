@@ -4,7 +4,7 @@ exports[`UriResolver get background 1`] = `
 Object {
   "@type": "ImageObject",
   "author": Object {
-    "@id": "johnsmith",
+    "@id": "john smith",
   },
   "contentSize": "51 kB",
   "contentUrl": "/images/image2.webp",
@@ -29,7 +29,7 @@ exports[`UriResolver get blog1 1`] = `
 Object {
   "@type": "BlogPosting",
   "author": Object {
-    "@id": "johnsmith",
+    "@id": "john smith",
   },
   "dateCreated": 2019-10-26T00:00:00.000Z,
   "dateModified": 2019-10-26T00:00:00.000Z,
@@ -82,7 +82,7 @@ Object {
   "@id": "/background",
   "@type": "ImageObject",
   "author": Object {
-    "@id": "/johnsmith",
+    "@id": "/john%20smith",
     "@type": "Person",
     "email": "smitty123@hotmail.com",
     "familyName": "Smith",
@@ -113,7 +113,7 @@ Object {
   "@id": "/blogs/blog1",
   "@type": "BlogPosting",
   "author": Object {
-    "@id": "/johnsmith",
+    "@id": "/john%20smith",
     "@type": "Person",
     "email": "smitty123@hotmail.com",
     "familyName": "Smith",

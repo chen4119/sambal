@@ -3,7 +3,8 @@ import {
     JSONLD_CONTEXT,
     SCHEMA_CONTEXT,
     JSONLD_ID,
-    isJsonLdRef
+    isJsonLdRef,
+    parseUri
 } from "sambal-jsonld";
 import {
     PAGES_FOLDER,
@@ -14,7 +15,8 @@ import {
     FS_PROTO,
     DATA_FOLDER,
     EntityUri,
-    EntityType
+    EntityType,
+    URI
 } from "./helpers/constant";
 import { normalizeJsonLdId, loadLocalFile } from "./helpers/data";
 import { log } from "./helpers/log";
@@ -197,7 +199,7 @@ export default class Router {
                     yield {
                         [JSONLD_ID]: uri,
                         [JSONLD_CONTEXT]: {
-                            "@vocab": SCHEMA_CONTEXT,
+                            "@vocab": `${SCHEMA_CONTEXT}/`,
                             "@base": baseUrl
                         },
                         ...jsonld
@@ -252,7 +254,7 @@ export default class Router {
         }
         this.collectionResolver = new CollectionResolver(collections, collectionRoutes, this.uriResolver, this);
         this.uriResolver.addResolver(
-            {protocol: FS_PROTO, path: collections.map(c => c.uri)},
+            {protocol: `${FS_PROTO}:`, path: collections.map(c => c.uri)},
             this.collectionResolver
         );
 
@@ -325,7 +327,10 @@ export default class Router {
             }
         } else if (paginate.uri && paginate.path) {
             const pageSize = Number.isInteger(paginate.pageSize) ? paginate.pageSize : DEFAULT_PAGE_SIZE;
-            const partitions = await this.collectionResolver.getCollectionPages(this.uriResolver.parseUri(paginate.uri), pageSize);
+            const partitions = await this.collectionResolver.getCollectionPages(
+                parseUri(normalizeJsonLdId(paginate.uri)) as URI,
+                pageSize
+            );
             for (const partition of partitions) {
                 for (let i = 0; i < partition.pages.length; i++) {
                     const variables = {

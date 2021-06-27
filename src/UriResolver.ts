@@ -4,15 +4,13 @@ import {
     FS_PROTO,
     URI
 } from "./helpers/constant";
-import { URL } from "url";
 import HttpResolver from "./resolvers/HttpResolver";
 import FileSystemResolver from "./resolvers/FileSystemResolver";
 import Media from "./Media";
-import { getPathnameAndQuery, isObjectLiteral } from "./helpers/util";
+import { isObjectLiteral } from "./helpers/util";
 import { 
     normalizeJsonLdId,
-    isImageFile,
-    isExternalSource
+    isImageFile
 } from "./helpers/data";
 import {
     JSONLD_CONTEXT,
@@ -20,7 +18,8 @@ import {
     JSONLD_ID,
     JSONLD_TYPE,
     isSchemaType,
-    isJsonLdRef
+    isJsonLdRef,
+    parseUri
 } from "sambal-jsonld";
 
 type UriMatcher = {
@@ -51,7 +50,7 @@ export default class UriResolver {
         this.httpResolver = new HttpResolver();
         this.resolvers = [
             {
-                matcher: {protocol: FS_PROTO},
+                matcher: {protocol: `${FS_PROTO}:`},
                 resolver: this.fsResolver
             },
             {
@@ -74,49 +73,32 @@ export default class UriResolver {
         }
     }
 
-    parseUri(uriStr: string) {
-        const normalizedUriStr = normalizeJsonLdId(uriStr);
-        let uri: URI;
-
-        if (isExternalSource(normalizedUriStr)) {
-            const url = new URL(uriStr);
-            uri = {
-                protocol: url.protocol,
-                host: url.host,
-                path: url.pathname,
-                query: url.searchParams
-            };
-        } else {
-            const pathAndQuery = getPathnameAndQuery(normalizedUriStr);
-            uri = {
-                protocol: FS_PROTO,
-                host: LOCALHOST,
-                path: pathAndQuery.pathname,
-                query: pathAndQuery.query
-            };
-        }
-        return uri;
-    }
-
     async resolveUri(uriStr: string) {
-        let uri: URI = this.parseUri(uriStr);
+        const uriObj: URI = parseUri(uriStr) as URI;
+        // Fill in protocol and host for relative path
+        if (!uriObj.protocol && !uriObj.host) {
+            uriObj.protocol = `${FS_PROTO}:`;
+            uriObj.host = LOCALHOST;
+        }
+
         let data;
         for (const instance of this.resolvers) {
-            if (this.isMatch(instance.matcher, uri)) {
-                data = await instance.resolver.resolveUri(uri);
+            if (this.isMatch(instance.matcher, uriObj)) {
+                data = await instance.resolver.resolveUri(uriObj);
                 break;
             }
         }
         if (!data) {
             throw new Error(`No resolver found for uri ${uriStr}`);
         }
-        if (this.fsResolver.isLocalImageFile(uri.path) || isImageFile(uriStr)) {
-            data = await this.media.loadImageUrl(uri.path, data);
+        if (this.fsResolver.isLocalImageFile(uriObj.path) || isImageFile(uriStr)) {
+            data = await this.media.loadImageUrl(uriObj.path, data);
         } else if (isSchemaType(data, IMAGE_OBJECT, false)) {
-            const image = await this.resolveUri(data.contentUrl);
+            const normalizedUrl = normalizeJsonLdId(data.contentUrl);
+            const image = await this.resolveUri(normalizedUrl);
             data = {
                 ...data,
-                ...await this.media.loadImageUrl(normalizeJsonLdId(data.contentUrl), image)
+                ...await this.media.loadImageUrl(normalizedUrl, image)
             };
         }
         return data;
@@ -175,8 +157,9 @@ export default class UriResolver {
             if (graph && graph.has(target[JSONLD_ID])) {
                 nextTarget = graph.get(target[JSONLD_ID]);
             } else {
-                nextTarget = await this.resolveUri(target[JSONLD_ID]);
-                this.ensureJsonLd(nextTarget, normalizeJsonLdId(target[JSONLD_ID]));
+                const uri = normalizeJsonLdId(target[JSONLD_ID]);
+                nextTarget = await this.resolveUri(uri);
+                this.ensureJsonLd(nextTarget, uri);
             }
             return await this.hydrate(
                 nextTarget,

@@ -1,10 +1,7 @@
 import sharp, { OutputInfo, Sharp } from "sharp";
 import mm from "micromatch";
-import { JSONLD_TYPE } from "sambal-jsonld";
-import {
-    isExternalSource,
-    normalizeJsonLdId
-} from "./helpers/data";
+import { JSONLD_TYPE, isAbsUri } from "sambal-jsonld";
+import { normalizeJsonLdId } from "./helpers/data";
 import { formatSize, getMimeType, writeBuffer } from "./helpers/util";
 import { log } from "./helpers/log";
 import { URL } from "url";
@@ -61,7 +58,7 @@ export default class Media {
             await this.transform(imageJsonLd, imageBuf, this.imageTransformMap.get(uri));
         } else {
             const output = await this.hydrateImage(imageJsonLd, imageBuf);
-            if (!isExternalSource(uri)) {
+            if (!isAbsUri(uri)) {
                 imageJsonLd.contentUrl = this.toLocalContentUrl(uri, output.info.format);
                 await this.writeImage(imageJsonLd.contentUrl, output.buffer);
             }
@@ -177,7 +174,7 @@ export default class Media {
         }
         localPath = splitted.join("/");
 
-        if (isExternalSource(contentUrl)) {
+        if (isAbsUri(contentUrl)) {
             const myUrl = new URL(contentUrl);
             localPath = `/${localPath.substring(myUrl.protocol.length + 2)}`;
         }

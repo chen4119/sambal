@@ -9,10 +9,10 @@ import {
     readTextFile,
     frontMatter,
     safeParseJson,
-    getPathnameAndQuery,
     getFileExt
 } from "./util";
 import { MOUNT_FILE, PAGE_FILE } from "./constant";
+import { isAbsUri, parseUri } from "sambal-jsonld";
 
 enum SUPPORTED_CONTENT_TYPE {
     yaml,
@@ -30,7 +30,7 @@ export function searchFiles(baseFolder: string, query: string | string[], allFil
         return Array.from(matchSet);
     }
 
-    if (isExternalSource(query)) {
+    if (isAbsUri(query)) {
         return [query];
     }
     const matches = glob.sync(query, {
@@ -45,10 +45,8 @@ function isSambalReservedFile(filePath: string) {
     return filePath.endsWith(MOUNT_FILE) || filePath.endsWith(PAGE_FILE);
 }
 
-export function normalizeRelativePath(src: string) {
-    if (isExternalSource(src)) {
-        return encodeURI(src);
-    }
+function normalizeRelativePath(src: string) {
+
     let normalSrc = src;
     if (normalSrc.endsWith("/")) {
         normalSrc = normalSrc.substring(0, normalSrc.length - 1);
@@ -59,23 +57,23 @@ export function normalizeRelativePath(src: string) {
     return normalSrc;
 }
 
-export function normalizeJsonLdId(src: string) {
-    if (isExternalSource(src)) {
-        return encodeURI(src);
+export function normalizeJsonLdId(uri: string) {
+    if (isAbsUri(uri)) {
+        return encodeURI(uri);
     }
 
-    const pathAndQuery = getPathnameAndQuery(src);
-    let normalSrc = normalizeRelativePath(pathAndQuery.pathname);
-    if (isSupportedFile(normalSrc)) {
-        normalSrc = normalSrc.substring(0, normalSrc.lastIndexOf("."));
+    const { path, query } = parseUri(uri);
+    let normalPath = normalizeRelativePath(path);
+    if (isSupportedFile(normalPath)) {
+        normalPath = normalPath.substring(0, normalPath.lastIndexOf("."));
     }
-    if (normalSrc === "/index") {
+    if (normalPath === "/index") {
         return "/";
     }
-    if (normalSrc.endsWith("/index")) {
-        normalSrc = normalSrc.substring(0, normalSrc.length - 6);
+    if (normalPath.endsWith("/index")) {
+        normalPath = normalPath.substring(0, normalPath.length - 6);
     }
-    return `${encodeURI(normalSrc)}${pathAndQuery.query ? `?${pathAndQuery.query.toString()}` : ""}`;
+    return `${encodeURI(normalPath)}${query ? `?${query.toString()}` : ""}`;
 }
 
 function isDataFileExist(baseFolder: string, filePath: string) {
@@ -102,10 +100,6 @@ export async function loadRemoteFile(src: string) {
     return parseContent(response.data, getAxiosResponseContentType(response));
 }
 
-export function isExternalSource(src: string) {
-    return src.startsWith("http://") || src.startsWith("https://");
-}
-
 const IMAGE_EXT_REGEX = /.+(.jpg|.jpeg|.gif|.png|.webp)$/i;
 const SUPPORTED_FILE_EXT_REGEX = /.+(.yaml|.yml|.json|.md)$/i;
 
@@ -120,7 +114,7 @@ export function isSupportedFile(src: string) {
     if (!src) {
         return false;
     }
-    return isExternalSource(src) || 
+    return isAbsUri(src) || 
     isImageFile(src) ||
     src.match(SUPPORTED_FILE_EXT_REGEX);
 }

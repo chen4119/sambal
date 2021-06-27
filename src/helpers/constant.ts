@@ -29,8 +29,8 @@ export interface IHtmlSerializer {
 };
 
 export type URI = {
-    protocol: string,
-    host: string,
+    protocol?: string,
+    host?: string,
     path: string,
     query?: URLSearchParams
 };
