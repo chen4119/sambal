@@ -64,6 +64,43 @@ Object {
       "email": "smitty123@hotmail.com",
       "familyName": "Smith",
       "givenName": "John",
+      "hasOfferCatalog": Object {
+        "@type": "OfferCatalog",
+        "itemListElement": Array [
+          Object {
+            "@context": Object {
+              "@base": "https://sambal.dev",
+              "@vocab": "https://schema.org",
+            },
+            "@id": "/",
+            "@type": "SoftwareSourceCode",
+            "codeRepository": "https://github.com/chen4119/sambal",
+            "description": "A linked data static site generator",
+            "headline": "A linked data static site generator",
+            "name": "Sambal",
+            "programmingLanguage": "Typescript",
+            "usageInfo": Array [
+              Object {
+                "alternativeHeadline": "Search engine optimized from day one",
+                "headline": "Schema.org json-ld as the content model",
+              },
+              Object {
+                "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                "headline": "Generate HTML and schema.org json-ld files",
+              },
+              Object {
+                "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                "headline": "Image to schema.org ImageObject",
+              },
+              Object {
+                "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                "headline": "Build universal themes",
+              },
+            ],
+          },
+        ],
+        "name": "Open source software",
+      },
       "name": "John Smith",
     },
     "dateCreated": 2019-10-26T00:00:00.000Z,
@@ -137,6 +174,43 @@ Object {
             "email": "smitty123@hotmail.com",
             "familyName": "Smith",
             "givenName": "John",
+            "hasOfferCatalog": Object {
+              "@type": "OfferCatalog",
+              "itemListElement": Array [
+                Object {
+                  "@context": Object {
+                    "@base": "https://sambal.dev",
+                    "@vocab": "https://schema.org",
+                  },
+                  "@id": "/",
+                  "@type": "SoftwareSourceCode",
+                  "codeRepository": "https://github.com/chen4119/sambal",
+                  "description": "A linked data static site generator",
+                  "headline": "A linked data static site generator",
+                  "name": "Sambal",
+                  "programmingLanguage": "Typescript",
+                  "usageInfo": Array [
+                    Object {
+                      "alternativeHeadline": "Search engine optimized from day one",
+                      "headline": "Schema.org json-ld as the content model",
+                    },
+                    Object {
+                      "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                      "headline": "Generate HTML and schema.org json-ld files",
+                    },
+                    Object {
+                      "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                      "headline": "Image to schema.org ImageObject",
+                    },
+                    Object {
+                      "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                      "headline": "Build universal themes",
+                    },
+                  ],
+                },
+              ],
+              "name": "Open source software",
+            },
             "name": "John Smith",
           },
           "dateCreated": 2017-10-26T00:00:00.000Z,
@@ -235,6 +309,43 @@ Object {
       "email": "smitty123@hotmail.com",
       "familyName": "Smith",
       "givenName": "John",
+      "hasOfferCatalog": Object {
+        "@type": "OfferCatalog",
+        "itemListElement": Array [
+          Object {
+            "@context": Object {
+              "@base": "https://sambal.dev",
+              "@vocab": "https://schema.org",
+            },
+            "@id": "/",
+            "@type": "SoftwareSourceCode",
+            "codeRepository": "https://github.com/chen4119/sambal",
+            "description": "A linked data static site generator",
+            "headline": "A linked data static site generator",
+            "name": "Sambal",
+            "programmingLanguage": "Typescript",
+            "usageInfo": Array [
+              Object {
+                "alternativeHeadline": "Search engine optimized from day one",
+                "headline": "Schema.org json-ld as the content model",
+              },
+              Object {
+                "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                "headline": "Generate HTML and schema.org json-ld files",
+              },
+              Object {
+                "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                "headline": "Image to schema.org ImageObject",
+              },
+              Object {
+                "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                "headline": "Build universal themes",
+              },
+            ],
+          },
+        ],
+        "name": "Open source software",
+      },
       "name": "John Smith",
     },
     "dateCreated": 2019-10-26T00:00:00.000Z,
@@ -323,6 +434,43 @@ Array [
         "email": "smitty123@hotmail.com",
         "familyName": "Smith",
         "givenName": "John",
+        "hasOfferCatalog": Object {
+          "@type": "OfferCatalog",
+          "itemListElement": Array [
+            Object {
+              "@context": Object {
+                "@base": "https://sambal.dev",
+                "@vocab": "https://schema.org",
+              },
+              "@id": "/",
+              "@type": "SoftwareSourceCode",
+              "codeRepository": "https://github.com/chen4119/sambal",
+              "description": "A linked data static site generator",
+              "headline": "A linked data static site generator",
+              "name": "Sambal",
+              "programmingLanguage": "Typescript",
+              "usageInfo": Array [
+                Object {
+                  "alternativeHeadline": "Search engine optimized from day one",
+                  "headline": "Schema.org json-ld as the content model",
+                },
+                Object {
+                  "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                  "headline": "Generate HTML and schema.org json-ld files",
+                },
+                Object {
+                  "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                  "headline": "Image to schema.org ImageObject",
+                },
+                Object {
+                  "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                  "headline": "Build universal themes",
+                },
+              ],
+            },
+          ],
+          "name": "Open source software",
+        },
         "name": "John Smith",
       },
       "dateCreated": 2019-10-26T00:00:00.000Z,
@@ -359,6 +507,43 @@ Hello world",
         "email": "smitty123@hotmail.com",
         "familyName": "Smith",
         "givenName": "John",
+        "hasOfferCatalog": Object {
+          "@type": "OfferCatalog",
+          "itemListElement": Array [
+            Object {
+              "@context": Object {
+                "@base": "https://sambal.dev",
+                "@vocab": "https://schema.org",
+              },
+              "@id": "/",
+              "@type": "SoftwareSourceCode",
+              "codeRepository": "https://github.com/chen4119/sambal",
+              "description": "A linked data static site generator",
+              "headline": "A linked data static site generator",
+              "name": "Sambal",
+              "programmingLanguage": "Typescript",
+              "usageInfo": Array [
+                Object {
+                  "alternativeHeadline": "Search engine optimized from day one",
+                  "headline": "Schema.org json-ld as the content model",
+                },
+                Object {
+                  "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                  "headline": "Generate HTML and schema.org json-ld files",
+                },
+                Object {
+                  "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                  "headline": "Image to schema.org ImageObject",
+                },
+                Object {
+                  "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                  "headline": "Build universal themes",
+                },
+              ],
+            },
+          ],
+          "name": "Open source software",
+        },
         "name": "John Smith",
       },
       "dateCreated": 2017-10-26T00:00:00.000Z,
@@ -528,6 +713,43 @@ Hello world2",
               "email": "smitty123@hotmail.com",
               "familyName": "Smith",
               "givenName": "John",
+              "hasOfferCatalog": Object {
+                "@type": "OfferCatalog",
+                "itemListElement": Array [
+                  Object {
+                    "@context": Object {
+                      "@base": "https://sambal.dev",
+                      "@vocab": "https://schema.org",
+                    },
+                    "@id": "/",
+                    "@type": "SoftwareSourceCode",
+                    "codeRepository": "https://github.com/chen4119/sambal",
+                    "description": "A linked data static site generator",
+                    "headline": "A linked data static site generator",
+                    "name": "Sambal",
+                    "programmingLanguage": "Typescript",
+                    "usageInfo": Array [
+                      Object {
+                        "alternativeHeadline": "Search engine optimized from day one",
+                        "headline": "Schema.org json-ld as the content model",
+                      },
+                      Object {
+                        "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                        "headline": "Generate HTML and schema.org json-ld files",
+                      },
+                      Object {
+                        "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                        "headline": "Image to schema.org ImageObject",
+                      },
+                      Object {
+                        "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                        "headline": "Build universal themes",
+                      },
+                    ],
+                  },
+                ],
+                "name": "Open source software",
+              },
               "name": "John Smith",
             },
             "dateCreated": 2019-10-26T00:00:00.000Z,
@@ -602,6 +824,43 @@ Hello world",
               "email": "smitty123@hotmail.com",
               "familyName": "Smith",
               "givenName": "John",
+              "hasOfferCatalog": Object {
+                "@type": "OfferCatalog",
+                "itemListElement": Array [
+                  Object {
+                    "@context": Object {
+                      "@base": "https://sambal.dev",
+                      "@vocab": "https://schema.org",
+                    },
+                    "@id": "/",
+                    "@type": "SoftwareSourceCode",
+                    "codeRepository": "https://github.com/chen4119/sambal",
+                    "description": "A linked data static site generator",
+                    "headline": "A linked data static site generator",
+                    "name": "Sambal",
+                    "programmingLanguage": "Typescript",
+                    "usageInfo": Array [
+                      Object {
+                        "alternativeHeadline": "Search engine optimized from day one",
+                        "headline": "Schema.org json-ld as the content model",
+                      },
+                      Object {
+                        "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                        "headline": "Generate HTML and schema.org json-ld files",
+                      },
+                      Object {
+                        "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                        "headline": "Image to schema.org ImageObject",
+                      },
+                      Object {
+                        "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                        "headline": "Build universal themes",
+                      },
+                    ],
+                  },
+                ],
+                "name": "Open source software",
+              },
               "name": "John Smith",
             },
             "dateCreated": 2017-10-26T00:00:00.000Z,
@@ -636,6 +895,43 @@ Hello world2",
         "email": "smitty123@hotmail.com",
         "familyName": "Smith",
         "givenName": "John",
+        "hasOfferCatalog": Object {
+          "@type": "OfferCatalog",
+          "itemListElement": Array [
+            Object {
+              "@context": Object {
+                "@base": "https://sambal.dev",
+                "@vocab": "https://schema.org",
+              },
+              "@id": "/",
+              "@type": "SoftwareSourceCode",
+              "codeRepository": "https://github.com/chen4119/sambal",
+              "description": "A linked data static site generator",
+              "headline": "A linked data static site generator",
+              "name": "Sambal",
+              "programmingLanguage": "Typescript",
+              "usageInfo": Array [
+                Object {
+                  "alternativeHeadline": "Search engine optimized from day one",
+                  "headline": "Schema.org json-ld as the content model",
+                },
+                Object {
+                  "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                  "headline": "Generate HTML and schema.org json-ld files",
+                },
+                Object {
+                  "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                  "headline": "Image to schema.org ImageObject",
+                },
+                Object {
+                  "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                  "headline": "Build universal themes",
+                },
+              ],
+            },
+          ],
+          "name": "Open source software",
+        },
         "name": "John Smith",
       },
       "dateCreated": 2019-10-26T00:00:00.000Z,

@@ -30,6 +30,11 @@ describe("UriResolver", () => {
         expect(result).toMatchSnapshot();
     });
 
+    it('hydrate johnsmith', async () => {
+        const result = await uriResolver.hydrateUri("/john%20smith");
+        expect(result).toMatchSnapshot();
+    });
+
     it('get image2', async () => {
         const result = await uriResolver.resolveUri("/images/image2");
         expect(result).toMatchSnapshot();

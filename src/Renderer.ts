@@ -28,7 +28,7 @@ import {
 } from "./helpers/constant";
 import { serializeJsonLd, renderSocialMediaMetaTags } from "./helpers/seo";
 import { log } from "./helpers/log";
-
+import { template } from "./ui/template";
 type UI = {
     renderPage: (props: {
         page: unknown,
@@ -136,38 +136,59 @@ export default class Renderer {
     }
 
     async renderPage(page: WebPage, publicPath?: string) {
-        let renderResult;
-        let clientBundle;
-        let bundlePrefix;
-        if (this.internalRenderer) {
-            const defaultOptions = this.getDefaultOptions(this.internalRenderer);
-            renderResult = await this.internalRenderer.renderPage({ 
-                page: page,
-                options: defaultOptions
-            });
-            clientBundle = this.internalBrowserBundleEntry;
-            bundlePrefix = publicPath ? publicPath : DEV_PUBLIC_PATH;
+        try {
+            let renderResult;
+            let clientBundle;
+            let bundlePrefix;
+            if (this.internalRenderer) {
+                const defaultOptions = this.getDefaultOptions(this.internalRenderer);
+                renderResult = await this.internalRenderer.renderPage({ 
+                    page: page,
+                    options: defaultOptions
+                });
+                clientBundle = this.internalBrowserBundleEntry;
+                bundlePrefix = publicPath ? publicPath : DEV_PUBLIC_PATH;
+            }
+            // if internalRenderer didn't render, try theme renderer, if available
+            if (!renderResult && this.themeRenderer) {
+                const defaultOptions = this.getDefaultOptions(this.themeRenderer);
+                renderResult = await this.themeRenderer.renderPage({ 
+                    page: page,
+                    options: {
+                        ...defaultOptions,
+                        ...this.themeOptions
+                    }
+                });
+                clientBundle = this.themeBrowserBundleEntry;
+                bundlePrefix = publicPath ? `${publicPath}/${this.themeFolder}` : THEME_PUBLIC_PATH;
+            }
+            if (renderResult) {
+                const html = typeof(renderResult) === "string" ? 
+                    renderResult :
+                    this.serializer.toHtml(renderResult);
+                return await this.postProcessHtml(page, html, clientBundle, bundlePrefix);
+            }
+            return null;
+        } catch (e) {
+            return await this.renderErrorPage(e);
         }
-        // if internalRenderer didn't render, try theme renderer, if available
-        if (!renderResult && this.themeRenderer) {
-            const defaultOptions = this.getDefaultOptions(this.themeRenderer);
-            renderResult = await this.themeRenderer.renderPage({ 
-                page: page,
-                options: {
-                    ...defaultOptions,
-                    ...this.themeOptions
-                }
-            });
-            clientBundle = this.themeBrowserBundleEntry;
-            bundlePrefix = publicPath ? `${publicPath}/${this.themeFolder}` : THEME_PUBLIC_PATH;
-        }
-        if (renderResult) {
-            const html = typeof(renderResult) === "string" ? 
-                renderResult :
-                this.serializer.toHtml(renderResult);
-            return await this.postProcessHtml(page, html, clientBundle, bundlePrefix);
-        }
-        return null;
+    }
+
+    private renderErrorPage(e) {
+        return template`
+            <html>
+                <head>
+                    <meta charset="UTF-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+                    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+                    <base href="/">
+                </head>
+                <body>
+                    <h1>Error</h1>
+                    ${e}
+                </body>
+            </html>
+        `;
     }
 
     private async postProcessHtml(page: WebPage, html: string, bundle: object, prefix: string) {

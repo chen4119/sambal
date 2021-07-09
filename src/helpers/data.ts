@@ -159,7 +159,7 @@ function parseContent(content: any, contentType: SUPPORTED_CONTENT_TYPE) {
             case SUPPORTED_CONTENT_TYPE.yaml:
                 return yaml.load(content);
             case SUPPORTED_CONTENT_TYPE.json:
-                return safeParseJson(content);
+                return typeof(content) === "string" ? safeParseJson(content) : content;
             case SUPPORTED_CONTENT_TYPE.markdown:
                 md = frontMatter(content);
                 return {
