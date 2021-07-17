@@ -1,8 +1,8 @@
 import sharp, { OutputInfo, Sharp } from "sharp";
 import mm from "micromatch";
 import { JSONLD_TYPE, isAbsUri } from "sambal-jsonld";
-import { normalizeJsonLdId } from "./helpers/data";
-import { formatSize, getMimeType, writeBuffer } from "./helpers/util";
+import { loadLocalFile, normalizeJsonLdId } from "./helpers/data";
+import { formatSize, getMimeType, writeBuffer, deepClone } from "./helpers/util";
 import { log } from "./helpers/log";
 import { URL } from "url";
 
@@ -49,9 +49,16 @@ export default class Media {
         }
     }
 
-    async loadImageUrl(uri: string, imageBuf: Buffer) {
+    async loadImage(localUri: string) {
+        if (this.publishedMediaPaths.has(localUri)) {
+            return await loadLocalFile(`${this.outputFolder}/${localUri}`);
+        }
+        return null;
+    }
+
+    async toImageObject(uri: string, imageBuf: Buffer) {
         if (this.cachedJsonldMap.has(uri)) {
-            return this.cachedJsonldMap.get(uri);
+            return deepClone(this.cachedJsonldMap.get(uri));
         }
 
         const imageJsonLd = this.newImageObject(uri); 
@@ -65,7 +72,7 @@ export default class Media {
             }
         }
         this.cachedJsonldMap.set(uri, imageJsonLd);
-        return imageJsonLd;
+        return deepClone(imageJsonLd);
     }
 
     private async transform(imageJsonLd: any, imageBuf: Buffer, imageTransform: ImageTransform) {
@@ -106,7 +113,7 @@ export default class Media {
     }
 
     private async hydrateImage(imageJsonLd: any, imageBuf: Buffer, transform?: SharpTransform) {
-        const output = await this.loadImage(imageBuf, transform);
+        const output = await this.sharpTransform(imageBuf, transform);
         imageJsonLd.encodingFormat = getMimeType(output.info.format);
         imageJsonLd.width = output.info.width;
         imageJsonLd.height = output.info.height;
@@ -122,7 +129,7 @@ export default class Media {
         await writeBuffer(`${this.outputFolder}${contentUrl}`, imageBuf);
     }
     
-    private async loadImage(imageBuf: Buffer, transform?: SharpTransform): Promise<{info: OutputInfo, buffer: Buffer}> {
+    private async sharpTransform(imageBuf: Buffer, transform?: SharpTransform): Promise<{info: OutputInfo, buffer: Buffer}> {
         return new Promise(async (resolve, reject) => {
             try {
                 const instance = sharp(imageBuf);

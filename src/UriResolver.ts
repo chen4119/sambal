@@ -74,7 +74,11 @@ export default class UriResolver {
     }
 
     async tryLoadLocalUri(localUri: string) {
-        return await this.fsResolver.tryLoadLocalUri(localUri);
+        let result = await this.media.loadImage(localUri);
+        if (!result) {
+            result = await this.fsResolver.tryLoadLocalUri(localUri);
+        }
+        return result;
     }
 
     async resolveUri(uriStr: string) {
@@ -96,13 +100,13 @@ export default class UriResolver {
             throw new Error(`No resolver found for uri ${uriStr}`);
         }
         if (this.fsResolver.isLocalImageFile(uriObj.path) || isImageFile(uriStr)) {
-            data = await this.media.loadImageUrl(uriObj.path, data);
+            data = await this.media.toImageObject(uriObj.path, data);
         } else if (isSchemaType(data, IMAGE_OBJECT, false)) {
             const normalizedUrl = normalizeJsonLdId(data.contentUrl);
             const image = await this.resolveUri(normalizedUrl);
             data = {
                 ...data,
-                ...await this.media.loadImageUrl(normalizedUrl, image)
+                ...await this.media.toImageObject(normalizedUrl, image)
             };
         }
         return data;

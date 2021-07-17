@@ -1,6 +1,6 @@
 {
     "name": "sambal",
-    "version": "0.0.52",
+    "version": "0.0.53",
     "description": "A linked data static site generator",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -26,8 +26,8 @@
     "scripts": {
         "init": "ts-node src/cli.ts init",
         "start": "ts-node src/cli.ts build",
-        "test": "jest",
-        "test:coverage": "jest --coverage",
+        "test": "jest --runInBand",
+        "test:coverage": "jest --runInBand --coverage",
         "build": "npm run clean && tsc",
         "clean": "rimraf ./dist",
         "serve": "ts-node src/cli.ts serve",

@@ -62,11 +62,20 @@ describe("DevServer", () => {
         expect(response.data).toMatchSnapshot();
     });
 
-    it('get image2', async () => {
+    it('get original image2', async () => {
         const response = await axios.get("http://localhost:3000/images/image2.jpg");
         // const data = await loadLocalFile("data/images/image2.jpg");
         expect(response.status).toBe(200);
+    });
 
+    it('get image2 as webp and thumbnail', async () => {
+        // load blog2 will trigger transformation of images
+        let response = await axios.get("http://localhost:3000/blogs/blog2");
+
+        response = await axios.get("http://localhost:3000/images/image2.webp");
+        expect(response.status).toBe(200);
+        response = await axios.get("http://localhost:3000/images/image2-50.webp");
+        expect(response.status).toBe(200);
     });
 
 });
