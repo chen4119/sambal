@@ -1,3 +1,4 @@
+import shelljs from "shelljs";
 import {
     IResolver,
     URI,
@@ -9,7 +10,7 @@ import {
     loadLocalFile,
     isImageFile
 } from "../helpers/data";
-import { deepClone } from "../helpers/util";
+import { deepClone, getAbsFilePath } from "../helpers/util";
 import { log } from "../helpers/log";
 
 export default class FileSystemResolver implements IResolver {
@@ -23,8 +24,23 @@ export default class FileSystemResolver implements IResolver {
         this.indexFilePaths(DATA_FOLDER, data);
     }
 
+
     isLocalImageFile(uriStr: string) {
         return this.localFileMap.has(uriStr) && isImageFile(this.localFileMap.get(uriStr));
+    }
+
+
+    async tryLoadLocalUri(localUri: string) {
+        let isFound = shelljs.test('-f', getAbsFilePath(`${DATA_FOLDER}/${localUri}`));
+        if (isFound) {
+            return await loadLocalFile(`${DATA_FOLDER}/${localUri}`);
+        }
+
+        isFound = shelljs.test('-f', getAbsFilePath(`${PAGES_FOLDER}/${localUri}`));
+        if (isFound) {
+            return await loadLocalFile(`${PAGES_FOLDER}/${localUri}`);
+        }
+        return null;
     }
 
     async resolveUri(uri: URI) {

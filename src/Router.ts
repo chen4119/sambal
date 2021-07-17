@@ -24,7 +24,7 @@ import UriResolver from "./UriResolver";
 import mm from "micromatch";
 import CollectionResolver from "./resolvers/CollectionResolver";
 import chokidar, { FSWatcher } from "chokidar";
-import { getAbsFilePath, isJsDate } from "./helpers/util";
+import { getAbsFilePath } from "./helpers/util";
 
 type RouteNode = {
     path: string,
@@ -49,7 +49,8 @@ const DEFAULT_PAGE_SIZE = 100;
 
 export default class Router {
     private root: RouteNode;
-    private routeMap: Map<string, WebPage>;
+    private urlSet: Set<string>;
+    private pageCache: Map<string, WebPage>;
     private collectionResolver: CollectionResolver;
 
     constructor(
@@ -57,7 +58,7 @@ export default class Router {
         private data: string[],
         private uriResolver: UriResolver) {
         this.root = this.newRouteNode("/");
-        this.routeMap = new Map<string, WebPage>();
+        this.pageCache = new Map<string, WebPage>();
     }
 
     async watchForFileChange(onChange: (type: string, path: string) => void) {
@@ -71,7 +72,7 @@ export default class Router {
                 });*/
                 watcher.on("change", (path) => {
                     log.info(`File changed: ${path}`);
-                    this.routeMap.clear();
+                    this.pageCache.clear();
                     this.uriResolver.clearCache();
                     onChange("change", path);
                 });
@@ -81,8 +82,8 @@ export default class Router {
     }
 
     async getPage(uri: string, withPageProps: boolean = true) {
-        if (this.routeMap.has(uri)) {
-            return this.routeMap.get(uri);
+        if (this.pageCache.has(uri)) {
+            return this.pageCache.get(uri);
         }
 
         const segments = uri.split("/");
@@ -116,17 +117,16 @@ export default class Router {
                         return await this.loadWebPage(uri, pageProps, withPageProps);
                     }
                 }
-                return null;
             }
 
             if (currentNode.children.has(segments[i])) {
                 currentNode = currentNode.children.get(segments[i]);
                 routePath.push(currentNode.path);
             } else {
-                return null;
+                break;
             }
         }
-        return null;
+        return await this.uriResolver.tryLoadLocalUri(uri);
     }
 
     getPageIterator() {
@@ -222,9 +222,10 @@ export default class Router {
 
     private async loadWebPage(uri: string, pageProps: any, isCache: boolean = true) {
         const mainEntity = await this.uriResolver.hydrateUri(uri);
-        const webpage: WebPage = this.getWebPage(uri, mainEntity[JSONLD_ID], pageProps, mainEntity);
+        const canonicalUrl = this.urlSet.has(mainEntity[JSONLD_ID]) ? mainEntity[JSONLD_ID] : uri;
+        const webpage: WebPage = this.getWebPage(uri, canonicalUrl, pageProps, mainEntity);
         if (isCache) {
-            this.routeMap.set(uri, webpage);
+            this.pageCache.set(uri, webpage);
         }
         return webpage;
     }
@@ -242,6 +243,7 @@ export default class Router {
             await this.addPathToTree(page, routes, nodeWithPagination);
         }
 
+        // collection routes are routes that match a collection
         const collectionRoutes = new Map<string, EntityUri[]>();
         for (const collection of collections) {
             let entityUris: EntityUri[] = [];
@@ -250,6 +252,7 @@ export default class Router {
 
             const dataMatches = mm(dataUris, collection.match);
             entityUris = entityUris.concat(dataMatches.map(m => ({type: EntityType.Data, path: m})));
+            log.debug(`Routes matching collection uri ${collection.uri}`, entityUris.map(d => d.path));
             collectionRoutes.set(collection.uri, entityUris);
         }
         this.collectionResolver = new CollectionResolver(collections, collectionRoutes, this.uriResolver, this);
@@ -258,8 +261,12 @@ export default class Router {
             this.collectionResolver
         );
 
+        this.urlSet = new Set(routes);
         for (const node of nodeWithPagination) {
             await this.paginateCollection(node);
+            for (const uri of Array.from(node.mount.keys())) {
+                this.urlSet.add(`/${node.path}/${uri}`);
+            }
         }
     }
 
@@ -283,11 +290,11 @@ export default class Router {
             currentNode.hasPage = true;
         } else if (fileName === MOUNT_FILE) {
             const data = await loadLocalFile(`${PAGES_FOLDER}/${pagePath}`);
-            if (data.forEach) {
+            if (data && data.forEach) {
                 const pathPrefix = segments.length > 1 ? segments.slice(0, segments.length - 1).join("/") : "";
                 await this.iterateMainEntities(currentNode, pathPrefix, routes, data.forEach);
             }
-            if (data.paginateCollection) {
+            if (data && data.paginateCollection) {
                 currentNode.paginateCollection = data.paginateCollection;
                 nodeWithPagination.push(currentNode);
             }

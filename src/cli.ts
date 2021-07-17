@@ -70,8 +70,8 @@ async function initSite(outputFolder: string) {
         }
 
         // const links = new Links();
-        const pages = searchFiles(PAGES_FOLDER, "**/*", true);
-        const data = searchFiles(DATA_FOLDER, "**/*", true);
+        const pages = searchFiles(PAGES_FOLDER, "**/*");
+        const data = searchFiles(DATA_FOLDER, "**/*");
 
         const imageTransforms = Array.isArray(module.siteConfig.imageTransforms) ? module.siteConfig.imageTransforms : [];
         const media = new Media(pages, data, outputFolder, imageTransforms);

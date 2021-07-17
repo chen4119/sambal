@@ -65,3 +65,5 @@ dist/
 .sambal/
 coverage/
 public/
+sambal.entry.js
+sambal.site.js

@@ -6,7 +6,7 @@ import { searchFiles } from "../src/helpers/data";
 
 const imageTransforms = [
     {
-        match: "/images/image2",
+        match: "/images/**/*",
         width: 500,
         encodingFormat: "image/webp",
         thumbnails: [
@@ -73,8 +73,8 @@ const customResolver = {
     }
 }
 
-const pages = searchFiles(PAGES_FOLDER, "**/*", true);
-const data = searchFiles(DATA_FOLDER, "**/*", true);
+const pages = searchFiles(PAGES_FOLDER, "**/*");
+const data = searchFiles(DATA_FOLDER, "**/*");
 
 export async function init(extraPages = []) {
     const allPages = [...pages, ...extraPages];

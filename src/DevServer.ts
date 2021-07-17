@@ -7,6 +7,7 @@ import { log } from "./helpers/log";
 import Router from "./Router";
 import { Server, OPEN } from "ws";
 import { FSWatcher } from "chokidar";
+import { isObjectLiteral } from "./helpers/util";
 
 const WEBSOCKET_ADDR = "ws://localhost:3001/";
 const CMD_REFRESH = "refresh";
@@ -114,8 +115,12 @@ export default class DevServer {
         log.debug(`Get path uri: ${req.path}`);
         const page = await this.router.getPage(req.path);
         if (page) {
-            let html = await this.renderer.renderPage(page);
-            res.send(this.addBrowserSyncScript(html));
+            if (isObjectLiteral(page)) {
+                const html = await this.renderer.renderPage(page);
+                res.send(this.addBrowserSyncScript(html));
+            } else {
+                res.send(page); // can be image
+            }
         } else {
             res.status(404).end();
         }

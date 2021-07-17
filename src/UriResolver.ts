@@ -73,6 +73,10 @@ export default class UriResolver {
         }
     }
 
+    async tryLoadLocalUri(localUri: string) {
+        return await this.fsResolver.tryLoadLocalUri(localUri);
+    }
+
     async resolveUri(uriStr: string) {
         const uriObj: URI = parseUri(uriStr) as URI;
         // Fill in protocol and host for relative path

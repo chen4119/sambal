@@ -11,7 +11,6 @@ import {
     safeParseJson,
     getFileExt
 } from "./util";
-import { MOUNT_FILE, PAGE_FILE } from "./constant";
 import { isAbsUri, parseUri } from "sambal-jsonld";
 
 enum SUPPORTED_CONTENT_TYPE {
@@ -21,7 +20,7 @@ enum SUPPORTED_CONTENT_TYPE {
     image
 }
 
-export function searchFiles(baseFolder: string, query: string | string[], allFiles: boolean = false): string[] {
+export function searchFiles(baseFolder: string, query: string | string[]): string[] {
     if (Array.isArray(query)) {
         const matchSet = query.reduce((accumulator, value) => {
             searchFiles(baseFolder, value).forEach(m => accumulator.add(m));
@@ -36,14 +35,13 @@ export function searchFiles(baseFolder: string, query: string | string[], allFil
     const matches = glob.sync(query, {
         cwd: `${process.cwd()}/${baseFolder}`
     });
-    return matches
-        .filter(m => (allFiles || !isSambalReservedFile(m)) &&
-        isDataFileExist(baseFolder, m));
+    return matches.filter(m => isDataFileExist(baseFolder, m));
 }
 
+/*
 function isSambalReservedFile(filePath: string) {
     return filePath.endsWith(MOUNT_FILE) || filePath.endsWith(PAGE_FILE);
-}
+}*/
 
 function normalizeRelativePath(src: string) {
 

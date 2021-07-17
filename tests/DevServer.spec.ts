@@ -5,6 +5,7 @@ import { init, wait } from "./setup";
 import DevServer from "../src/DevServer";
 import { PAGES_FOLDER } from "../src/helpers/constant";
 import { writeText, getAbsFilePath } from "../src/helpers/util";
+import { loadLocalFile } from "../src/helpers/data";
 
 const originalTestBlog = `
 ---
@@ -59,6 +60,13 @@ describe("DevServer", () => {
         await wait();
         response = await axios.get("http://localhost:3000/testblog");
         expect(response.data).toMatchSnapshot();
+    });
+
+    it('get image2', async () => {
+        const response = await axios.get("http://localhost:3000/images/image2.jpg");
+        // const data = await loadLocalFile("data/images/image2.jpg");
+        expect(response.status).toBe(200);
+
     });
 
 });

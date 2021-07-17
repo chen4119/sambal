@@ -44,6 +44,7 @@ export default class Media {
         ];
         for (const transform of imageTransforms) {
             const matches = mm(localFileUris, transform.match);
+            log.debug(`Found images matching ${transform.match}`, matches);
             matches.forEach(uri => this.imageTransformMap.set(normalizeJsonLdId(uri), transform));
         }
     }
