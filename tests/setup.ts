@@ -1,12 +1,11 @@
 import Media from "../src/Media";
 import Router from "../src/Router";
 import UriResolver from "../src/UriResolver";
-import { CACHE_FOLDER, PAGES_FOLDER, DATA_FOLDER, Collection } from "../src/helpers/constant";
-import { searchFiles } from "../src/helpers/data";
+import { CACHE_FOLDER, Collection } from "../src/helpers/constant";
 
 const imageTransforms = [
     {
-        match: "/images/**/*",
+        include: "data/images/**/*",
         width: 500,
         encodingFormat: "image/webp",
         thumbnails: [
@@ -21,7 +20,7 @@ const imageTransforms = [
 const collections: Collection[] = [
     {
         uri: "/collections/tags",
-        match: ["/blogs/**/*"],
+        include: ["pages/blogs/**/*"],
         groupBy: (mainEntity) => {
             return mainEntity.keywords.map(tag => ({
                 tag: tag
@@ -33,7 +32,7 @@ const collections: Collection[] = [
     },
     {
         uri: "/collections/year",
-        match: ["/blogs/**/*"],
+        include: ["pages/blogs/**/*"],
         groupBy: (mainEntity) => {
             return {
                 year: mainEntity.dateCreated.getFullYear()
@@ -45,7 +44,7 @@ const collections: Collection[] = [
     },
     {
         uri: "/collections/images",
-        match: ["/images/**/*"]
+        include: ["data/images/**/*"]
     }
 ];
 
@@ -73,21 +72,17 @@ const customResolver = {
     }
 }
 
-const pages = searchFiles(PAGES_FOLDER, "**/*");
-const data = searchFiles(DATA_FOLDER, "**/*");
-
-export async function init(extraPages = []) {
-    const allPages = [...pages, ...extraPages];
-    const media = new Media(pages, data, CACHE_FOLDER, imageTransforms);
-    const uriResolver = new UriResolver(allPages, data, media);
-    const router = new Router(allPages, data, uriResolver);
+export async function init() {
+    const media = new Media(CACHE_FOLDER, imageTransforms);
+    const uriResolver = new UriResolver(collections, media);
+    const router = new Router(uriResolver);
 
     uriResolver.addResolver({host: "custom.com"}, {
         resolveUri: customResolver.resolveUri,
         clearCache: () => {}
     });
     
-    await router.collectRoutes(collections);
+    await router.collectRoutes();
 
     return {
         uriResolver,

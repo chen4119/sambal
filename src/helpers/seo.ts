@@ -21,7 +21,7 @@ export async function renderSocialMediaMetaTags(baseUrl: string, page: WebPage) 
 }
 
 function mainEntityToMeta(baseUrl: string, page: any) {
-    const { mainEntity, mainEntityOfPage} = page;
+    const { mainEntity, url } = page;
     let imageUrls;
     if (mainEntity.image) {
         imageUrls = Array.isArray(mainEntity.image) ?
@@ -29,7 +29,7 @@ function mainEntityToMeta(baseUrl: string, page: any) {
         getImageUrl(baseUrl, mainEntity.image);
     }
     return {
-        url: toAbsUrl(baseUrl, mainEntityOfPage),
+        url: toAbsUrl(baseUrl, url),
         title: mainEntity.headline ? mainEntity.headline : mainEntity.name,
         description: mainEntity.description,
         image: imageUrls

@@ -16,62 +16,63 @@ describe("UriResolver", () => {
     });
 
     it('get blog1', async () => {
-        const result = await uriResolver.resolveUri("/blogs/blog1");
+        const result = await uriResolver.resolveUri("/pages/blogs/blog1.md");
         expect(result).toMatchSnapshot();
     });
 
+    
     it('hydrate blog1', async () => {
-        const result = await uriResolver.hydrateUri("/blogs/blog1");
+        const result = await uriResolver.hydrateUri("/pages/blogs/blog1.md");
         expect(result).toMatchSnapshot();
     });
 
     it('get johnsmith', async () => {
-        const result = await uriResolver.resolveUri("/john%20smith");
+        const result = await uriResolver.resolveUri("/data/john smith.yml");
         expect(result).toMatchSnapshot();
     });
 
+    
     it('hydrate johnsmith', async () => {
-        const result = await uriResolver.hydrateUri("/john%20smith");
+        const result = await uriResolver.hydrateUri("/data/john smith.yml");
         expect(result).toMatchSnapshot();
     });
 
     it('get image2', async () => {
-        const result = await uriResolver.resolveUri("/images/image2");
+        const result = await uriResolver.resolveUri("/data/images/image2.jpg");
         expect(result).toMatchSnapshot();
-        expect(shelljs.test('-f', `${CACHE_FOLDER}/images/image2.webp`)).toBeTruthy();
-        expect(shelljs.test('-f', `${CACHE_FOLDER}/images/image2-50.webp`)).toBeTruthy();
+        expect(shelljs.test('-f', `${CACHE_FOLDER}/data/images/image2.webp`)).toBeTruthy();
+        expect(shelljs.test('-f', `${CACHE_FOLDER}/data/images/image2-50.webp`)).toBeTruthy();
     });
 
     it('get background', async () => {
-        const result = await uriResolver.resolveUri("/background");
+        const result = await uriResolver.resolveUri("/data/background.yml");
         expect(result).toMatchSnapshot();
     });
 
     it('hydrate background', async () => {
-        const result = await uriResolver.hydrateUri("/background");
+        const result = await uriResolver.hydrateUri("/data/background.yml");
         expect(result).toMatchSnapshot();
     });
 
     it('hydrate header', async () => {
-        const result = await uriResolver.hydrateUri("/header");
+        const result = await uriResolver.hydrateUri("/data/header.yml");
         expect(result).toMatchSnapshot();
     });
 
     it('get collections/tags', async () => {
-        const collection = await uriResolver.resolveUri("/collections/tags?tag=java%20script");
-        expect(collection["@id"]).toBe("/collections/tags/_part/tag=java%20script");
+        const collection = await uriResolver.resolveUri("/collections/tags?tag=java script");
         expect(collection.itemListElement.length).toBe(2);
     });
 
     it('get collections/tags as nav', async () => {
-        const collection = await uriResolver.resolveUri("/collections/tags?tag=java%20script&output=sitenav");
+        const collection = await uriResolver.resolveUri("/collections/tags?tag=java script&output=sitenav");
         expect(collection[0].url).toBe("/blogs/blog1");
         expect(collection[1].url).toBe("/blogs/blog2");
     });
 
     it('get collections/images', async () => {
         const collection = await uriResolver.resolveUri("/collections/images");
-        expect(collection.itemListElement[0].contentUrl).toBe("/images/image2.webp");
+        expect(collection.itemListElement[0].contentUrl).toBe("/data/images/image2.webp");
     });
 
     describe("Custom resolver", () => {

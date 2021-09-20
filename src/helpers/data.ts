@@ -1,17 +1,17 @@
-import shelljs from "shelljs";
 import axios, { AxiosResponse } from "axios";
 import yaml from "js-yaml";
 // import marked from "marked";
 import glob from "glob";
 import {
     getAbsFilePath,
+    isValidRelativePath,
     readFileAsBuffer,
     readTextFile,
     frontMatter,
     safeParseJson,
     getFileExt
 } from "./util";
-import { isAbsUri, parseUri } from "sambal-jsonld";
+import { isAbsUri } from "sambal-jsonld";
 
 enum SUPPORTED_CONTENT_TYPE {
     yaml,
@@ -20,29 +20,22 @@ enum SUPPORTED_CONTENT_TYPE {
     image
 }
 
-export function searchFiles(baseFolder: string, query: string | string[]): string[] {
+export function searchFiles(query: string | string[]): string[] {
     if (Array.isArray(query)) {
         const matchSet = query.reduce((accumulator, value) => {
-            searchFiles(baseFolder, value).forEach(m => accumulator.add(m));
+            searchFiles(value).forEach(m => accumulator.add(m));
             return accumulator;
         }, new Set<string>());
         return Array.from(matchSet);
     }
-
     if (isAbsUri(query)) {
         return [query];
     }
-    const matches = glob.sync(query, {
-        cwd: `${process.cwd()}/${baseFolder}`
-    });
-    return matches.filter(m => isDataFileExist(baseFolder, m));
+    const matches = glob.sync(query);
+    return matches.filter(m => isValidRelativePath(m));
 }
 
 /*
-function isSambalReservedFile(filePath: string) {
-    return filePath.endsWith(MOUNT_FILE) || filePath.endsWith(PAGE_FILE);
-}*/
-
 function normalizeRelativePath(src: string) {
 
     let normalSrc = src;
@@ -53,8 +46,29 @@ function normalizeRelativePath(src: string) {
         normalSrc = `/${normalSrc}`;
     }
     return normalSrc;
+}*/
+
+export function inferUrl(uri: string) {
+    if (!uri || typeof(uri) !== "string") {
+        return "";
+    }
+    if (uri.startsWith("/pages")) {
+        let url = uri.substring(6);
+        if (isSupportedFile(url)) {
+            url = url.substring(0, url.lastIndexOf("."));
+        }
+        if (url === "/index") {
+            return "/";
+        }
+        if (url.endsWith("/index")) {
+            url = url.substring(0, url.length - 6);
+        }
+        return url;
+    }
+    return uri;
 }
 
+/*
 export function normalizeJsonLdId(uri: string) {
     if (isAbsUri(uri)) {
         return encodeURI(uri);
@@ -72,11 +86,12 @@ export function normalizeJsonLdId(uri: string) {
         normalPath = normalPath.substring(0, normalPath.length - 6);
     }
     return `${encodeURI(normalPath)}${query ? `?${query.toString()}` : ""}`;
-}
+}*/
 
-function isDataFileExist(baseFolder: string, filePath: string) {
-    return shelljs.test('-f', getAbsFilePath(`${baseFolder}/${filePath}`));
-}
+/*
+function isDataFileExist(filePath: string) {
+    return shelljs.test('-f', getAbsFilePath(filePath));
+}*/
 
 export async function loadLocalFile(src: string) {
     if (!isSupportedFile(src)) {
@@ -86,9 +101,9 @@ export async function loadLocalFile(src: string) {
     const contentType = getLocalFileContentType(src);
     let content;
     if (contentType === SUPPORTED_CONTENT_TYPE.image) {
-        content = await readFileAsBuffer(`${process.cwd()}/${src}`);
+        content = await readFileAsBuffer(getAbsFilePath(src));
     } else {
-        content = await readTextFile(`${process.cwd()}/${src}`);
+        content = await readTextFile(getAbsFilePath(src));
     }
     return parseContent(content, contentType);
 }

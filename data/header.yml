@@ -7,7 +7,7 @@ hasPart:
   - "@type": SiteNavigationElement
     name: Docs
     url: /get-started
-  - "@id": collections/tags?tag=java%20script&output=sitenav
+  - "@id": /collections/tags?tag=java%20script&output=sitenav
 potentialAction:
   - "@type": "DownloadAction"
     target: https://github.com/chen4119/sambal

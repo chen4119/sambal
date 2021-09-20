@@ -1,13 +1,12 @@
 import sharp, { OutputInfo, Sharp } from "sharp";
-import mm from "micromatch";
 import { JSONLD_TYPE, isAbsUri } from "sambal-jsonld";
-import { loadLocalFile, normalizeJsonLdId } from "./helpers/data";
-import { formatSize, getMimeType, writeBuffer, deepClone } from "./helpers/util";
+import { loadLocalFile, searchFiles } from "./helpers/data";
+import { formatSize, getMimeType, writeBuffer, deepClone, normalizeUri } from "./helpers/util";
 import { log } from "./helpers/log";
 import { URL } from "url";
 
 type ImageTransform = {
-    match: string | string[],
+    include: string | string[],
     width?: number,
     height?: number,
     encodingFormat?: string
@@ -30,22 +29,17 @@ export default class Media {
     private publishedMediaPaths: Set<string>;
 
     constructor(
-        pages: string[],
-        data: string[],
         private outputFolder: string,
         imageTransforms: ImageTransform[])
     {
         this.imageTransformMap = new Map<string, ImageTransform>();
         this.cachedJsonldMap = new Map<string, unknown>();
         this.publishedMediaPaths = new Set<string>();
-        const localFileUris = [
-            ...pages.map(p => normalizeJsonLdId(p)),
-            ...data.map(d => normalizeJsonLdId(d))
-        ];
+
         for (const transform of imageTransforms) {
-            const matches = mm(localFileUris, transform.match);
-            log.debug(`Found images matching ${transform.match}`, matches);
-            matches.forEach(uri => this.imageTransformMap.set(normalizeJsonLdId(uri), transform));
+            const matches = searchFiles(transform.include);
+            log.debug(`Found images matching ${transform.include}`, matches);
+            matches.forEach(uri => this.imageTransformMap.set(normalizeUri(uri), transform));
         }
     }
 

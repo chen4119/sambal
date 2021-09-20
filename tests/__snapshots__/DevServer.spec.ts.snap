@@ -28,8 +28,7 @@ exports[`DevServer refresh data on file change 1`] = `
     \\"@type\\": \\"BlogPosting\\",
     \\"headline\\": \\"Test blog\\",
     \\"text\\": \\"\\\\n\\\\nHello world 3 changed!\\\\n\\",
-    \\"encodingFormat\\": \\"text/markdown\\",
-    \\"@id\\": \\"/testblog\\"
+    \\"encodingFormat\\": \\"text/markdown\\"
 }
         </script></head>
                     <body>
@@ -89,8 +88,7 @@ exports[`DevServer render html 1`] = `
     \\"name\\": \\"Sambal\\",
     \\"headline\\": \\"A linked data static site generator\\",
     \\"description\\": \\"A linked data static site generator\\",
-    \\"text\\": \\"&lt;need to &lt;&gt; escape&gt;\\",
-    \\"@id\\": \\"/\\"
+    \\"text\\": \\"&lt;need to &lt;&gt; escape&gt;\\"
 }
         </script></head>
                     <body>

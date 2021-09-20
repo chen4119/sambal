@@ -1,5 +1,5 @@
 "@type": ImageObject
-contentUrl: images/image2.jpg
+contentUrl: /data/images/image2.jpg
 name: My background
 author:
-  "@id": john smith
+  "@id": /data/john smith.yml

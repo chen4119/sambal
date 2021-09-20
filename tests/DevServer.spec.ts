@@ -30,12 +30,13 @@ describe("DevServer", () => {
     let server: DevServer;
     const baseUrl = "https://example.com";
     const testFile = getAbsFilePath(`${PAGES_FOLDER}/testblog.md`);
+
     beforeAll(async () => {
         await writeText(testFile, originalTestBlog);
-        const classes = await init(["testblog.md"]);
+        const classes = await init();
         renderer = new Renderer(baseUrl, null, "mock-theme");
         await renderer.initTheme();
-        server = new DevServer(classes.router, renderer, 3000);
+        server = new DevServer(classes.uriResolver, classes.media, classes.router, renderer, 3000);
         await server.start();
     });
 
@@ -63,8 +64,7 @@ describe("DevServer", () => {
     });
 
     it('get original image2', async () => {
-        const response = await axios.get("http://localhost:3000/images/image2.jpg");
-        // const data = await loadLocalFile("data/images/image2.jpg");
+        const response = await axios.get("http://localhost:3000/data/images/image2.jpg");
         expect(response.status).toBe(200);
     });
 
@@ -72,9 +72,9 @@ describe("DevServer", () => {
         // load blog2 will trigger transformation of images
         let response = await axios.get("http://localhost:3000/blogs/blog2");
 
-        response = await axios.get("http://localhost:3000/images/image2.webp");
+        response = await axios.get("http://localhost:3000/data/images/image2.webp");
         expect(response.status).toBe(200);
-        response = await axios.get("http://localhost:3000/images/image2-50.webp");
+        response = await axios.get("http://localhost:3000/data/images/image2-50.webp");
         expect(response.status).toBe(200);
     });
 

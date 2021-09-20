@@ -1,15 +1,16 @@
 import { 
     IResolver,
     LOCALHOST,
-    FS_PROTO,
-    URI
+    FILE_PROTOCOL,
+    URI,
+    Collection
 } from "./helpers/constant";
 import HttpResolver from "./resolvers/HttpResolver";
 import FileSystemResolver from "./resolvers/FileSystemResolver";
+import CollectionResolver from "./resolvers/CollectionResolver";
 import Media from "./Media";
-import { isObjectLiteral } from "./helpers/util";
-import { 
-    normalizeJsonLdId,
+import { isObjectLiteral, normalizeUri } from "./helpers/util";
+import {
     isImageFile
 } from "./helpers/data";
 import {
@@ -35,22 +36,27 @@ export default class UriResolver {
     // private blankNodeIndex: number;
     private fsResolver: FileSystemResolver;
     private httpResolver: HttpResolver;
+    private collectionResolver: CollectionResolver;
     private resolvers: {
         matcher: UriMatcher,
         resolver: IResolver
     }[];
 
     constructor(
-        pages: string[],
-        data: string[],
+        collections: Collection[],
         private media: Media
     ) {
         // this.blankNodeIndex = 1;
-        this.fsResolver = new FileSystemResolver(pages, data);
+        this.fsResolver = new FileSystemResolver();
         this.httpResolver = new HttpResolver();
+        this.collectionResolver = new CollectionResolver(collections, this);
         this.resolvers = [
             {
-                matcher: {protocol: `${FS_PROTO}:`},
+                matcher: {protocol: FILE_PROTOCOL, path: collections.map(c => c.uri)},
+                resolver: this.collectionResolver
+            },
+            {
+                matcher: {protocol: FILE_PROTOCOL},
                 resolver: this.fsResolver
             },
             {
@@ -73,19 +79,15 @@ export default class UriResolver {
         }
     }
 
-    async tryLoadLocalUri(localUri: string) {
-        let result = await this.media.loadImage(localUri);
-        if (!result) {
-            result = await this.fsResolver.tryLoadLocalUri(localUri);
-        }
-        return result;
+    get referencedJsonLds() {
+        return this.fsResolver.referencedJsonLds;
     }
 
     async resolveUri(uriStr: string) {
-        const uriObj: URI = parseUri(uriStr) as URI;
+        const uriObj: URI = parseUri(normalizeUri(uriStr)) as URI;
         // Fill in protocol and host for relative path
         if (!uriObj.protocol && !uriObj.host) {
-            uriObj.protocol = `${FS_PROTO}:`;
+            uriObj.protocol = FILE_PROTOCOL;
             uriObj.host = LOCALHOST;
         }
 
@@ -99,14 +101,15 @@ export default class UriResolver {
         if (!data) {
             throw new Error(`No resolver found for uri ${uriStr}`);
         }
-        if (this.fsResolver.isLocalImageFile(uriObj.path) || isImageFile(uriStr)) {
+
+        if (isImageFile(uriStr)) {
+            // convert binary image data to schema ImageObject
             data = await this.media.toImageObject(uriObj.path, data);
         } else if (isSchemaType(data, IMAGE_OBJECT, false)) {
-            const normalizedUrl = normalizeJsonLdId(data.contentUrl);
-            const image = await this.resolveUri(normalizedUrl);
+            const image = await this.resolveUri(data.contentUrl);
             data = {
                 ...data,
-                ...await this.media.toImageObject(normalizedUrl, image)
+                ...await this.media.toImageObject(data.contentUrl, image)
             };
         }
         return data;
@@ -127,11 +130,12 @@ export default class UriResolver {
 
     async hydrateUri(uri: string) {
         let jsonld = await this.resolveUri(uri);
-        this.ensureJsonLd(jsonld, normalizeJsonLdId(uri));
+        // this.ensureJsonLd(jsonld, uri);
         jsonld = await this.hydrate(jsonld);
         return jsonld;
     }
 
+    /*
     // all data need @id and @type
     private async ensureJsonLd(jsonld: any, impliedId: string) {
         if (Array.isArray(jsonld)) {
@@ -141,7 +145,7 @@ export default class UriResolver {
             // jsonld[JSONLD_ID] = impliedId ? impliedId : `_:${this.blankNodeIndex++}`;
             jsonld[JSONLD_ID] = impliedId;
         }
-    }
+    }*/
 
     async hydrate(
         target: unknown,
@@ -165,9 +169,9 @@ export default class UriResolver {
             if (graph && graph.has(target[JSONLD_ID])) {
                 nextTarget = graph.get(target[JSONLD_ID]);
             } else {
-                const uri = normalizeJsonLdId(target[JSONLD_ID]);
+                const uri = target[JSONLD_ID];
                 nextTarget = await this.resolveUri(uri);
-                this.ensureJsonLd(nextTarget, uri);
+                // this.ensureJsonLd(nextTarget, uri);
             }
             return await this.hydrate(
                 nextTarget,
@@ -175,7 +179,6 @@ export default class UriResolver {
                 graph
             );
         } else if (isObjectLiteral(target)) {
-            // this.ensureJsonLd(target);
             await this.iterateObjectKeys(target, nextLevel, graph);
         }
         return target;

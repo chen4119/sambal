@@ -1,10 +1,45 @@
 import {
-    normalizeJsonLdId
+    searchFiles,
+    inferUrl
 } from "../../src/helpers/data";
 
 
 describe("data", () => {
 
+    describe("searchFiles", () => {
+
+        it('get all pages', async () => {
+            const result = searchFiles("pages/**/*");
+            expect(result.length).toBe(7);
+        });
+
+        it('return absolute uris', async () => {
+            const result = searchFiles(["https://sambal.dev/1", "https://chen4119.me/1"]);
+            expect(result).toStrictEqual(["https://sambal.dev/1", "https://chen4119.me/1"]);
+        });
+
+    });
+
+    describe("inferUrl", () => {
+
+        it('return /', async () => {
+            const result = inferUrl("/pages/index.yml");
+            expect(result).toBe("/");
+        });
+
+        it('return /blogs/blog1', async () => {
+            const result = inferUrl("/pages/blogs/blog1.md");
+            expect(result).toBe("/blogs/blog1");
+        });
+
+        it('return /data/header.yml', async () => {
+            const result = inferUrl("/data/header.yml");
+            expect(result).toBe("/data/header.yml");
+        });
+
+    });
+
+    /*
     describe("normalizeJsonLdId", () => {
 
         it('return original id', async () => {
@@ -31,6 +66,6 @@ describe("data", () => {
             const result = normalizeJsonLdId("https://sambal.dev/blogs/blog 1");
             expect(result).toBe("https://sambal.dev/blogs/blog%201");
         });
-    });
+    });*/
 
 });

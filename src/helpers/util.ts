@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { isAbsUri } from "sambal-jsonld";
 import shelljs from "shelljs";
 
 export function isObjectLiteral(obj) {
@@ -24,10 +25,29 @@ export function deepClone(obj: any) {
     return obj;
 }
 
+export function normalizeUri(uri: string) {
+    if (isAbsUri(uri)) {
+        return uri;
+    }
+
+    // uri assumed to be relative
+    if (uri.startsWith("./") || uri.startsWith("../")) {
+        throw new Error (`Relative path needs to start with "/", relative to root project folder`);
+    }
+    if (!uri.startsWith("/")) {
+        return `/${uri}`;
+    }
+    return uri;
+}
+
 /*
 export function isNullOrUndefined(val: any) {
     return typeof(val) === "undefined" || val === null;
 }*/
+
+export function isValidRelativePath(filePath: string) {
+    return shelljs.test('-f', getAbsFilePath(filePath));
+}
 
 export function getAbsFilePath(src: string) {
     return path.normalize(`${process.cwd()}/${src}`);

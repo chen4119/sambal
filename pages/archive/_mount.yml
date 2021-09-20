@@ -1,9 +1,0 @@
-paginateCollection:
-  uri: collections/year
-  path: :year/:pageNum
-  pageSize: 100
-
-
-forEach:
-  uri: https://custom.com/dummy/uri
-  path: :identifier

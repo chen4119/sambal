@@ -2,17 +2,21 @@ import path from "path";
 import Renderer from "./Renderer";
 import prettier from "prettier";
 import { writeText, getFileExt, isObjectLiteral } from "./helpers/util";
+import { inferUrl } from "./helpers/data";
+import { serializeJsonLd } from "./helpers/seo";
 import { log } from "./helpers/log";
-import { OUTPUT_FOLDER } from "./helpers/constant";
+import { OUTPUT_FOLDER, PAGES_FOLDER } from "./helpers/constant";
 import Router from "./Router";
+import UriResolver from "./UriResolver";
 import { template } from "./ui/template";
 import {
     JSONLD_ID,
     JSONLD_TYPE,
     JSONLD_CONTEXT,
-    isJsonLdRef
+    SCHEMA_CONTEXT,
+    isJsonLdRef,
+    isAbsUri
 } from "sambal-jsonld";
-import { normalizeJsonLdId } from "./helpers/data";
 
 type SiteMapItem = {
     loc: string,
@@ -23,7 +27,12 @@ const JSONLD_FILENAME = "schema.json";
 
 export default class SiteGenerator {
     private siteMap: SiteMapItem[];
-    constructor(private baseUrl: string, private router: Router, private renderer: Renderer) {
+    constructor(
+        private baseUrl: string,
+        private uriResolver: UriResolver,
+        private router: Router,
+        private renderer: Renderer
+    ) {
         this.siteMap = [];
     }
 
@@ -45,15 +54,36 @@ export default class SiteGenerator {
     }
 
     async buildJsonLds() {
-        const iterator = this.router.getJsonLdIterator(this.baseUrl);
-        for await (const jsonld of iterator) {
-            log.info(`Writing ${jsonld[JSONLD_ID]}`);
-            const finalJsonLd = this.updateRef(jsonld);
-            await writeText(
-                `./${OUTPUT_FOLDER}${jsonld[JSONLD_ID]}/${JSONLD_FILENAME}`,
-                JSON.stringify(finalJsonLd, null, 4)
-            );
+        for (const uri of this.uriResolver.referencedJsonLds) {
+            let jsonld = await this.uriResolver.resolveUri(uri);
+            if (!isJsonLdRef(jsonld)) {
+                jsonld = {
+                    [JSONLD_ID]: this.getJsonLdId(uri),
+                    [JSONLD_CONTEXT]: {
+                        "@vocab": `${SCHEMA_CONTEXT}/`,
+                        "@base": this.baseUrl
+                    },
+                    ...jsonld
+                }
+                this.updateRef(jsonld);
+                await writeText(
+                    `./${OUTPUT_FOLDER}${jsonld[JSONLD_ID]}`,
+                    serializeJsonLd(jsonld)
+                );
+            }
         }
+    }
+
+    private getJsonLdId(uri: string) {
+        if (isAbsUri(uri)) {
+            return uri;
+        }
+        
+        if (uri.startsWith(`/${PAGES_FOLDER}`)) {
+            const url = inferUrl(uri);
+            return url === "/" ? `/${JSONLD_FILENAME}` : `${url}/${JSONLD_FILENAME}`;
+        }
+        return `${uri}/${JSONLD_FILENAME}`;
     }
 
     private updateRef(jsonld: any) {
@@ -62,7 +92,7 @@ export default class SiteGenerator {
         }
 
         if (isJsonLdRef(jsonld)) {
-            jsonld[JSONLD_ID] = `${normalizeJsonLdId(jsonld[JSONLD_ID])}/${JSONLD_FILENAME}`;
+            jsonld[JSONLD_ID] = this.getJsonLdId(jsonld[JSONLD_ID]);
         } else if (isObjectLiteral(jsonld)) {
             for (const fieldName of Object.keys(jsonld)) {
                 if (fieldName !== JSONLD_ID && fieldName !== JSONLD_TYPE && fieldName !== JSONLD_CONTEXT) {

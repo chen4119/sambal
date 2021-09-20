@@ -5,7 +5,7 @@ exports[`Renderer render using mock-theme 1`] = `
                 <html>
                     <head>
             
-        <link rel=\\"canonical\\" href=\\"https://example.comundefined\\" />
+        <link rel=\\"canonical\\" href=\\"https://example.com/dummy\\" />
         <title>John Smith</title>
     
             
@@ -14,7 +14,7 @@ exports[`Renderer render using mock-theme 1`] = `
         
     
             
-        <meta name=\\"og:url\\" content=\\"https://example.comundefined\\" />
+        <meta name=\\"og:url\\" content=\\"https://example.com/dummy\\" />
         <meta name=\\"og:title\\" content=\\"John Smith\\" />
         
     

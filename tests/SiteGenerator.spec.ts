@@ -12,17 +12,13 @@ describe("SiteGenerator", () => {
         const classes = await init();
         const renderer = new Renderer(baseUrl, getAbsFilePath("tests/mock/sambal.entry.js"), null);
         await renderer.build("/js");
-        siteGenerator = new SiteGenerator(baseUrl, classes.router, renderer);
+        siteGenerator = new SiteGenerator(baseUrl, classes.uriResolver, classes.router, renderer);
     });
 
     it('build', async () => {
         await siteGenerator.buildPages("/js");
+        await siteGenerator.buildJsonLds();
         await siteGenerator.generateSiteMap();
     });
-
-    /*
-    it('buildJsonLds', async () => {
-        await siteGenerator.buildJsonLds();
-    });*/
 
 });

@@ -9,7 +9,7 @@ export type PartitionKey = {[key: string]: string | number | Date};
 
 export type Collection = {
     uri: string,
-    match: string | string[],
+    include: string | string[],
     groupBy?: (mainEntity: any) => PartitionKey | PartitionKey[],
     sort?: (a: any, b: any) => number
 };
@@ -40,27 +40,23 @@ export interface IResolver {
     clearCache(): void;
 };
 
+/*
 export enum EntityType {
     Page,
     Data
-};
-
-export type EntityUri = {
-    type: EntityType,
-    path: string
-};
+};*/
 
 export const CACHE_FOLDER = ".sambal";
 export const OUTPUT_FOLDER = "public";
 export const PAGES_FOLDER = "pages";
-export const DATA_FOLDER = "data";
+// export const DATA_FOLDER = "data";
 export const SAMBAL_ENTRY_FILE = "sambal.entry.js";
 export const SAMBAL_SITE_FILE = "sambal.site.js";
 
-export const MOUNT_FILE = "_mount.yml";
+// export const MOUNT_FILE = "_mount.yml";
 export const PAGE_FILE = "_page.yml";
 export const LOCALHOST = "localhost";
-export const FS_PROTO = "fs";
+export const FILE_PROTOCOL = "file:";
 
 // for DevServer
 export const THEME_PUBLIC_PATH = "/_theme";

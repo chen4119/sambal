@@ -2,9 +2,9 @@
 "@type": BlogPosting
 headline: My second blog
 author:
-  "@id": /john smith
+  "@id": /data/john smith.yml
 image:
-  "@id": images/image2
+  "@id": /data/images/image2.jpg
 dateCreated: 2017-10-26
 dateModified: 2017-10-26
 keywords: ["sambal", "java script"]

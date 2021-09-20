@@ -5,9 +5,10 @@ import Renderer from "./Renderer";
 import { THEME_PUBLIC_PATH, DEV_PUBLIC_PATH } from "./helpers/constant";
 import { log } from "./helpers/log";
 import Router from "./Router";
+import UriResolver from "./UriResolver";
+import Media from "./Media";
 import { Server, OPEN } from "ws";
 import { FSWatcher } from "chokidar";
-import { isObjectLiteral } from "./helpers/util";
 
 const WEBSOCKET_ADDR = "ws://localhost:3001/";
 const CMD_REFRESH = "refresh";
@@ -19,8 +20,12 @@ export default class DevServer {
     private watcher: FSWatcher;
     // private watchEntryFile: Watching;
     
-    constructor(private router: Router, private renderer: Renderer, private port: Number) {
-        
+    constructor(
+        private uriResolver: UriResolver,
+        private media: Media,
+        private router: Router,
+        private renderer: Renderer,
+        private port: Number) {
     }
     
     async start() {
@@ -115,13 +120,20 @@ export default class DevServer {
         log.debug(`Get path uri: ${req.path}`);
         const page = await this.router.getPage(req.path);
         if (page) {
-            if (isObjectLiteral(page)) {
-                const html = await this.renderer.renderPage(page);
-                res.send(this.addBrowserSyncScript(html));
-            } else {
-                res.send(page); // can be image
-            }
-        } else {
+            const html = await this.renderer.renderPage(page);
+            res.send(this.addBrowserSyncScript(html));
+            return;
+        }
+
+        const image = await this.media.loadImage(req.path);
+        if (image) {
+            res.send(image);
+            return;
+        }
+        
+        try {
+            res.send(this.uriResolver.resolveUri(req.path));
+        } catch (e) {
             res.status(404).end();
         }
     }

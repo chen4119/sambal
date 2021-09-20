@@ -4,10 +4,10 @@ exports[`UriResolver get background 1`] = `
 Object {
   "@type": "ImageObject",
   "author": Object {
-    "@id": "john smith",
+    "@id": "/data/john smith.yml",
   },
   "contentSize": "51 kB",
-  "contentUrl": "/images/image2.webp",
+  "contentUrl": "/data/images/image2.webp",
   "encodingFormat": "image/webp",
   "height": 333,
   "name": "My background",
@@ -15,7 +15,7 @@ Object {
     Object {
       "@type": "ImageObject",
       "contentSize": "1 kB",
-      "contentUrl": "/images/image2-50.webp",
+      "contentUrl": "/data/images/image2-50.webp",
       "encodingFormat": "image/webp",
       "height": 50,
       "width": 75,
@@ -29,7 +29,7 @@ exports[`UriResolver get blog1 1`] = `
 Object {
   "@type": "BlogPosting",
   "author": Object {
-    "@id": "john smith",
+    "@id": "/data/john smith.yml",
   },
   "dateCreated": 2019-10-26T00:00:00.000Z,
   "dateModified": 2019-10-26T00:00:00.000Z,
@@ -50,14 +50,14 @@ exports[`UriResolver get image2 1`] = `
 Object {
   "@type": "ImageObject",
   "contentSize": "51 kB",
-  "contentUrl": "/images/image2.webp",
+  "contentUrl": "/data/images/image2.webp",
   "encodingFormat": "image/webp",
   "height": 333,
   "thumbnail": Array [
     Object {
       "@type": "ImageObject",
       "contentSize": "1 kB",
-      "contentUrl": "/images/image2-50.webp",
+      "contentUrl": "/data/images/image2-50.webp",
       "encodingFormat": "image/webp",
       "height": 50,
       "width": 75,
@@ -88,10 +88,8 @@ Object {
 
 exports[`UriResolver hydrate background 1`] = `
 Object {
-  "@id": "/background",
   "@type": "ImageObject",
   "author": Object {
-    "@id": "/john%20smith",
     "@type": "Person",
     "email": "smitty123@hotmail.com",
     "familyName": "Smith",
@@ -102,29 +100,39 @@ Object {
         Object {
           "@context": Object {
             "@base": "https://sambal.dev",
-            "@vocab": "https://schema.org",
+            "@vocab": "https://schema.org/",
           },
           "@id": "/",
           "@type": "SoftwareSourceCode",
+          "alternativeHeadline": "A linked data static site generator",
           "codeRepository": "https://github.com/chen4119/sambal",
-          "description": "A linked data static site generator",
-          "headline": "A linked data static site generator",
-          "name": "Sambal",
+          "headline": "Sambal",
+          "potentialAction": Array [
+            Object {
+              "@type": "Action",
+              "name": "Get Started",
+              "target": "/docs/get-started",
+            },
+          ],
           "programmingLanguage": "Typescript",
           "usageInfo": Array [
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Search engine optimized from day one",
               "headline": "Schema.org json-ld as the content model",
             },
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Share your json-ld just like how you share your webpage",
               "headline": "Generate HTML and schema.org json-ld files",
             },
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
               "headline": "Image to schema.org ImageObject",
             },
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
               "headline": "Build universal themes",
             },
@@ -136,7 +144,7 @@ Object {
     "name": "John Smith",
   },
   "contentSize": "51 kB",
-  "contentUrl": "/images/image2.webp",
+  "contentUrl": "/data/images/image2.webp",
   "encodingFormat": "image/webp",
   "height": 333,
   "name": "My background",
@@ -144,7 +152,7 @@ Object {
     Object {
       "@type": "ImageObject",
       "contentSize": "1 kB",
-      "contentUrl": "/images/image2-50.webp",
+      "contentUrl": "/data/images/image2-50.webp",
       "encodingFormat": "image/webp",
       "height": 50,
       "width": 75,
@@ -156,10 +164,8 @@ Object {
 
 exports[`UriResolver hydrate blog1 1`] = `
 Object {
-  "@id": "/blogs/blog1",
   "@type": "BlogPosting",
   "author": Object {
-    "@id": "/john%20smith",
     "@type": "Person",
     "email": "smitty123@hotmail.com",
     "familyName": "Smith",
@@ -170,29 +176,39 @@ Object {
         Object {
           "@context": Object {
             "@base": "https://sambal.dev",
-            "@vocab": "https://schema.org",
+            "@vocab": "https://schema.org/",
           },
           "@id": "/",
           "@type": "SoftwareSourceCode",
+          "alternativeHeadline": "A linked data static site generator",
           "codeRepository": "https://github.com/chen4119/sambal",
-          "description": "A linked data static site generator",
-          "headline": "A linked data static site generator",
-          "name": "Sambal",
+          "headline": "Sambal",
+          "potentialAction": Array [
+            Object {
+              "@type": "Action",
+              "name": "Get Started",
+              "target": "/docs/get-started",
+            },
+          ],
           "programmingLanguage": "Typescript",
           "usageInfo": Array [
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Search engine optimized from day one",
               "headline": "Schema.org json-ld as the content model",
             },
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Share your json-ld just like how you share your webpage",
               "headline": "Generate HTML and schema.org json-ld files",
             },
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
               "headline": "Image to schema.org ImageObject",
             },
             Object {
+              "@type": "HowToTip",
               "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
               "headline": "Build universal themes",
             },
@@ -220,7 +236,6 @@ Hello world",
 
 exports[`UriResolver hydrate header 1`] = `
 Object {
-  "@id": "/header",
   "@type": "WPHeader",
   "hasPart": Array [
     Object {
@@ -258,7 +273,6 @@ Object {
 
 exports[`UriResolver hydrate johnsmith 1`] = `
 Object {
-  "@id": "/john%2520smith",
   "@type": "Person",
   "email": "smitty123@hotmail.com",
   "familyName": "Smith",
@@ -269,29 +283,39 @@ Object {
       Object {
         "@context": Object {
           "@base": "https://sambal.dev",
-          "@vocab": "https://schema.org",
+          "@vocab": "https://schema.org/",
         },
         "@id": "/",
         "@type": "SoftwareSourceCode",
+        "alternativeHeadline": "A linked data static site generator",
         "codeRepository": "https://github.com/chen4119/sambal",
-        "description": "A linked data static site generator",
-        "headline": "A linked data static site generator",
-        "name": "Sambal",
+        "headline": "Sambal",
+        "potentialAction": Array [
+          Object {
+            "@type": "Action",
+            "name": "Get Started",
+            "target": "/docs/get-started",
+          },
+        ],
         "programmingLanguage": "Typescript",
         "usageInfo": Array [
           Object {
+            "@type": "HowToTip",
             "alternativeHeadline": "Search engine optimized from day one",
             "headline": "Schema.org json-ld as the content model",
           },
           Object {
+            "@type": "HowToTip",
             "alternativeHeadline": "Share your json-ld just like how you share your webpage",
             "headline": "Generate HTML and schema.org json-ld files",
           },
           Object {
+            "@type": "HowToTip",
             "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
             "headline": "Image to schema.org ImageObject",
           },
           Object {
+            "@type": "HowToTip",
             "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
             "headline": "Build universal themes",
           },

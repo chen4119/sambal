@@ -5,11 +5,9 @@ import {
     SAMBAL_ENTRY_FILE,
     SAMBAL_SITE_FILE,
     CACHE_FOLDER,
-    DATA_FOLDER,
     PAGES_FOLDER
 } from "./helpers/constant";
-import { getAbsFilePath, writeText } from "./helpers/util";
-import { searchFiles, normalizeJsonLdId } from "./helpers/data";
+import { getAbsFilePath, writeText, normalizeUri } from "./helpers/util";
 import { bundleSambalFile, bundleBrowserPackage } from "./helpers/bundler";
 import Renderer from "./Renderer";
 import SiteGenerator from "./SiteGenerator";
@@ -69,18 +67,14 @@ async function initSite(outputFolder: string) {
             throw new Error("No sambal.entry.js file found and no theme specified");
         }
 
-        // const links = new Links();
-        const pages = searchFiles(PAGES_FOLDER, "**/*");
-        const data = searchFiles(DATA_FOLDER, "**/*");
-
         const imageTransforms = Array.isArray(module.siteConfig.imageTransforms) ? module.siteConfig.imageTransforms : [];
-        const media = new Media(pages, data, outputFolder, imageTransforms);
+        const media = new Media(outputFolder, imageTransforms);
         const collections = Array.isArray(module.siteConfig.collections) ? module.siteConfig.collections : [];
         collections.forEach(c => {
-            c.uri = normalizeJsonLdId(c.uri);
+            c.uri = normalizeUri(c.uri);
         });
 
-        const uriResolver = new UriResolver(pages, data, media);
+        const uriResolver = new UriResolver(collections, media);
         const resolvers = Array.isArray(module.siteConfig.resolvers) ? module.siteConfig.resolvers : [];
         for (const resolver of resolvers) {
             if (resolver.host && resolver.resolveUri) {
@@ -94,9 +88,13 @@ async function initSite(outputFolder: string) {
             }
         }
         
-        const router = new Router(pages, data, uriResolver);
-        await router.collectRoutes(collections);
-        return router;
+        const router = new Router(uriResolver);
+        await router.collectRoutes();
+        return {
+            media,
+            router,
+            uriResolver
+        };
     }
     throw new Error("No sambal.site.js file found");
 }
@@ -106,12 +104,12 @@ async function serve() {
     clean(`./${CACHE_FOLDER}`);
 
     try {
-        const router = await initSite(CACHE_FOLDER);
+        const init = await initSite(CACHE_FOLDER);
 
         const renderer = new Renderer(baseUrl, entryFile, theme);
         await renderer.initTheme();
 
-        const server = new DevServer(router, renderer, 3000);
+        const server = new DevServer(init.uriResolver, init.media, init.router, renderer, 3000);
         await server.start();
     } catch(e) {
         log.error(e);
@@ -125,12 +123,12 @@ async function build() {
     const publicPath = `/js`;
     
     try {
-        const router = await initSite(OUTPUT_FOLDER);
+        const init = await initSite(OUTPUT_FOLDER);
 
         const renderer = new Renderer(baseUrl, entryFile, theme);
         await renderer.build(publicPath);
 
-        const builder = new SiteGenerator(baseUrl, router, renderer);
+        const builder = new SiteGenerator(baseUrl, init.uriResolver, init.router, renderer);
         await builder.buildPages(publicPath);
 
         log.info("Writing schema.org json-lds");
@@ -190,8 +188,8 @@ async function publishTheme() {
 
 async function init() {
     try {
-        await writeText(getAbsFilePath(`${PAGES_FOLDER}/index.md`), initBlogpost("author"));
-        await writeText(getAbsFilePath(`${DATA_FOLDER}/author.yml`), initPerson());
+        await writeText(getAbsFilePath(`${PAGES_FOLDER}/index.md`), initBlogpost("/data/author.yml"));
+        await writeText(getAbsFilePath("data/author.yml"), initPerson());
         await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());
         await writeText(getAbsFilePath(SAMBAL_ENTRY_FILE), initSambalEntry());
     } catch(e) {
