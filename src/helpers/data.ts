@@ -35,19 +35,6 @@ export function searchFiles(query: string | string[]): string[] {
     return matches.filter(m => isValidRelativePath(m));
 }
 
-/*
-function normalizeRelativePath(src: string) {
-
-    let normalSrc = src;
-    if (normalSrc.endsWith("/")) {
-        normalSrc = normalSrc.substring(0, normalSrc.length - 1);
-    }
-    if (!normalSrc.startsWith("/")) {
-        normalSrc = `/${normalSrc}`;
-    }
-    return normalSrc;
-}*/
-
 export function inferUrl(uri: string) {
     if (!uri || typeof(uri) !== "string") {
         return "";
@@ -67,31 +54,6 @@ export function inferUrl(uri: string) {
     }
     return uri;
 }
-
-/*
-export function normalizeJsonLdId(uri: string) {
-    if (isAbsUri(uri)) {
-        return encodeURI(uri);
-    }
-
-    const { path, query } = parseUri(uri);
-    let normalPath = normalizeRelativePath(path);
-    if (isSupportedFile(normalPath)) {
-        normalPath = normalPath.substring(0, normalPath.lastIndexOf("."));
-    }
-    if (normalPath === "/index") {
-        return "/";
-    }
-    if (normalPath.endsWith("/index")) {
-        normalPath = normalPath.substring(0, normalPath.length - 6);
-    }
-    return `${encodeURI(normalPath)}${query ? `?${query.toString()}` : ""}`;
-}*/
-
-/*
-function isDataFileExist(filePath: string) {
-    return shelljs.test('-f', getAbsFilePath(filePath));
-}*/
 
 export async function loadLocalFile(src: string) {
     if (!isSupportedFile(src)) {

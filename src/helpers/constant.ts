@@ -40,20 +40,12 @@ export interface IResolver {
     clearCache(): void;
 };
 
-/*
-export enum EntityType {
-    Page,
-    Data
-};*/
-
 export const CACHE_FOLDER = ".sambal";
 export const OUTPUT_FOLDER = "public";
 export const PAGES_FOLDER = "pages";
-// export const DATA_FOLDER = "data";
 export const SAMBAL_ENTRY_FILE = "sambal.entry.js";
 export const SAMBAL_SITE_FILE = "sambal.site.js";
 
-// export const MOUNT_FILE = "_mount.yml";
 export const PAGE_FILE = "_page.yml";
 export const LOCALHOST = "localhost";
 export const FILE_PROTOCOL = "file:";

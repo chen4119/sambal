@@ -1,10 +1,11 @@
 import { JSONLD_TYPE } from "sambal-jsonld";
 import {
+    CACHE_FOLDER,
     PAGES_FOLDER,
     PAGE_FILE,
     WebPage
 } from "./helpers/constant";
-import { inferUrl, loadLocalFile, searchFiles } from "./helpers/data";
+import { inferUrl, isSupportedFile, loadLocalFile, searchFiles } from "./helpers/data";
 import { log } from "./helpers/log";
 import UriResolver from "./UriResolver";
 import chokidar, { FSWatcher } from "chokidar";
@@ -40,14 +41,24 @@ export default class Router {
             const watcher = chokidar.watch(process.cwd());
             watcher.on("ready", () => {
                 watcher.on("change", (path) => {
-                    log.info(`File changed: ${path}`);
-                    this.pageCache.clear();
-                    this.uriResolver.clearCache();
-                    onChange("change", path);
+                    if (this.isUserContentFile(path)) {
+                        log.info(`File changed: ${path}`);
+                        this.pageCache.clear();
+                        this.uriResolver.clearCache();
+                        onChange("change", path);
+                    }
                 });
                 resolve(watcher);
             });
         });
+    }
+
+    private isUserContentFile(path: string) {
+        const relativePath = path.substring(process.cwd().length);
+        if (relativePath.startsWith(`/${CACHE_FOLDER}`)) {
+            return false; // ignore all changes in cache folder
+        }
+        return isSupportedFile(relativePath);
     }
 
     async getPage(uri: string) {

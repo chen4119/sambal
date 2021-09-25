@@ -132,7 +132,7 @@ export default class DevServer {
         }
         
         try {
-            res.send(this.uriResolver.resolveUri(req.path));
+            res.send(await this.uriResolver.resolveUri(req.path));
         } catch (e) {
             res.status(404).end();
         }
