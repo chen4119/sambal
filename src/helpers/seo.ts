@@ -2,8 +2,10 @@ import { template } from "../ui/template";
 import { isSchemaType, JSONLD_TYPE } from "sambal-jsonld";
 import { WebPage } from "./constant";
 
-export function serializeJsonLd(mainEntity: any) {
-    return JSON.stringify(minimizeEntity(mainEntity), null, 4)
+export function serializeJsonLd(mainEntity: any, isMinimize: boolean = true) {
+    return JSON.stringify(
+        isMinimize ? minimizeEntity(mainEntity) : mainEntity, 
+        null, 4)
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 }

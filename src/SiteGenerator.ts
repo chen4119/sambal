@@ -69,7 +69,7 @@ export default class SiteGenerator {
                 this.updateRef(jsonld);
                 await writeText(
                     `./${OUTPUT_FOLDER}${jsonld[JSONLD_ID]}`,
-                    serializeJsonLd(jsonld)
+                    serializeJsonLd(jsonld, false)
                 );
             }
         }
