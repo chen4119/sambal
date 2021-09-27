@@ -12,9 +12,7 @@ export default class FileSystemResolver implements IResolver {
         this.objectCache = new Map<string, unknown>();
     }
 
-
     async resolveUri(uri: URI) {
-        // const uriStr = uri.path;
         if (this.objectCache.has(uri.path)) {
             return deepClone(this.objectCache.get(uri.path));
         }

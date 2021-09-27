@@ -62,6 +62,7 @@ describe("UriResolver", () => {
     it('get collections/tags', async () => {
         const collection = await uriResolver.resolveUri("/collections/tags?tag=java script");
         expect(collection.itemListElement.length).toBe(2);
+        expect(collection).toMatchSnapshot();
     });
 
     it('get collections/tags as nav', async () => {

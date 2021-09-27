@@ -25,7 +25,6 @@ exports[`seo serializeJsonLd article 1`] = `
     \\"name\\": \\"name field\\",
     \\"headline\\": \\"Title of my article\\",
     \\"description\\": \\"Description about my article\\",
-    \\"text\\": \\"&lt;have some characters to &lt;escape&gt;&gt;\\",
     \\"image\\": {
         \\"@type\\": \\"ImageObject\\",
         \\"contentSize\\": \\"1 kB\\",

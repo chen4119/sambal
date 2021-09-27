@@ -130,7 +130,10 @@ export default class CollectionResolver implements IResolver {
     private serializeItemList(feed: CollectionItem[]) {
         return {
             [JSONLD_TYPE]: "ItemList",
-            itemListElement: feed.map(d => d.item)
+            itemListElement: feed.map(d => ({
+                url: inferUrl(d.uri),
+                ...d.item
+            }))
         };
     }
 

@@ -63,8 +63,9 @@ export default class SiteGenerator {
                         "@vocab": `${SCHEMA_CONTEXT}/`,
                         "@base": this.baseUrl
                     },
+                    url: inferUrl(uri),
                     ...jsonld
-                }
+                };
                 this.updateRef(jsonld);
                 await writeText(
                     `./${OUTPUT_FOLDER}${jsonld[JSONLD_ID]}`,

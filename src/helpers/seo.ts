@@ -1,11 +1,19 @@
 import { template } from "../ui/template";
-import { JSONLD_TYPE } from "sambal-jsonld";
+import { isSchemaType, JSONLD_TYPE } from "sambal-jsonld";
 import { WebPage } from "./constant";
 
 export function serializeJsonLd(mainEntity: any) {
+    removeUnnecessaryFields(mainEntity);
     return JSON.stringify(mainEntity, null, 4)
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
+}
+
+function removeUnnecessaryFields(mainEntity) {
+    if (isSchemaType(mainEntity, "Article")) {
+        delete mainEntity.text;
+        delete mainEntity.encodingFormat;
+    }
 }
 
 export async function renderSocialMediaMetaTags(baseUrl: string, page: WebPage) {

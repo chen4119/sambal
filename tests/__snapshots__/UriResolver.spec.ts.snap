@@ -46,6 +46,172 @@ Hello world",
 }
 `;
 
+exports[`UriResolver get collections/tags 1`] = `
+Object {
+  "@type": "ItemList",
+  "itemListElement": Array [
+    Object {
+      "@type": "BlogPosting",
+      "author": Object {
+        "@type": "Person",
+        "email": "smitty123@hotmail.com",
+        "familyName": "Smith",
+        "givenName": "John",
+        "hasOfferCatalog": Object {
+          "@type": "OfferCatalog",
+          "itemListElement": Array [
+            Object {
+              "@context": Object {
+                "@base": "https://sambal.dev",
+                "@vocab": "https://schema.org/",
+              },
+              "@id": "/schema.json",
+              "@type": "SoftwareSourceCode",
+              "alternativeHeadline": "A linked data static site generator",
+              "codeRepository": "https://github.com/chen4119/sambal",
+              "headline": "Sambal",
+              "potentialAction": Array [
+                Object {
+                  "@type": "Action",
+                  "name": "Get Started",
+                  "target": "/docs/get-started",
+                },
+              ],
+              "programmingLanguage": "Typescript",
+              "usageInfo": Array [
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Search engine optimized from day one",
+                  "headline": "Schema.org json-ld as the content model",
+                },
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                  "headline": "Generate HTML and schema.org json-ld files",
+                },
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                  "headline": "Image to schema.org ImageObject",
+                },
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                  "headline": "Build universal themes",
+                },
+              ],
+            },
+          ],
+          "name": "Open source software",
+        },
+        "name": "John Smith",
+      },
+      "dateCreated": 2019-10-26T00:00:00.000Z,
+      "dateModified": 2019-10-26T00:00:00.000Z,
+      "encodingFormat": "text/markdown",
+      "headline": "My first blog",
+      "keywords": Array [
+        "rxjs",
+        "java script",
+      ],
+      "position": 1,
+      "text": "
+
+Hello world",
+      "url": "/blogs/blog1",
+    },
+    Object {
+      "@type": "BlogPosting",
+      "author": Object {
+        "@type": "Person",
+        "email": "smitty123@hotmail.com",
+        "familyName": "Smith",
+        "givenName": "John",
+        "hasOfferCatalog": Object {
+          "@type": "OfferCatalog",
+          "itemListElement": Array [
+            Object {
+              "@context": Object {
+                "@base": "https://sambal.dev",
+                "@vocab": "https://schema.org/",
+              },
+              "@id": "/schema.json",
+              "@type": "SoftwareSourceCode",
+              "alternativeHeadline": "A linked data static site generator",
+              "codeRepository": "https://github.com/chen4119/sambal",
+              "headline": "Sambal",
+              "potentialAction": Array [
+                Object {
+                  "@type": "Action",
+                  "name": "Get Started",
+                  "target": "/docs/get-started",
+                },
+              ],
+              "programmingLanguage": "Typescript",
+              "usageInfo": Array [
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Search engine optimized from day one",
+                  "headline": "Schema.org json-ld as the content model",
+                },
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Share your json-ld just like how you share your webpage",
+                  "headline": "Generate HTML and schema.org json-ld files",
+                },
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Automatically convert image to schema.org ImageObject and generate thumbnails",
+                  "headline": "Image to schema.org ImageObject",
+                },
+                Object {
+                  "@type": "HowToTip",
+                  "alternativeHeadline": "Using schema.org means never get locked into any vendor specific content model",
+                  "headline": "Build universal themes",
+                },
+              ],
+            },
+          ],
+          "name": "Open source software",
+        },
+        "name": "John Smith",
+      },
+      "dateCreated": 2017-10-26T00:00:00.000Z,
+      "dateModified": 2017-10-26T00:00:00.000Z,
+      "encodingFormat": "text/markdown",
+      "headline": "My second blog",
+      "image": Object {
+        "@type": "ImageObject",
+        "contentSize": "51 kB",
+        "contentUrl": "/data/images/image2.webp",
+        "encodingFormat": "image/webp",
+        "height": 333,
+        "thumbnail": Array [
+          Object {
+            "@type": "ImageObject",
+            "contentSize": "1 kB",
+            "contentUrl": "/data/images/image2-50.webp",
+            "encodingFormat": "image/webp",
+            "height": 50,
+            "width": 75,
+          },
+        ],
+        "width": 500,
+      },
+      "keywords": Array [
+        "sambal",
+        "java script",
+      ],
+      "position": 2,
+      "text": "
+
+Hello world2",
+      "url": "/blogs/blog2",
+    },
+  ],
+}
+`;
+
 exports[`UriResolver get image2 1`] = `
 Object {
   "@type": "ImageObject",
@@ -102,7 +268,7 @@ Object {
             "@base": "https://sambal.dev",
             "@vocab": "https://schema.org/",
           },
-          "@id": "/",
+          "@id": "/schema.json",
           "@type": "SoftwareSourceCode",
           "alternativeHeadline": "A linked data static site generator",
           "codeRepository": "https://github.com/chen4119/sambal",
@@ -178,7 +344,7 @@ Object {
             "@base": "https://sambal.dev",
             "@vocab": "https://schema.org/",
           },
-          "@id": "/",
+          "@id": "/schema.json",
           "@type": "SoftwareSourceCode",
           "alternativeHeadline": "A linked data static site generator",
           "codeRepository": "https://github.com/chen4119/sambal",
@@ -285,7 +451,7 @@ Object {
           "@base": "https://sambal.dev",
           "@vocab": "https://schema.org/",
         },
-        "@id": "/",
+        "@id": "/schema.json",
         "@type": "SoftwareSourceCode",
         "alternativeHeadline": "A linked data static site generator",
         "codeRepository": "https://github.com/chen4119/sambal",
