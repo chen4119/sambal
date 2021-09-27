@@ -11,8 +11,9 @@ export function serializeJsonLd(mainEntity: any) {
 
 function removeUnnecessaryFields(mainEntity) {
     if (isSchemaType(mainEntity, "Article")) {
-        delete mainEntity.text;
-        delete mainEntity.encodingFormat;
+        const minEntity = {...mainEntity};
+        delete minEntity.text;
+        delete minEntity.encodingFormat;
     }
 }
 
