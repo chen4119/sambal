@@ -3,18 +3,19 @@ import { isSchemaType, JSONLD_TYPE } from "sambal-jsonld";
 import { WebPage } from "./constant";
 
 export function serializeJsonLd(mainEntity: any) {
-    removeUnnecessaryFields(mainEntity);
-    return JSON.stringify(mainEntity, null, 4)
+    return JSON.stringify(minimizeEntity(mainEntity), null, 4)
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 }
 
-function removeUnnecessaryFields(mainEntity) {
+function minimizeEntity(mainEntity) {
     if (isSchemaType(mainEntity, "Article")) {
         const minEntity = {...mainEntity};
         delete minEntity.text;
         delete minEntity.encodingFormat;
+        return minEntity;
     }
+    return mainEntity;
 }
 
 export async function renderSocialMediaMetaTags(baseUrl: string, page: WebPage) {
