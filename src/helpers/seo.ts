@@ -49,6 +49,7 @@ function mainEntityToMeta(baseUrl: string, page: any) {
 }
 
 function getImageUrl(baseUrl: string, imageObj: any) {
+    // contentUrl will always be relative url
     return `${baseUrl}${imageObj.contentUrl}`;
 }
 
