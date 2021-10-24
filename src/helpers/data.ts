@@ -71,14 +71,56 @@ export async function loadLocalFile(src: string) {
 }
 
 export async function loadRemoteFile(src: string) {
-    const response = await axios.get(src);
-    return parseContent(response.data, getAxiosResponseContentType(response));
+    const response = parseAxiosResponse(await axios.get(src, {
+        responseType: 'arraybuffer'
+      }));
+    return parseContent(response.data, response.supportedType);
+}
+
+function parseAxiosResponse(response: AxiosResponse<any>): {data: any, supportedType: SUPPORTED_CONTENT_TYPE} {
+    const contentType = response.headers["content-type"];
+    if (!contentType) {
+        throw `Unsupported content type ${contentType}`;
+    }
+    let data = null;
+    let supportedType: SUPPORTED_CONTENT_TYPE = null;
+    switch (contentType) {
+        case "text/yaml":
+        case "text/yml":
+        case "application/yaml":
+        case "application/yml":
+            data = response.data.toString("utf-8");
+            supportedType = SUPPORTED_CONTENT_TYPE.yaml;
+            break;
+        case "application/json":
+        case "application/ld+json":
+            data = response.data.toString("utf-8");
+            supportedType = SUPPORTED_CONTENT_TYPE.json;
+            break;
+        case "text/markdown":
+            data = response.data.toString("utf-8");
+            supportedType = SUPPORTED_CONTENT_TYPE.markdown;
+            break;
+        case "image/jpeg":
+        case "image/webp":
+        case "image/gif":
+        case "image/png":
+            data = response.data;
+            supportedType = SUPPORTED_CONTENT_TYPE.image;
+            break;
+        default:
+            throw `Unsupported content type ${contentType}`;
+    }
+    return {
+        data,
+        supportedType
+    };
 }
 
 const IMAGE_EXT_REGEX = /.+(.jpg|.jpeg|.gif|.png|.webp)$/i;
 const SUPPORTED_FILE_EXT_REGEX = /.+(.yaml|.yml|.json|.md)$/i;
 
-export function isImageFile(src: string) {
+function isImageFile(src: string) {
     if (!src) {
         return false;
     }
@@ -92,30 +134,6 @@ export function isSupportedFile(src: string) {
     return isAbsUri(src) || 
     isImageFile(src) ||
     src.match(SUPPORTED_FILE_EXT_REGEX);
-}
-
-function getAxiosResponseContentType(response: AxiosResponse<any>): SUPPORTED_CONTENT_TYPE {
-    const contentType = response.headers["content-type"];
-    if (contentType) {
-        switch (contentType) {
-            case "text/yaml":
-            case "text/yml":
-            case "application/yaml":
-            case "application/yml":
-                return SUPPORTED_CONTENT_TYPE.yaml;
-            case "application/json":
-            case "application/ld+json":
-                return SUPPORTED_CONTENT_TYPE.json;
-            case "text/markdown":
-                return SUPPORTED_CONTENT_TYPE.markdown;
-            case "image/jpeg":
-            case "image/webp":
-            case "image/gif":
-            case "image/png":
-                return SUPPORTED_CONTENT_TYPE.image;
-        }
-    }
-    throw `Unsupported content type ${contentType}`;
 }
 
 function getLocalFileContentType(src: string): SUPPORTED_CONTENT_TYPE {

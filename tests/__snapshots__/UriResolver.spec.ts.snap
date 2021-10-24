@@ -35,6 +35,9 @@ Object {
   "dateModified": 2019-10-26T00:00:00.000Z,
   "encodingFormat": "text/markdown",
   "headline": "My first blog",
+  "image": Object {
+    "@id": "https://picsum.photos/200/300.jpg",
+  },
   "keywords": Array [
     "rxjs",
     "java script",
@@ -103,6 +106,14 @@ Object {
       "dateModified": 2019-10-26T00:00:00.000Z,
       "encodingFormat": "text/markdown",
       "headline": "My first blog",
+      "image": Object {
+        "@type": "ImageObject",
+        "contentSize": "8 kB",
+        "contentUrl": "https://picsum.photos/200/300.jpg",
+        "encodingFormat": "image/jpeg",
+        "height": 300,
+        "width": 200,
+      },
       "keywords": Array [
         "rxjs",
         "java script",
@@ -361,6 +372,14 @@ Object {
   "dateModified": 2019-10-26T00:00:00.000Z,
   "encodingFormat": "text/markdown",
   "headline": "My first blog",
+  "image": Object {
+    "@type": "ImageObject",
+    "contentSize": "9 kB",
+    "contentUrl": "https://picsum.photos/200/300.jpg",
+    "encodingFormat": "image/jpeg",
+    "height": 300,
+    "width": 200,
+  },
   "keywords": Array [
     "rxjs",
     "java script",

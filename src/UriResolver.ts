@@ -11,9 +11,6 @@ import CollectionResolver from "./resolvers/CollectionResolver";
 import Media from "./Media";
 import { isObjectLiteral, normalizeUri } from "./helpers/util";
 import {
-    isImageFile
-} from "./helpers/data";
-import {
     JSONLD_CONTEXT,
     JSONLD_GRAPH,
     JSONLD_ID,
@@ -102,9 +99,13 @@ export default class UriResolver {
             throw new Error(`No resolver found for uri ${uriStr}`);
         }
 
-        if (isImageFile(uriStr)) {
+        // data is image if type is Buffer
+        if (data instanceof Buffer) {
             // convert binary image data to schema ImageObject
-            data = await this.media.toImageObject(uriObj.path, data);
+            const mediaUri = uriObj.protocol === FILE_PROTOCOL ?
+                uriObj.path :
+                `${uriObj.protocol}//${uriObj.host}${uriObj.path}`;
+            data = await this.media.toImageObject(mediaUri, data);
         } else if (isSchemaType(data, IMAGE_OBJECT, false)) {
             const image = await this.resolveUri(data.contentUrl);
             data = {

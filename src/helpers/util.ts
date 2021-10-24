@@ -148,7 +148,6 @@ export function formatSize(size) {
     return `${Math.floor(size / Math.pow(1024, base))} ${['B', 'kB', 'MB', 'GB', 'TB'][base]}`;
 }
 
-// const FRONT_MATTER_REGEX = /---(.+)---(.+)/s
 export function frontMatter(md: string) {
     const splitted = md.split("---");
     if (splitted.length >= 1) {
