@@ -23,6 +23,7 @@ exports[`Renderer render using mock-theme 1`] = `
                     
         <script type=\\"application/ld+json\\">
             {
+    \\"@context\\": \\"https://schema.org\\",
     \\"@type\\": \\"Person\\",
     \\"name\\": \\"John Smith\\"
 }

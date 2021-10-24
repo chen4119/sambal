@@ -29,6 +29,7 @@ import {
 import { serializeJsonLd, renderSocialMediaMetaTags } from "./helpers/seo";
 import { log } from "./helpers/log";
 import { template } from "./ui/template";
+import { SCHEMA_CONTEXT } from "sambal-jsonld";
 type UI = {
     renderPage: (props: {
         page: unknown,
@@ -174,7 +175,7 @@ export default class Renderer {
         }
     }
 
-    private renderErrorPage(e) {
+    renderErrorPage(e) {
         return template`
             <html>
                 <head>
@@ -240,11 +241,12 @@ export default class Renderer {
     }
 
     private addJsonLdScript(html: string, mainEntity: any) {
-        const serializedJsonLd = serializeJsonLd(mainEntity);
-
         const jsonLdScript = `
         <script type="application/ld+json">
-            ${serializedJsonLd}
+            ${serializeJsonLd({
+                "@context": SCHEMA_CONTEXT,
+                ...mainEntity
+            })}
         </script>`;
 
         const index = html.indexOf("</head>");

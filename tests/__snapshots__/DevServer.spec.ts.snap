@@ -25,6 +25,7 @@ exports[`DevServer refresh data on file change 1`] = `
                     
         <script type=\\"application/ld+json\\">
             {
+    \\"@context\\": \\"https://schema.org\\",
     \\"@type\\": \\"BlogPosting\\",
     \\"headline\\": \\"Test blog\\"
 }
@@ -82,6 +83,7 @@ exports[`DevServer render html 1`] = `
                     
         <script type=\\"application/ld+json\\">
             {
+    \\"@context\\": \\"https://schema.org\\",
     \\"@type\\": \\"SoftwareSourceCode\\",
     \\"name\\": \\"Sambal\\",
     \\"headline\\": \\"A linked data static site generator\\",

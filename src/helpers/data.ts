@@ -94,12 +94,25 @@ export function isSupportedFile(src: string) {
     src.match(SUPPORTED_FILE_EXT_REGEX);
 }
 
-// TODO: what about image type?
 function getAxiosResponseContentType(response: AxiosResponse<any>): SUPPORTED_CONTENT_TYPE {
     const contentType = response.headers["content-type"];
     if (contentType) {
-        if (contentType === "application/json" || contentType === "application/ld+json") {
-            return SUPPORTED_CONTENT_TYPE.json;
+        switch (contentType) {
+            case "text/yaml":
+            case "text/yml":
+            case "application/yaml":
+            case "application/yml":
+                return SUPPORTED_CONTENT_TYPE.yaml;
+            case "application/json":
+            case "application/ld+json":
+                return SUPPORTED_CONTENT_TYPE.json;
+            case "text/markdown":
+                return SUPPORTED_CONTENT_TYPE.markdown;
+            case "image/jpeg":
+            case "image/webp":
+            case "image/gif":
+            case "image/png":
+                return SUPPORTED_CONTENT_TYPE.image;
         }
     }
     throw `Unsupported content type ${contentType}`;

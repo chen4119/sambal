@@ -118,23 +118,28 @@ export default class DevServer {
 
     private async route(req, res) {
         log.debug(`Get path uri: ${req.path}`);
-        const page = await this.router.getPage(req.path);
-        if (page) {
-            const html = await this.renderer.renderPage(page);
-            res.send(this.addBrowserSyncScript(html));
-            return;
-        }
-
-        const image = await this.media.loadImage(req.path);
-        if (image) {
-            res.send(image);
-            return;
-        }
-        
         try {
-            res.send(await this.uriResolver.resolveUri(req.path));
-        } catch (e) {
-            res.status(404).end();
+            const page = await this.router.getPage(req.path);
+            if (page) {
+                const html = await this.renderer.renderPage(page);
+                res.send(this.addBrowserSyncScript(html));
+                return;
+            }
+
+            const image = await this.media.loadImage(req.path);
+            if (image) {
+                res.send(image);
+                return;
+            }
+            
+            try {
+                res.send(await this.uriResolver.resolveUri(req.path));
+            } catch (e) {
+                res.status(404).end();
+            }
+        } catch(e) {
+            const html = await this.renderer.renderErrorPage(e);
+            res.send(this.addBrowserSyncScript(html));
         }
     }
 
