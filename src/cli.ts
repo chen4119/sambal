@@ -31,7 +31,11 @@ import {
 import {
     initSambalEntry,
     initSambalSite,
-    initBlogpost,
+    initBlogpost1,
+    initBlogpost2,
+    initBundle,
+    initCss,
+    initIndex,
     initPerson
 } from "./helpers/init";
 import { log } from "./helpers/log";
@@ -188,7 +192,11 @@ async function publishTheme() {
 
 async function init() {
     try {
-        await writeText(getAbsFilePath(`${PAGES_FOLDER}/index.md`), initBlogpost("/data/author.yml"));
+        await writeText(getAbsFilePath(`${PAGES_FOLDER}/index.yml`), initIndex());
+        await writeText(getAbsFilePath(`${PAGES_FOLDER}/blogs/blog1.md`), initBlogpost1("/data/author.yml"));
+        await writeText(getAbsFilePath(`${PAGES_FOLDER}/blogs/blog2.md`), initBlogpost2());
+        await writeText(getAbsFilePath("css/style.css"), initCss());
+        await writeText(getAbsFilePath("js/bundle.js"), initBundle("../css/style.css"));
         await writeText(getAbsFilePath("data/author.yml"), initPerson());
         await writeText(getAbsFilePath(SAMBAL_SITE_FILE), initSambalSite());
         await writeText(getAbsFilePath(SAMBAL_ENTRY_FILE), initSambalEntry());
