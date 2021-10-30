@@ -64,11 +64,11 @@ const Landing = ({ mainEntity, options }) => {
             <p>{mainEntity.description}</p>
             <b>My blogposts</b>
             <LinkList 
-                list={mainEntity.allPosts.itemListElement}
+                list={mainEntity.allPosts}
             />
             <b>Blogposts tagged with "webdev"</b>
             <LinkList 
-                list={mainEntity.postsByTag.itemListElement}
+                list={mainEntity.postsByTag}
             />
             <b>Default options:</b>
             <p>Google Analytics Id {options.googleAnalyticsId}</p>

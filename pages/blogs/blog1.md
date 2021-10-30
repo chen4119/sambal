@@ -4,7 +4,7 @@ headline: My first blog
 author:
   "@id": /data/john smith.yml
 image:
-  "@id": https://picsum.photos/200/300.jpg
+  "@id": https://via.placeholder.com/300
 dateCreated: 2019-10-26
 dateModified: 2019-10-26
 keywords: ["rxjs", "java script"]

@@ -72,7 +72,7 @@ async function initSite(outputFolder: string) {
         }
 
         const imageTransforms = Array.isArray(module.siteConfig.imageTransforms) ? module.siteConfig.imageTransforms : [];
-        const media = new Media(outputFolder, imageTransforms);
+        const media = new Media(baseUrl, outputFolder, imageTransforms);
         const collections = Array.isArray(module.siteConfig.collections) ? module.siteConfig.collections : [];
         collections.forEach(c => {
             c.uri = normalizeUri(c.uri);

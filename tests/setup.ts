@@ -73,7 +73,8 @@ const customResolver = {
 }
 
 export async function init() {
-    const media = new Media(CACHE_FOLDER, imageTransforms);
+    const baseUrl = "https://example.com";
+    const media = new Media(baseUrl, CACHE_FOLDER, imageTransforms);
     const uriResolver = new UriResolver(collections, media);
     const router = new Router(uriResolver);
 

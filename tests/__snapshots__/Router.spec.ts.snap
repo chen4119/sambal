@@ -107,11 +107,12 @@ Object {
     "headline": "My first blog",
     "image": Object {
       "@type": "ImageObject",
-      "contentSize": "7 kB",
-      "contentUrl": "https://picsum.photos/200/300.jpg",
-      "encodingFormat": "image/jpeg",
+      "contentSize": "2 kB",
+      "contentUrl": "https://via.placeholder.com/300",
+      "encodingFormat": "image/png",
       "height": 300,
-      "width": 200,
+      "url": "https://via.placeholder.com/300",
+      "width": 300,
     },
     "keywords": Array [
       "rxjs",
@@ -191,11 +192,12 @@ Object {
     "headline": "My first blog",
     "image": Object {
       "@type": "ImageObject",
-      "contentSize": "17 kB",
-      "contentUrl": "https://picsum.photos/200/300.jpg",
-      "encodingFormat": "image/jpeg",
+      "contentSize": "2 kB",
+      "contentUrl": "https://via.placeholder.com/300",
+      "encodingFormat": "image/png",
       "height": 300,
-      "width": 200,
+      "url": "https://via.placeholder.com/300",
+      "width": 300,
     },
     "keywords": Array [
       "rxjs",

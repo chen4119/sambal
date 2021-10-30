@@ -61,7 +61,7 @@ describe("UriResolver", () => {
 
     it('get collections/tags', async () => {
         const collection = await uriResolver.resolveUri("/collections/tags?tag=java script");
-        expect(collection.itemListElement.length).toBe(2);
+        expect(collection.length).toBe(2);
         expect(collection).toMatchSnapshot();
     });
 
@@ -73,7 +73,7 @@ describe("UriResolver", () => {
 
     it('get collections/images', async () => {
         const collection = await uriResolver.resolveUri("/collections/images");
-        expect(collection.itemListElement[0].contentUrl).toBe("/data/images/image2.webp");
+        expect(collection[0].contentUrl).toBe("/data/images/image2.webp");
     });
 
     describe("Custom resolver", () => {

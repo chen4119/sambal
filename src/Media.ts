@@ -29,6 +29,7 @@ export default class Media {
     private publishedMediaPaths: Set<string>;
 
     constructor(
+        private baseUrl: string,
         private outputFolder: string,
         imageTransforms: ImageTransform[])
     {
@@ -61,7 +62,7 @@ export default class Media {
         } else {
             const output = await this.hydrateImage(imageJsonLd, imageBuf);
             if (!isAbsUri(uri)) {
-                imageJsonLd.contentUrl = this.toLocalContentUrl(uri, output.info.format);
+                this.setLocalContentUrl(imageJsonLd, uri, output.info.format);
                 await this.writeImage(imageJsonLd.contentUrl, output.buffer);
             }
         }
@@ -75,7 +76,8 @@ export default class Media {
             height: imageTransform.height,
             encodingFormat: imageTransform.encodingFormat
         });
-        imageJsonLd.contentUrl = this.toLocalContentUrl(imageJsonLd.contentUrl, output.info.format);
+        // With transform, content url always local
+        this.setLocalContentUrl(imageJsonLd, imageJsonLd.contentUrl, output.info.format);
         await this.writeImage(imageJsonLd.contentUrl, output.buffer);
         if (imageTransform.thumbnails) {
             const thumbnailJsonLds = [];
@@ -96,12 +98,21 @@ export default class Media {
         const thumbnailJsonLd = this.newImageObject(thumbnailUrl);
         const output = await this.hydrateImage(thumbnailJsonLd, imageBuf, transform);
         await this.writeImage(thumbnailUrl, output.buffer);
+        this.setLocalContentUrl(thumbnailJsonLd, thumbnailUrl, output.info.format);
         return thumbnailJsonLd;
+    }
+
+    private setLocalContentUrl(imageObject: any, contentUrl: string, imageFormat: string) {
+        const localUrl = this.toLocalContentUrl(contentUrl, imageFormat);
+        imageObject.contentUrl = localUrl;
+        // Google requires absolute url
+        imageObject.url = `${this.baseUrl}${localUrl}`;
     }
 
     private newImageObject(contentUrl: string): any {
         return {
             [JSONLD_TYPE]: "ImageObject",
+            url: contentUrl,
             contentUrl: contentUrl
         };
     }
