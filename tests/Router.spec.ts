@@ -1,7 +1,5 @@
-import shelljs from "shelljs";
-import { getAbsFilePath } from "../src/helpers/util";
 import Router from "../src/Router";
-import { init, wait } from "./setup";
+import { init } from "./setup";
 
 describe("Router", () => {
     let router: Router;
@@ -18,14 +16,13 @@ describe("Router", () => {
             pages.push(page);
         }
         expect(pages.length).toBe(4);
-        // expect(pages).toMatchSnapshot();
     });
 
-    
     it('get /', async () => {
         const page = await router.getPage("/");
         expect(page).toMatchSnapshot();
     });
+
 
     it('get /blogs/blog1', async () => {
         const page = await router.getPage("/blogs/blog1");

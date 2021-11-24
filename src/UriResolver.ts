@@ -81,12 +81,7 @@ export default class UriResolver {
     }
 
     async resolveUri(uriStr: string) {
-        const uriObj: URI = parseUri(normalizeUri(uriStr)) as URI;
-        // Fill in protocol and host for relative path
-        if (!uriObj.protocol && !uriObj.host) {
-            uriObj.protocol = FILE_PROTOCOL;
-            uriObj.host = LOCALHOST;
-        }
+        const uriObj: URI = this.toUri(uriStr)
 
         let data;
         for (const instance of this.resolvers) {
@@ -101,19 +96,25 @@ export default class UriResolver {
 
         // data is image if type is Buffer
         if (data instanceof Buffer) {
-            // convert binary image data to schema ImageObject
-            const mediaUri = uriObj.protocol === FILE_PROTOCOL ?
-                uriObj.path :
-                `${uriObj.protocol}//${uriObj.host}${uriObj.path}`;
-            data = await this.media.toImageObject(mediaUri, data);
+            data = await this.media.toImageObject(uriObj, data);
         } else if (isSchemaType(data, IMAGE_OBJECT, false)) {
             const image = await this.resolveUri(data.contentUrl);
             data = {
                 ...data,
-                ...await this.media.toImageObject(data.contentUrl, image)
+                ...await this.media.toImageObject(this.toUri(data.contentUrl), image)
             };
         }
         return data;
+    }
+
+    private toUri(uriStr: string): URI {
+        const uriObj: URI = parseUri(normalizeUri(uriStr)) as URI;
+        // Fill in protocol and host for relative path
+        if (!uriObj.protocol && !uriObj.host) {
+            uriObj.protocol = FILE_PROTOCOL;
+            uriObj.host = LOCALHOST;
+        }
+        return uriObj;
     }
 
     private isMatch(matcher: UriMatcher, uri: URI) {

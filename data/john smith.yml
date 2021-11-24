@@ -3,8 +3,3 @@ name: John Smith
 email: smitty123@hotmail.com
 familyName: Smith
 givenName: John
-hasOfferCatalog:
-  "@type": OfferCatalog
-  name: Open source software
-  itemListElement:
-    - "@id": https://www.sambal.dev/schema.json

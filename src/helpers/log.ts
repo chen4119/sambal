@@ -21,7 +21,7 @@ function getPrefix(level: string) {
     }
 }
 
-function getMessageType(message:unknown) {
+function getMessageType(message: unknown) {
     if (Number.isInteger(message)) {
         return "%i";
     } else if (typeof(message) === "number") {

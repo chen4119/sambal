@@ -4,23 +4,23 @@ import { OUTPUT_FOLDER } from "../src/helpers/constant";
 
 describe("Renderer", () => {
     const baseUrl = "https://example.com";
+    const publicPath = `${OUTPUT_FOLDER}/js`;
     let renderer: Renderer;
 
     beforeEach(async () => {
-        renderer = new Renderer(baseUrl, null, "mock-theme");
+        renderer = new Renderer(baseUrl, publicPath, null, "mock-theme");
+        await renderer.bundle();
     });
 
     afterEach(async () => {
         shelljs.rm("-rf", OUTPUT_FOLDER);
     });
 
-    it('copy theme bundle to /public', async () => {
-        await renderer.build("/js");
-        expect(shelljs.test('-f', "public/js/mock-theme/client.123.js")).toBeTruthy();
+    it(`copy theme bundle to /${OUTPUT_FOLDER}`, async () => {
+        expect(shelljs.ls(publicPath).length).toBe(7);
     });
 
     it('render using mock-theme', async () => {
-        await renderer.build("/js");
         const result = await renderer.renderPage({
             "@type": "WebPage",
             url: "/dummy",
@@ -28,7 +28,7 @@ describe("Renderer", () => {
                 "@type": "Person",
                 name: "John Smith"
             },
-        }, "/js");
+        });
         expect(result).toMatchSnapshot();
     });
 

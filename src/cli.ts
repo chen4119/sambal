@@ -5,29 +5,17 @@ import {
     SAMBAL_ENTRY_FILE,
     SAMBAL_SITE_FILE,
     CACHE_FOLDER,
-    PAGES_FOLDER
+    PAGES_FOLDER,
+    THEME_PREFIX
 } from "./helpers/constant";
 import { getAbsFilePath, writeText, normalizeUri } from "./helpers/util";
-import { bundleSambalFile, bundleBrowserPackage } from "./helpers/bundler";
+import { bundleSambalFile } from "./helpers/bundler";
 import Renderer from "./Renderer";
 import SiteGenerator from "./SiteGenerator";
 import DevServer from "./DevServer";
 import Media from "./Media";
 import Router from "./Router";
 import UriResolver from "./UriResolver";
-import {
-    makeVariableStatement,
-    makeStringLiteral,
-    makeCallExpression,
-    makeEqualsBinaryExpression,
-    makePropertyAccess,
-    makeIdentifier,
-    makeObjectLiteral,
-    makePropertyAssignment,
-    objectToObjectLiteral,
-    makeExpressionStatement,
-    writeJavascript
-} from "./helpers/ast";
 import {
     initSambalEntry,
     initSambalSite,
@@ -71,8 +59,7 @@ async function initSite(outputFolder: string) {
             throw new Error("No sambal.entry.js file found and no theme specified");
         }
 
-        const imageTransforms = Array.isArray(module.siteConfig.imageTransforms) ? module.siteConfig.imageTransforms : [];
-        const media = new Media(baseUrl, outputFolder, imageTransforms);
+        const media = new Media(baseUrl, outputFolder);
         const collections = Array.isArray(module.siteConfig.collections) ? module.siteConfig.collections : [];
         collections.forEach(c => {
             c.uri = normalizeUri(c.uri);
@@ -93,7 +80,6 @@ async function initSite(outputFolder: string) {
         }
         
         const router = new Router(uriResolver);
-        await router.collectRoutes();
         return {
             media,
             router,
@@ -110,8 +96,7 @@ async function serve() {
     try {
         const init = await initSite(CACHE_FOLDER);
 
-        const renderer = new Renderer(baseUrl, entryFile, theme);
-        await renderer.initTheme();
+        const renderer = new Renderer(baseUrl, THEME_PREFIX, entryFile, theme);
 
         const server = new DevServer(init.uriResolver, init.media, init.router, renderer, 3000);
         await server.start();
@@ -124,67 +109,20 @@ async function build() {
     log.info("Cleaning cache and public folder");
     clean(`./${OUTPUT_FOLDER}`);
     clean(`./${CACHE_FOLDER}`);
-    const publicPath = `/js`;
+    const publicPath = `${OUTPUT_FOLDER}/js`;
     
     try {
         const init = await initSite(OUTPUT_FOLDER);
 
-        const renderer = new Renderer(baseUrl, entryFile, theme);
-        await renderer.build(publicPath);
+        const renderer = new Renderer(baseUrl, publicPath, entryFile, theme);
+        await renderer.bundle();
 
         const builder = new SiteGenerator(baseUrl, init.uriResolver, init.router, renderer);
-        await builder.buildPages(publicPath);
+        await builder.buildPages();
 
         log.info("Writing schema.org json-lds");
         await builder.buildJsonLds();
         await builder.generateSiteMap();
-    } catch(e) {
-        log.error(e);
-    }
-}
-
-async function publishTheme() {
-    log.info("Cleaning cache and dist folder");
-    clean(`./${CACHE_FOLDER}`);
-    clean("./dist");
-
-    if (!entryFile) {
-        log.info("Exiting. No sambal.entry.js file found");
-        return;
-    }
-
-    try {
-        log.info("Bundling sambal.entry.js...");
-        await bundleSambalFile(entryFile, getAbsFilePath("dist/server"), false);
-        const module = require(getAbsFilePath(`dist/server/${SAMBAL_ENTRY_FILE}`));
-        let browserBundleEntry = {};
-        if (module.browserBundle) {
-            log.info("Bundling browser bundle...");
-            browserBundleEntry = await bundleBrowserPackage(
-                module.browserBundle,
-                getAbsFilePath("dist/client")
-            );
-            for (const fieldName of Object.keys(browserBundleEntry)) {
-                browserBundleEntry[fieldName] = browserBundleEntry[fieldName];
-            }
-        }
-        const statements = [];
-        statements.push(
-            makeVariableStatement(
-                undefined,
-                "entry",
-                makeCallExpression("require", [makeStringLiteral("./server/sambal.entry")])
-            )
-        );
-        const leftExpr = makePropertyAccess(makeIdentifier("module"), "exports");
-        const rightExpr = makeObjectLiteral([
-            makePropertyAssignment("entry", makeIdentifier("entry")),
-            makePropertyAssignment("browserBundle", objectToObjectLiteral(browserBundleEntry))
-        ]);
-        statements.push(
-            makeExpressionStatement(makeEqualsBinaryExpression(leftExpr, rightExpr))
-        );
-        writeJavascript(statements, "dist/index.js");
     } catch(e) {
         log.error(e);
     }
@@ -223,11 +161,6 @@ program
 .command(`serve`)
 .description('Start dev server')
 .action(serve);
-
-program
-.command(`theme`)
-.description('Publish theme')
-.action(publishTheme);
 
 program
 .command('*')

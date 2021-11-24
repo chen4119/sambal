@@ -2,7 +2,7 @@ import { URLSearchParams } from "url";
 
 export type Theme = {
     name: string,
-    options: object
+    options?: object
 };
 
 export type PartitionKey = {[key: string]: string | number | Date};
@@ -51,6 +51,6 @@ export const LOCALHOST = "localhost";
 export const FILE_PROTOCOL = "file:";
 
 // for DevServer
-export const THEME_PUBLIC_PATH = "/_theme";
+export const THEME_PREFIX = `${CACHE_FOLDER}/theme`;
 export const DEV_PUBLIC_PATH = "/_sambal";
 

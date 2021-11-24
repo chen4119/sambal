@@ -59,46 +59,6 @@ Object {
       "email": "smitty123@hotmail.com",
       "familyName": "Smith",
       "givenName": "John",
-      "hasOfferCatalog": Object {
-        "@type": "OfferCatalog",
-        "itemListElement": Array [
-          Object {
-            "@context": Object {
-              "@base": "https://sambal.dev",
-              "@vocab": "https://schema.org/",
-            },
-            "@id": "/schema.json",
-            "@type": "SoftwareSourceCode",
-            "alternativeHeadline": "A linked data static site generator",
-            "codeRepository": "https://github.com/chen4119/sambal",
-            "headline": "Sambal",
-            "potentialAction": Array [
-              Object {
-                "@type": "Action",
-                "name": "Get Started",
-                "target": "/docs/get-started",
-              },
-            ],
-            "programmingLanguage": "Typescript",
-            "url": "/",
-            "usageInfo": Array [
-              Object {
-                "@type": "HowToTip",
-                "headline": "Natively support schema.org json-ld",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Generate both HTML and schema.org json-ld files",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Build UI themes based on the semantic meaning of your data",
-              },
-            ],
-          },
-        ],
-        "name": "Open source software",
-      },
       "name": "John Smith",
     },
     "dateCreated": 2019-10-26T00:00:00.000Z,
@@ -144,46 +104,6 @@ Object {
       "email": "smitty123@hotmail.com",
       "familyName": "Smith",
       "givenName": "John",
-      "hasOfferCatalog": Object {
-        "@type": "OfferCatalog",
-        "itemListElement": Array [
-          Object {
-            "@context": Object {
-              "@base": "https://sambal.dev",
-              "@vocab": "https://schema.org/",
-            },
-            "@id": "/schema.json",
-            "@type": "SoftwareSourceCode",
-            "alternativeHeadline": "A linked data static site generator",
-            "codeRepository": "https://github.com/chen4119/sambal",
-            "headline": "Sambal",
-            "potentialAction": Array [
-              Object {
-                "@type": "Action",
-                "name": "Get Started",
-                "target": "/docs/get-started",
-              },
-            ],
-            "programmingLanguage": "Typescript",
-            "url": "/",
-            "usageInfo": Array [
-              Object {
-                "@type": "HowToTip",
-                "headline": "Natively support schema.org json-ld",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Generate both HTML and schema.org json-ld files",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Build UI themes based on the semantic meaning of your data",
-              },
-            ],
-          },
-        ],
-        "name": "Open source software",
-      },
       "name": "John Smith",
     },
     "dateCreated": 2019-10-26T00:00:00.000Z,

@@ -3,9 +3,8 @@ import axios, { AxiosResponse } from "axios";
 import Renderer from "../src/Renderer";
 import { init, wait } from "./setup";
 import DevServer from "../src/DevServer";
-import { PAGES_FOLDER } from "../src/helpers/constant";
+import { PAGES_FOLDER, THEME_PREFIX } from "../src/helpers/constant";
 import { writeText, getAbsFilePath } from "../src/helpers/util";
-import { loadLocalFile } from "../src/helpers/data";
 
 const originalTestBlog = `
 ---
@@ -19,10 +18,10 @@ Hello world3
 const modifiedTestBlog = `
 ---
 "@type": BlogPosting
-headline: Test blog
+headline: Test blog changed!
 ---
 
-Hello world 3 changed!
+Hello world3
 `;
 
 describe("DevServer", () => {
@@ -34,8 +33,7 @@ describe("DevServer", () => {
     beforeAll(async () => {
         await writeText(testFile, originalTestBlog);
         const classes = await init();
-        renderer = new Renderer(baseUrl, null, "mock-theme");
-        await renderer.initTheme();
+        renderer = new Renderer(baseUrl, THEME_PREFIX, null, "mock-theme");
         server = new DevServer(classes.uriResolver, classes.media, classes.router, renderer, 3000);
         await server.start();
     });
@@ -51,7 +49,7 @@ describe("DevServer", () => {
     });
 
     it('get client bundle', async () => {
-        const response = await axios.get("http://localhost:3000/_theme/client.123.js");
+        const response = await axios.get("http://localhost:3000/.sambal/theme/client.8eddd7c976d49f038992.js");
         expect(response.data).toMatchSnapshot();
     });
 
@@ -71,10 +69,10 @@ describe("DevServer", () => {
     it('get image2 as webp and thumbnail', async () => {
         // load blog2 will trigger transformation of images
         let response = await axios.get("http://localhost:3000/blogs/blog2");
-
+        
         response = await axios.get("http://localhost:3000/data/images/image2.webp");
         expect(response.status).toBe(200);
-        response = await axios.get("http://localhost:3000/data/images/image2-50.webp");
+        response = await axios.get("http://localhost:3000/data/images/image2-50w.webp");
         expect(response.status).toBe(200);
     });
 

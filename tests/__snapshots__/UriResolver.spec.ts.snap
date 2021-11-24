@@ -6,24 +6,13 @@ Object {
   "author": Object {
     "@id": "/data/john smith.yml",
   },
-  "contentSize": "51 kB",
-  "contentUrl": "/data/images/image2.webp",
-  "encodingFormat": "image/webp",
-  "height": 333,
+  "contentSize": "399 kB",
+  "contentUrl": "/data/images/image2.jpg",
+  "encodingFormat": "image/jpeg",
+  "height": 853,
   "name": "My background",
-  "thumbnail": Array [
-    Object {
-      "@type": "ImageObject",
-      "contentSize": "1 kB",
-      "contentUrl": "/data/images/image2-50.webp",
-      "encodingFormat": "image/webp",
-      "height": 50,
-      "url": "https://example.com/data/images/image2-50.webp",
-      "width": 75,
-    },
-  ],
-  "url": "https://example.com/data/images/image2.webp",
-  "width": 500,
+  "url": "https://example.com/data/images/image2.jpg",
+  "width": 1280,
 }
 `;
 
@@ -60,46 +49,6 @@ Array [
       "email": "smitty123@hotmail.com",
       "familyName": "Smith",
       "givenName": "John",
-      "hasOfferCatalog": Object {
-        "@type": "OfferCatalog",
-        "itemListElement": Array [
-          Object {
-            "@context": Object {
-              "@base": "https://sambal.dev",
-              "@vocab": "https://schema.org/",
-            },
-            "@id": "/schema.json",
-            "@type": "SoftwareSourceCode",
-            "alternativeHeadline": "A linked data static site generator",
-            "codeRepository": "https://github.com/chen4119/sambal",
-            "headline": "Sambal",
-            "potentialAction": Array [
-              Object {
-                "@type": "Action",
-                "name": "Get Started",
-                "target": "/docs/get-started",
-              },
-            ],
-            "programmingLanguage": "Typescript",
-            "url": "/",
-            "usageInfo": Array [
-              Object {
-                "@type": "HowToTip",
-                "headline": "Natively support schema.org json-ld",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Generate both HTML and schema.org json-ld files",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Build UI themes based on the semantic meaning of your data",
-              },
-            ],
-          },
-        ],
-        "name": "Open source software",
-      },
       "name": "John Smith",
     },
     "dateCreated": 2019-10-26T00:00:00.000Z,
@@ -132,46 +81,6 @@ Hello world",
       "email": "smitty123@hotmail.com",
       "familyName": "Smith",
       "givenName": "John",
-      "hasOfferCatalog": Object {
-        "@type": "OfferCatalog",
-        "itemListElement": Array [
-          Object {
-            "@context": Object {
-              "@base": "https://sambal.dev",
-              "@vocab": "https://schema.org/",
-            },
-            "@id": "/schema.json",
-            "@type": "SoftwareSourceCode",
-            "alternativeHeadline": "A linked data static site generator",
-            "codeRepository": "https://github.com/chen4119/sambal",
-            "headline": "Sambal",
-            "potentialAction": Array [
-              Object {
-                "@type": "Action",
-                "name": "Get Started",
-                "target": "/docs/get-started",
-              },
-            ],
-            "programmingLanguage": "Typescript",
-            "url": "/",
-            "usageInfo": Array [
-              Object {
-                "@type": "HowToTip",
-                "headline": "Natively support schema.org json-ld",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Generate both HTML and schema.org json-ld files",
-              },
-              Object {
-                "@type": "HowToTip",
-                "headline": "Build UI themes based on the semantic meaning of your data",
-              },
-            ],
-          },
-        ],
-        "name": "Open source software",
-      },
       "name": "John Smith",
     },
     "dateCreated": 2017-10-26T00:00:00.000Z,
@@ -187,12 +96,21 @@ Hello world",
       "thumbnail": Array [
         Object {
           "@type": "ImageObject",
-          "contentSize": "1 kB",
-          "contentUrl": "/data/images/image2-50.webp",
+          "contentSize": "2 kB",
+          "contentUrl": "/data/images/image2-100w.webp",
           "encodingFormat": "image/webp",
-          "height": 50,
-          "url": "https://example.com/data/images/image2-50.webp",
-          "width": 75,
+          "height": 67,
+          "url": "https://example.com/data/images/image2-100w.webp",
+          "width": 100,
+        },
+        Object {
+          "@type": "ImageObject",
+          "contentSize": "758 B",
+          "contentUrl": "/data/images/image2-50w.webp",
+          "encodingFormat": "image/webp",
+          "height": 33,
+          "url": "https://example.com/data/images/image2-50w.webp",
+          "width": 50,
         },
       ],
       "url": "https://example.com/data/images/image2.webp",
@@ -214,23 +132,12 @@ Hello world2",
 exports[`UriResolver get image2 1`] = `
 Object {
   "@type": "ImageObject",
-  "contentSize": "51 kB",
-  "contentUrl": "/data/images/image2.webp",
-  "encodingFormat": "image/webp",
-  "height": 333,
-  "thumbnail": Array [
-    Object {
-      "@type": "ImageObject",
-      "contentSize": "1 kB",
-      "contentUrl": "/data/images/image2-50.webp",
-      "encodingFormat": "image/webp",
-      "height": 50,
-      "url": "https://example.com/data/images/image2-50.webp",
-      "width": 75,
-    },
-  ],
-  "url": "https://example.com/data/images/image2.webp",
-  "width": 500,
+  "contentSize": "399 kB",
+  "contentUrl": "/data/images/image2.jpg",
+  "encodingFormat": "image/jpeg",
+  "height": 853,
+  "url": "https://example.com/data/images/image2.jpg",
+  "width": 1280,
 }
 `;
 
@@ -240,15 +147,6 @@ Object {
   "email": "smitty123@hotmail.com",
   "familyName": "Smith",
   "givenName": "John",
-  "hasOfferCatalog": Object {
-    "@type": "OfferCatalog",
-    "itemListElement": Array [
-      Object {
-        "@id": "https://www.sambal.dev/schema.json",
-      },
-    ],
-    "name": "Open source software",
-  },
   "name": "John Smith",
 }
 `;
@@ -261,66 +159,15 @@ Object {
     "email": "smitty123@hotmail.com",
     "familyName": "Smith",
     "givenName": "John",
-    "hasOfferCatalog": Object {
-      "@type": "OfferCatalog",
-      "itemListElement": Array [
-        Object {
-          "@context": Object {
-            "@base": "https://sambal.dev",
-            "@vocab": "https://schema.org/",
-          },
-          "@id": "/schema.json",
-          "@type": "SoftwareSourceCode",
-          "alternativeHeadline": "A linked data static site generator",
-          "codeRepository": "https://github.com/chen4119/sambal",
-          "headline": "Sambal",
-          "potentialAction": Array [
-            Object {
-              "@type": "Action",
-              "name": "Get Started",
-              "target": "/docs/get-started",
-            },
-          ],
-          "programmingLanguage": "Typescript",
-          "url": "/",
-          "usageInfo": Array [
-            Object {
-              "@type": "HowToTip",
-              "headline": "Natively support schema.org json-ld",
-            },
-            Object {
-              "@type": "HowToTip",
-              "headline": "Generate both HTML and schema.org json-ld files",
-            },
-            Object {
-              "@type": "HowToTip",
-              "headline": "Build UI themes based on the semantic meaning of your data",
-            },
-          ],
-        },
-      ],
-      "name": "Open source software",
-    },
     "name": "John Smith",
   },
-  "contentSize": "51 kB",
-  "contentUrl": "/data/images/image2.webp",
-  "encodingFormat": "image/webp",
-  "height": 333,
+  "contentSize": "399 kB",
+  "contentUrl": "/data/images/image2.jpg",
+  "encodingFormat": "image/jpeg",
+  "height": 853,
   "name": "My background",
-  "thumbnail": Array [
-    Object {
-      "@type": "ImageObject",
-      "contentSize": "1 kB",
-      "contentUrl": "/data/images/image2-50.webp",
-      "encodingFormat": "image/webp",
-      "height": 50,
-      "url": "https://example.com/data/images/image2-50.webp",
-      "width": 75,
-    },
-  ],
-  "url": "https://example.com/data/images/image2.webp",
-  "width": 500,
+  "url": "https://example.com/data/images/image2.jpg",
+  "width": 1280,
 }
 `;
 
@@ -332,46 +179,6 @@ Object {
     "email": "smitty123@hotmail.com",
     "familyName": "Smith",
     "givenName": "John",
-    "hasOfferCatalog": Object {
-      "@type": "OfferCatalog",
-      "itemListElement": Array [
-        Object {
-          "@context": Object {
-            "@base": "https://sambal.dev",
-            "@vocab": "https://schema.org/",
-          },
-          "@id": "/schema.json",
-          "@type": "SoftwareSourceCode",
-          "alternativeHeadline": "A linked data static site generator",
-          "codeRepository": "https://github.com/chen4119/sambal",
-          "headline": "Sambal",
-          "potentialAction": Array [
-            Object {
-              "@type": "Action",
-              "name": "Get Started",
-              "target": "/docs/get-started",
-            },
-          ],
-          "programmingLanguage": "Typescript",
-          "url": "/",
-          "usageInfo": Array [
-            Object {
-              "@type": "HowToTip",
-              "headline": "Natively support schema.org json-ld",
-            },
-            Object {
-              "@type": "HowToTip",
-              "headline": "Generate both HTML and schema.org json-ld files",
-            },
-            Object {
-              "@type": "HowToTip",
-              "headline": "Build UI themes based on the semantic meaning of your data",
-            },
-          ],
-        },
-      ],
-      "name": "Open source software",
-    },
     "name": "John Smith",
   },
   "dateCreated": 2019-10-26T00:00:00.000Z,
@@ -441,46 +248,6 @@ Object {
   "email": "smitty123@hotmail.com",
   "familyName": "Smith",
   "givenName": "John",
-  "hasOfferCatalog": Object {
-    "@type": "OfferCatalog",
-    "itemListElement": Array [
-      Object {
-        "@context": Object {
-          "@base": "https://sambal.dev",
-          "@vocab": "https://schema.org/",
-        },
-        "@id": "/schema.json",
-        "@type": "SoftwareSourceCode",
-        "alternativeHeadline": "A linked data static site generator",
-        "codeRepository": "https://github.com/chen4119/sambal",
-        "headline": "Sambal",
-        "potentialAction": Array [
-          Object {
-            "@type": "Action",
-            "name": "Get Started",
-            "target": "/docs/get-started",
-          },
-        ],
-        "programmingLanguage": "Typescript",
-        "url": "/",
-        "usageInfo": Array [
-          Object {
-            "@type": "HowToTip",
-            "headline": "Natively support schema.org json-ld",
-          },
-          Object {
-            "@type": "HowToTip",
-            "headline": "Generate both HTML and schema.org json-ld files",
-          },
-          Object {
-            "@type": "HowToTip",
-            "headline": "Build UI themes based on the semantic meaning of your data",
-          },
-        ],
-      },
-    ],
-    "name": "Open source software",
-  },
   "name": "John Smith",
 }
 `;

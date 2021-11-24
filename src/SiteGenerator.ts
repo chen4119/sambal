@@ -36,14 +36,14 @@ export default class SiteGenerator {
         this.siteMap = [];
     }
 
-    async buildPages(publicPath: string) {
+    async buildPages() {
         const iterator = this.router.getPageIterator();
         for await (const page of iterator) {
             log.info(`Rendering ${page.url}`);
             this.siteMap.push({
                 loc: `${this.baseUrl}${page.url}`
             });
-            let html = await this.renderer.renderPage(page, publicPath);
+            let html = await this.renderer.renderPage(page);
             try {
                 html =  prettier.format(html, {parser: "html"});
             } catch (e) {

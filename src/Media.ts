@@ -1,88 +1,107 @@
 import sharp, { OutputInfo, Sharp } from "sharp";
 import { JSONLD_TYPE, isAbsUri } from "sambal-jsonld";
-import { loadLocalFile, searchFiles } from "./helpers/data";
-import { formatSize, getMimeType, writeBuffer, deepClone, normalizeUri } from "./helpers/util";
+import { loadLocalFile } from "./helpers/data";
+import { formatSize, getMimeType, writeBuffer } from "./helpers/util";
 import { log } from "./helpers/log";
-import { URL } from "url";
-
-type ImageTransform = {
-    include: string | string[],
-    width?: number,
-    height?: number,
-    encodingFormat?: string
-    thumbnails?: {
-        suffix: string,
-        width?: number,
-        height?: number
-    }[]
-};
+import { URLSearchParams } from "url";
+import { URI, FILE_PROTOCOL } from "./helpers/constant";
 
 type SharpTransform = {
     width?: number,
     height?: number,
-    encodingFormat?: string
+    encodingFormat?: string,
+    suffix?: string
 };
 
+interface ImageTransform extends SharpTransform {
+    thumbnails?: SharpTransform[]
+};
+
+
+//q = quality
+// query w=123&h=123&fit=cover&output=webp&q=76&thumbnails=50w
 export default class Media {
-    private imageTransformMap: Map<string, ImageTransform>;
-    private cachedJsonldMap: Map<string, unknown>;
-    private publishedMediaPaths: Set<string>;
+    private publishedMediaMap: Map<string, OutputInfo>;
 
-    constructor(
-        private baseUrl: string,
-        private outputFolder: string,
-        imageTransforms: ImageTransform[])
-    {
-        this.imageTransformMap = new Map<string, ImageTransform>();
-        this.cachedJsonldMap = new Map<string, unknown>();
-        this.publishedMediaPaths = new Set<string>();
-
-        for (const transform of imageTransforms) {
-            const matches = searchFiles(transform.include);
-            log.debug(`Found images matching ${transform.include}`, matches);
-            matches.forEach(uri => this.imageTransformMap.set(normalizeUri(uri), transform));
-        }
+    constructor(private baseUrl: string, private outputFolder: string) {
+        this.publishedMediaMap = new Map<string, OutputInfo>();
     }
 
     async loadImage(localUri: string) {
-        if (this.publishedMediaPaths.has(localUri)) {
+        if (this.publishedMediaMap.has(localUri)) {
             return await loadLocalFile(`${this.outputFolder}/${localUri}`);
         }
         return null;
     }
 
-    async toImageObject(uri: string, imageBuf: Buffer) {
-        if (this.cachedJsonldMap.has(uri)) {
-            return deepClone(this.cachedJsonldMap.get(uri));
-        }
+    async toImageObject(uri: URI, imageBuf: Buffer) {
+        const mediaUri = uri.protocol === FILE_PROTOCOL ?
+            uri.path : `${uri.protocol}//${uri.host}${uri.path}`;
 
-        const imageJsonLd = this.newImageObject(uri); 
-        if (this.imageTransformMap.has(uri)) {
-            await this.transform(imageJsonLd, imageBuf, this.imageTransformMap.get(uri));
+        const imageJsonLd = this.newImageObject(mediaUri);
+        const transform = this.getImageTransform(uri.query);
+        if (transform) {
+            await this.transform(imageJsonLd, imageBuf, transform);
         } else {
             const output = await this.hydrateImage(imageJsonLd, imageBuf);
-            if (!isAbsUri(uri)) {
-                this.setLocalContentUrl(imageJsonLd, uri, output.info.format);
-                await this.writeImage(imageJsonLd.contentUrl, output.buffer);
+            if (!isAbsUri(mediaUri)) {
+                this.setLocalContentUrl(imageJsonLd, mediaUri, null);
+                if (output) {
+                    await this.writeImage(imageJsonLd.contentUrl, output.info, output.buffer);
+                }
             }
         }
-        this.cachedJsonldMap.set(uri, imageJsonLd);
-        return deepClone(imageJsonLd);
+        return imageJsonLd;
+    }
+
+    private getImageTransform(params: URLSearchParams): ImageTransform {
+        if (!params) {
+            return null;
+        }
+
+        const transform: ImageTransform = {
+            width: +params.get("w"),
+            height: +params.get("h"),
+            encodingFormat: getMimeType(params.get("output")),
+            thumbnails: this.parseThumbnails(params.get("thumbnails"))
+        };
+        return this.isValidSharpTransform(transform) && transform.thumbnails.length > 0 ? 
+            transform : null;
+    }
+
+    private isValidSharpTransform(transform: SharpTransform): transform is SharpTransform {
+        return Boolean(transform.width) || 
+            Boolean(transform.height) ||
+            Boolean(transform.encodingFormat);
+    }
+
+    private parseThumbnails(thumbnails: string | null): SharpTransform[] {
+        if (thumbnails) {
+            return thumbnails.split(",").map(spec => {
+                const cleanedSpec = spec.toLowerCase().trim();
+                if (cleanedSpec.endsWith("w")) {
+                    return {width: +cleanedSpec.substring(0, cleanedSpec.length - 1), suffix: cleanedSpec};
+                }
+                if (cleanedSpec.endsWith("h")) {
+                    return {height: +cleanedSpec.substring(0, cleanedSpec.length - 1), suffix: cleanedSpec};
+                }
+                return {};
+            }).filter(transform => this.isValidSharpTransform(transform));
+        }
+        return [];
     }
 
     private async transform(imageJsonLd: any, imageBuf: Buffer, imageTransform: ImageTransform) {
-        const output = await this.hydrateImage(imageJsonLd, imageBuf, {
-            width: imageTransform.width,
-            height: imageTransform.height,
-            encodingFormat: imageTransform.encodingFormat
-        });
         // With transform, content url always local
-        this.setLocalContentUrl(imageJsonLd, imageJsonLd.contentUrl, output.info.format);
-        await this.writeImage(imageJsonLd.contentUrl, output.buffer);
+        this.setLocalContentUrl(imageJsonLd, imageJsonLd.contentUrl, imageTransform.encodingFormat);
+        const output = await this.hydrateImage(imageJsonLd, imageBuf, imageTransform);
+        if (output) {
+            await this.writeImage(imageJsonLd.contentUrl, output.info, output.buffer);
+        }
         if (imageTransform.thumbnails) {
             const thumbnailJsonLds = [];
             for (const thumbnail of imageTransform.thumbnails) {
-                const thumbnailUrl = this.toLocalContentUrl(imageJsonLd.contentUrl, output.info.format, thumbnail.suffix);
+                const thumbnailUrl = this.toLocalContentUrl(imageJsonLd.contentUrl, imageTransform.encodingFormat, thumbnail.suffix);
                 const thumbnailJsonLd = await this.generateThumbnail(thumbnailUrl, imageBuf, {
                     width: thumbnail.width,
                     height: thumbnail.height,
@@ -97,13 +116,15 @@ export default class Media {
     private async generateThumbnail(thumbnailUrl: string, imageBuf: Buffer, transform: SharpTransform) {
         const thumbnailJsonLd = this.newImageObject(thumbnailUrl);
         const output = await this.hydrateImage(thumbnailJsonLd, imageBuf, transform);
-        await this.writeImage(thumbnailUrl, output.buffer);
-        this.setLocalContentUrl(thumbnailJsonLd, thumbnailUrl, output.info.format);
+        if (output) {
+            await this.writeImage(thumbnailUrl, output.info, output.buffer);
+        }
+        this.setLocalContentUrl(thumbnailJsonLd, thumbnailUrl, transform.encodingFormat);
         return thumbnailJsonLd;
     }
 
-    private setLocalContentUrl(imageObject: any, contentUrl: string, imageFormat: string) {
-        const localUrl = this.toLocalContentUrl(contentUrl, imageFormat);
+    private setLocalContentUrl(imageObject: any, contentUrl: string, mimeType: string) {
+        const localUrl = this.toLocalContentUrl(contentUrl, mimeType);
         imageObject.contentUrl = localUrl;
         // Google requires absolute url
         imageObject.url = `${this.baseUrl}${localUrl}`;
@@ -117,20 +138,25 @@ export default class Media {
         };
     }
 
+    // if publishedMediaMap already has contentUrl, use cached output info
     private async hydrateImage(imageJsonLd: any, imageBuf: Buffer, transform?: SharpTransform) {
-        const output = await this.sharpTransform(imageBuf, transform);
-        imageJsonLd.encodingFormat = getMimeType(output.info.format);
-        imageJsonLd.width = output.info.width;
-        imageJsonLd.height = output.info.height;
-        imageJsonLd.contentSize = formatSize(output.info.size);
+        let sharpOutputInfo;
+        let output;
+        if (this.publishedMediaMap.has(imageJsonLd.contentUrl)) {
+            sharpOutputInfo = this.publishedMediaMap.get(imageJsonLd.contentUrl);
+        } else {
+            output = await this.sharpTransform(imageBuf, transform);
+            sharpOutputInfo = output.info;
+        }
+        imageJsonLd.encodingFormat = getMimeType(sharpOutputInfo.format);
+        imageJsonLd.width = sharpOutputInfo.width;
+        imageJsonLd.height = sharpOutputInfo.height;
+        imageJsonLd.contentSize = formatSize(sharpOutputInfo.size);
         return output;
     }
 
-    private async writeImage(contentUrl: string, imageBuf: Buffer) {
-        if (this.publishedMediaPaths.has(contentUrl)) {
-            log.warn(`Duplicate ${contentUrl}`);
-        }
-        this.publishedMediaPaths.add(contentUrl);
+    private async writeImage(contentUrl: string, info: OutputInfo, imageBuf: Buffer) {
+        this.publishedMediaMap.set(contentUrl, info);
         await writeBuffer(`${this.outputFolder}${contentUrl}`, imageBuf);
     }
     
@@ -140,10 +166,13 @@ export default class Media {
                 const instance = sharp(imageBuf);
                 if (transform) {
                     if (transform.width || transform.height) {
-                        const options = {
-                            width: transform.width,
-                            height: transform.height
-                        };
+                        const options: any = {};
+                        if (transform.width > 0) {
+                            options.width = transform.width;
+                        }
+                        if (transform.height > 0) {
+                            options.height = transform.height;
+                        }
                         instance.resize(options);
                     }
                     if (transform.encodingFormat) {
@@ -170,20 +199,26 @@ export default class Media {
     }
 
     // change filename and file extension, remove protocol if absolute url
-    private toLocalContentUrl(contentUrl: string, ext: string, suffix?: string) {
+    private toLocalContentUrl(contentUrl: string, mimeType: string, suffix?: string) {
         let localPath = contentUrl;
         const splitted = localPath.split("/");
         const filenameWithExt = splitted[splitted.length - 1];
         let filename = filenameWithExt;
+        let originalExt = "";
         const index = filenameWithExt.lastIndexOf(".");
         if (index >= 0) {
             filename = filenameWithExt.substring(0, index);
+            originalExt = filenameWithExt.substring(index + 1);
         }
 
+        let newExt = this.getFileExtension(mimeType);
+        if (!newExt) {
+            newExt = originalExt;
+        }
         if (suffix) {
-            splitted[splitted.length - 1] = `${filename}-${suffix}.${ext}`;
+            splitted[splitted.length - 1] = `${filename}-${suffix}.${newExt}`;
         } else {
-            splitted[splitted.length - 1] = `${filename}.${ext}`;
+            splitted[splitted.length - 1] = `${filename}.${newExt}`;
         }
         localPath = splitted.join("/");
 
@@ -194,6 +229,21 @@ export default class Media {
         return localPath;
     }
     
+    private getFileExtension(mimeFormat: string) {
+        switch (mimeFormat) {
+            case "image/jpeg":
+                return "jpg";
+            case "image/webp":
+                return "webp";
+            case "image/gif":
+                return "gif";
+            case "image/png":
+                return "png";
+            default:
+                return null;
+        }
+    }
+
     private transformImage(instance: Sharp, mimeFormat: string) {
         switch (mimeFormat) {
             case "image/jpeg":

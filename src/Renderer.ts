@@ -1,4 +1,3 @@
-import shelljs from "shelljs";
 import ReactSerializer from "./ui/ReactSerializer";
 import WebpackListenerPlugin from "./WebpackListenerPlugin";
 import { replaceScriptSrc } from "./helpers/html";
@@ -9,17 +8,13 @@ import {
     getDevServerBrowserCompiler
 } from "./helpers/bundler";
 import {
+    deepClone,
     getAbsFilePath,
-    isObjectLiteral,
-    getMimeType,
-    readFileAsBuffer,
-    getFileExt
+    isObjectLiteral
 } from "./helpers/util";
 import {
     CACHE_FOLDER,
-    OUTPUT_FOLDER,
     SAMBAL_ENTRY_FILE,
-    THEME_PUBLIC_PATH,
     DEV_PUBLIC_PATH,
     Theme,
     OnBundleChanged,
@@ -30,6 +25,8 @@ import { serializeJsonLd, renderSocialMediaMetaTags } from "./helpers/seo";
 import { log } from "./helpers/log";
 import { template } from "./ui/template";
 import { SCHEMA_CONTEXT } from "sambal-jsonld";
+import { join } from "path";
+
 type UI = {
     renderPage: (props: {
         page: unknown,
@@ -47,136 +44,113 @@ type UI = {
 
 export default class Renderer {
     private serializer: IHtmlSerializer;
-    private internalRenderer: UI;
-    private internalBrowserBundleEntry: object;
-    private themeRenderer: UI;
-    private themeBrowserBundleEntry: object;
-    private themeFolder: string;
-    private themeOptions: object;
+    private renderer: UI;
+    private browserBundleEntry: object;
 
     constructor(
         private baseUrl: string,
+        private publicPath: string,
         private entryFile: string,
         private theme: string | Theme) {
         this.serializer = new ReactSerializer();
-        if (theme) {
-            if (typeof(theme) === "string") {
-                this.themeFolder = theme;
-            } else if (isObjectLiteral(this.theme)) {
-                this.themeFolder = theme.name;
-                this.themeOptions = theme.options && isObjectLiteral(theme.options) ? theme.options : {};
-            }
-        }
     }
 
-    async build(publicPath: string) {
-        if (this.entryFile) {
-            log.info("Bundling sambal.entry.js...");
-            await bundleSambalFile(this.entryFile, getAbsFilePath(`${CACHE_FOLDER}/output`));
-            this.internalRenderer = require(getAbsFilePath(`${CACHE_FOLDER}/output/${SAMBAL_ENTRY_FILE}`));
-            if (this.internalRenderer.browserBundle) {
-                log.info("Bundling browser bundle...");
-                this.internalBrowserBundleEntry = await bundleBrowserPackage(
-                    this.internalRenderer.browserBundle,
-                    getAbsFilePath(`${OUTPUT_FOLDER}/${publicPath}`)
-                );
+    async bundle() {
+        let uiEntryFile = this.entryFile;
+        let themeFolder;
+        if (this.theme) {
+            if (typeof(this.theme) === "string") {
+                themeFolder = this.theme;
+                uiEntryFile = getAbsFilePath(`${this.theme}/${SAMBAL_ENTRY_FILE}`);
+            } else if (isObjectLiteral(this.theme)) {
+                themeFolder = this.theme.name;
+                uiEntryFile = getAbsFilePath(`${this.theme.name}/${SAMBAL_ENTRY_FILE}`);
             }
         }
-        await this.initTheme();
-        if (this.themeBrowserBundleEntry) {
-            const outputDir = `${OUTPUT_FOLDER}/${publicPath}/${this.themeFolder}`;
-            shelljs.mkdir("-p", outputDir);
-            shelljs.cp("-R",
-                getAbsFilePath(`${this.themeFolder}/dist/client/*`),
-                getAbsFilePath(outputDir));
+        log.info("Bundling sambal.entry.js...");
+        await bundleSambalFile(uiEntryFile, getAbsFilePath(`${CACHE_FOLDER}/output`));
+        this.renderer = require(getAbsFilePath(`${CACHE_FOLDER}/output/${SAMBAL_ENTRY_FILE}`));
+        if (this.renderer.browserBundle) {
+            log.info("Bundling browser bundle...");
+            const webpackEntry = deepClone(this.renderer.browserBundle)
+            if (themeFolder) {
+                this.updateThemeBrowserBundlePath(themeFolder, webpackEntry);
+            }
+            this.browserBundleEntry = await bundleBrowserPackage(
+                webpackEntry,
+                getAbsFilePath(this.publicPath)
+            );
         }
-        if (!this.internalRenderer && !this.themeRenderer) {
+        if (!this.renderer) {
             throw new Error("No html renderer available.  Implement sambal.entry.js or specify a theme in sambal.site.js");
         }
     }
 
-    async initTheme() {
-        if (this.themeFolder) {
-            try {
-                log.info(`Loading theme ${this.themeFolder}`);
-                const module = require(getAbsFilePath(`${this.themeFolder}/dist/index.js`));
-                this.themeRenderer = module.entry;
-                this.themeBrowserBundleEntry = module.browserBundle;
-                return true;
-            } catch (e) {
-                log.error("Error loading theme", e);
+    private updateThemeBrowserBundlePath(themeFolder: string, bundle: any) {
+        if (bundle && bundle.entry) {
+            for (const key of Object.keys(bundle.entry)) {
+                bundle.entry[key] = join(themeFolder, bundle.entry[key]);
             }
         }
-        return false;
     }
 
-    watchForEntryChange(onChange: OnBundleChanged) {
+    async watchForEntryChange(onChange: OnBundleChanged) {
         if (this.entryFile) {
             return watchSambalFile(this.entryFile, (isError, entry) => {
                 if (!isError) {
-                    const module = require(getAbsFilePath(`${CACHE_FOLDER}/watch/${entry.main}`));
-                    this.internalRenderer = module;
+                    this.renderer = require(getAbsFilePath(`${CACHE_FOLDER}/watch/${entry.main}`));
                     onChange(isError, entry);
                 }
             });
-        } else {
-            onChange(false, {});
-            return null;
+        } else if (this.theme){
+            // bundle theme entry file
+            await this.bundle();
         }
+        onChange(false, null);
+        return null;
     }
 
+    // Only called if using project sambal.entry.js not theme
     watchForBrowserBundleChange(onChange: OnBundleChanged) {
-        if (this.internalRenderer && this.internalRenderer.browserBundle) {
+        if (this.renderer && this.renderer.browserBundle) {
+            // override public path to path used by dev server
+            this.publicPath = DEV_PUBLIC_PATH;
             const listener = new WebpackListenerPlugin((isError, entry) => {
-                this.internalBrowserBundleEntry = entry;
+                this.browserBundleEntry = entry;
                 onChange(isError, entry);
             });
-            return getDevServerBrowserCompiler(this.internalRenderer.browserBundle, listener);
+            return getDevServerBrowserCompiler(this.renderer.browserBundle, listener);
         }
         return null;
     }
 
-    async renderPage(page: WebPage, publicPath?: string) {
+    async renderPage(page: WebPage) {
         try {
             let renderResult;
-            let clientBundle;
-            let bundlePrefix;
-            if (this.internalRenderer) {
-                const defaultOptions = this.getDefaultOptions(this.internalRenderer);
-                renderResult = await this.internalRenderer.renderPage({ 
-                    page: page,
-                    options: defaultOptions
-                });
-                clientBundle = this.internalBrowserBundleEntry;
-                bundlePrefix = publicPath ? publicPath : DEV_PUBLIC_PATH;
-            }
-            // if internalRenderer didn't render, try theme renderer, if available
-            if (!renderResult && this.themeRenderer) {
-                const defaultOptions = this.getDefaultOptions(this.themeRenderer);
-                renderResult = await this.themeRenderer.renderPage({ 
-                    page: page,
-                    options: {
-                        ...defaultOptions,
-                        ...this.themeOptions
-                    }
-                });
-                clientBundle = this.themeBrowserBundleEntry;
-                bundlePrefix = publicPath ? `${publicPath}/${this.themeFolder}` : THEME_PUBLIC_PATH;
-            }
+            const options = {
+                ...this.getDefaultOptions(this.renderer),
+                ...isObjectLiteral(this.theme) ? (this.theme as Theme).options : {}
+            };
+            
+            renderResult = await this.renderer.renderPage({ 
+                page: page,
+                options: options
+            });
+
             if (renderResult) {
                 const html = typeof(renderResult) === "string" ? 
                     renderResult :
                     this.serializer.toHtml(renderResult);
-                return await this.postProcessHtml(page, html, clientBundle, bundlePrefix);
+                return await this.postProcessHtml(page, html, this.browserBundleEntry);
             }
-            return null;
+            return await this.renderErrorPage("Nothing rendered");
         } catch (e) {
             return await this.renderErrorPage(e);
         }
     }
 
-    renderErrorPage(e) {
-        return template`
+    async renderErrorPage(e) {
+        return await template`
             <html>
                 <head>
                     <meta charset="UTF-8" />
@@ -192,7 +166,7 @@ export default class Renderer {
         `;
     }
 
-    private async postProcessHtml(page: WebPage, html: string, bundle: object, prefix: string) {
+    private async postProcessHtml(page: WebPage, html: string, bundle: object) {
         let hasJsonLd = false;
         let hasSocialMediaMeta = false;
         let updatedHtml = await replaceScriptSrc(html, (name, attribs) => {
@@ -206,7 +180,7 @@ export default class Renderer {
                 let realSrc = attribs.src;
                 for (const entryName of Object.keys(bundle)) {
                     if (attribs.src === entryName) {
-                        realSrc = `${prefix}/${bundle[entryName]}`;
+                        realSrc = `${this.publicPath}/${bundle[entryName]}`;
                         break;
                     }
                 }
@@ -254,13 +228,6 @@ export default class Renderer {
             return html.substring(0, index) + jsonLdScript + html.substring(index);
         }
         return html;
-    }
-
-    async getThemeFile(filePath: string) {
-        return {
-            mime: getMimeType(getFileExt(filePath)),
-            data: await readFileAsBuffer(getAbsFilePath(`${this.themeFolder}/dist/client/${filePath}`))
-        }
     }
 
     private getDefaultOptions(renderer: UI) {

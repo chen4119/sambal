@@ -1,5 +1,19 @@
 {
-    "compileOnSave": false,
+    "extends": "ts-node/node16/tsconfig.json",
+
+    "ts-node": {
+        // It is faster to skip typechecking.
+        // Remove if you want ts-node to do typechecking.
+        "transpileOnly": true,
+
+        "files": true,
+
+        "compilerOptions": {
+            // compilerOptions specified here will override those declared below,
+            // but *only* in ts-node.  Useful if you want ts-node and tsc to use
+            // different options with a single tsconfig.json.
+        }
+    },
     "compilerOptions": {
         "rootDir": "src",
         "outDir": "./dist",
@@ -14,12 +28,15 @@
         "resolveJsonModule": true,
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
-        "target": "es5",
+        "noImplicitAny": false,
+        "strictPropertyInitialization": false,
+        "strictNullChecks": false,
+        // "target": "es5",
         "typeRoots": [
             "node_modules/@types"
         ],
         "lib": [
-            "es6",
+            "es2021",
             "dom"
         ],
         "jsx": "react"

@@ -40,8 +40,7 @@ describe("UriResolver", () => {
     it('get image2', async () => {
         const result = await uriResolver.resolveUri("/data/images/image2.jpg");
         expect(result).toMatchSnapshot();
-        expect(shelljs.test('-f', `${CACHE_FOLDER}/data/images/image2.webp`)).toBeTruthy();
-        expect(shelljs.test('-f', `${CACHE_FOLDER}/data/images/image2-50.webp`)).toBeTruthy();
+        expect(shelljs.test('-f', `${CACHE_FOLDER}/data/images/image2.jpg`)).toBeTruthy();
     });
 
     it('get background', async () => {
@@ -73,7 +72,7 @@ describe("UriResolver", () => {
 
     it('get collections/images', async () => {
         const collection = await uriResolver.resolveUri("/collections/images");
-        expect(collection[0].contentUrl).toBe("/data/images/image2.webp");
+        expect(collection[0].contentUrl).toBe("/data/images/image2.jpg");
     });
 
     describe("Custom resolver", () => {

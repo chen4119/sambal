@@ -2,8 +2,8 @@
 
 exports[`Renderer render using mock-theme 1`] = `
 "
-                <html>
-                    <head>
+        <html>
+            <head>
             
         <link rel=\\"canonical\\" href=\\"https://example.com/dummy\\" />
         <title>John Smith</title>
@@ -19,8 +19,8 @@ exports[`Renderer render using mock-theme 1`] = `
         
     
          
-                        <script src=\\"/js/mock-theme/client.123.js\\"></script>
-                    
+                <script src=\\"public/js/client.8eddd7c976d49f038992.js\\"></script>
+            
         <script type=\\"application/ld+json\\">
             {
     \\"@context\\": \\"https://schema.org\\",
@@ -28,9 +28,10 @@ exports[`Renderer render using mock-theme 1`] = `
     \\"name\\": \\"John Smith\\"
 }
         </script></head>
-                    <body>
-                        <h1>Hello from mock theme</h1>
-                    </body>
-                </html>
-            "
+            <body>
+                <h1>Hello from mock theme</h1>
+                <p>test1</p>
+            </body>
+        </html>
+    "
 `;

@@ -10,29 +10,14 @@ import { log } from "./helpers/log";
 import UriResolver from "./UriResolver";
 import chokidar, { FSWatcher } from "chokidar";
 
-type RouteNode = {
-    path: string,
-    files: Set<string>,
-    hasPage: boolean,
-    children: Map<string, RouteNode>
-}
-
-type NodePair = {
-    parent?: RouteNode,
-    node: RouteNode
-};
-
-type PageProps = {
-    route: string[],
-    props: any
-};
-
 export default class Router {
-    private root: RouteNode;
     private pageCache: Map<string, WebPage>;
+    private pagePaths: string[];
+    private pageUrlToFileMap: Map<string, string>; // map url to file path
+    private pagePropsSet: Set<string>;
 
     constructor(private uriResolver: UriResolver) {
-        this.root = this.newRouteNode("/");
+        this.initFileSystemRouter();
         this.pageCache = new Map<string, WebPage>();
     }
 
@@ -62,160 +47,86 @@ export default class Router {
     }
 
     async getPage(uri: string) {
-        if (this.pageCache.has(uri)) {
-            return this.pageCache.get(uri);
+        if (!this.pageUrlToFileMap.has(uri)) {
+            return null;
         }
-
-        const segments = uri.split("/");
-        let currentNode = this.root;
-        let routePath = [];
-        let currentPagePropsRoute: string[];
-
-        // i start at 1 because 0 is always empty string
-        for (let i = 1; i < segments.length; i++) {
-            if (currentNode.hasPage) {
-                currentPagePropsRoute = [...routePath];
-            }
-            if (i === segments.length - 1) {
-                for (const fileName of Array.from(currentNode.files)) {
-                    const filePath = this.getFilePath(routePath, fileName);;
-                    if (uri === inferUrl(filePath)) {
-                        const pageProps = currentPagePropsRoute ?
-                            await this.loadPageProps(currentPagePropsRoute) : {};
-                        // don't cache if loading web page without page props
-                        return await this.loadWebPage(filePath, pageProps);
-                    }
-                }
-            }
-
-            if (currentNode.children.has(segments[i])) {
-                currentNode = currentNode.children.get(segments[i]);
-                routePath.push(currentNode.path);
-            } else {
-                break;
-            }
+        const filePath = this.pageUrlToFileMap.get(uri);
+        if (this.pageCache.has(filePath)) {
+            return this.pageCache.get(filePath);
         }
-        return null;
+        return await this.loadWebPage(filePath);
     }
 
     getPageIterator() {
-        const rootNode = this.root;
         const self = this;
         const iterator = async function* generator() {
-            const stack: NodePair[] = [{node: rootNode}];
-            const pagePropsStack: PageProps[] = [];
-            let current: NodePair;
-            let prevNode: RouteNode;
-            let currentPageProps: PageProps = {route: [], props: {}};
-            let routePath = [];
-
-            while (stack.length > 0) {
-                current = stack.shift();
-                if (current.parent !== prevNode) {
-                    routePath.pop();
-                }
-                if (current.node.path !== "/") {
-                    routePath.push(current.node.path);
-                }
-                const currentRoutePath = `/${routePath.join("/")}`;
-                currentPageProps = self.getClosestPageProps(currentRoutePath, currentPageProps, pagePropsStack);
-                if (current.node.hasPage) {
-                    pagePropsStack.unshift(currentPageProps);
-                    currentPageProps = {
-                        route: [...routePath],
-                        props: await self.loadPageProps(routePath)
-                    };
-                }
-                for (const fileName of Array.from(current.node.files)) {
-                    const filePath = self.getFilePath(routePath, fileName);
-                    yield await self.loadWebPage(filePath, currentPageProps.props);
-                }
-                for(const childNode of Array.from(current.node.children.values())) {
-                    stack.unshift({parent: current.node, node: childNode});
-                }
-                prevNode = current.node;
+            for (const filePath of self.pagePaths) {
+                yield await self.loadWebPage(filePath);
             }
         };
         return iterator();
     }
 
-    private getFilePath(routePath: string[], fileName: string) {
-        return `/${[PAGES_FOLDER, ...routePath].join("/")}/${fileName}`;
-    }
-
-    private getClosestPageProps(routePath: string, currentPageProps: PageProps, pagePropsStack: PageProps[]) {
-        let closestPageProps = currentPageProps;
-        let currentPagePropsRoute = `/${closestPageProps.route.join("/")}`;
-        while (routePath.indexOf(currentPagePropsRoute) !== 0) {
-            closestPageProps = pagePropsStack.shift();
-            currentPagePropsRoute = `/${closestPageProps.route.join("/")}`;
-        }
-        return closestPageProps;
-    }
-
-    async collectRoutes() {
-        const pages = searchFiles("pages/**/*")
-                        .map(d => d.substring(6)); // remove pages/
-
-        const routes: string[] = [];
-        // const dataUris = this.data.map(d => normalizeJsonLdId(d));
-        const nodeWithPagination: RouteNode[] = [];
-        for (const page of pages) {
-            await this.addPathToTree(page, routes, nodeWithPagination);
-        }
-    }
-
-    private async addPathToTree(pagePath: string, routes: string[], nodeWithPagination: RouteNode[]) {
-        const segments = pagePath.split("/");
-        let currentNode = this.root;
-        if (segments.length > 1) {
-            for (let i = 0; i < segments.length - 1; i++) {
-                const pathSegment = segments[i];
-                if (currentNode.children.has(pathSegment)) {
-                    currentNode = currentNode.children.get(pathSegment);
-                } else {
-                    const newNode = this.newRouteNode(pathSegment);
-                    currentNode.children.set(pathSegment, newNode);
-                    currentNode = newNode;
-                }
-            }
-        }
-        const fileName = segments[segments.length - 1];
-        if (fileName === PAGE_FILE) {
-            currentNode.hasPage = true;
-        } else {
-            currentNode.files.add(fileName);
-            routes.push(pagePath);
-        } 
-    }
-
-    private getWebPage(filePath: string, pageProps: any, mainEntity: any) {
-        return {
+    private async loadWebPage(filePath: string) {
+        const pagePropPath = this.getClosestPagePropPath(
+            filePath.substring(0, filePath.lastIndexOf("/"))
+        );
+        const pageProps = pagePropPath ? await this.loadPageProps(pagePropPath) : {};
+        
+        const mainEntity = await this.uriResolver.hydrateUri(filePath);
+        const webpage: WebPage = {
             ...pageProps,
             [JSONLD_TYPE]: "WebPage",
             url: inferUrl(filePath),
             mainEntity: mainEntity
         };
-    }
-
-    private async loadWebPage(filePath: string, pageProps: any) {
-        const mainEntity = await this.uriResolver.hydrateUri(filePath);
-        const webpage: WebPage = this.getWebPage(filePath, pageProps, mainEntity);
         this.pageCache.set(filePath, webpage);
         return webpage;
     }
 
-    private async loadPageProps(routePath: string[]) {
-        const json = await loadLocalFile(`${PAGES_FOLDER}/${routePath.join("/")}/${PAGE_FILE}`);
+    private async loadPageProps(filePath: string) {
+        const json = await loadLocalFile(filePath);
         return await this.uriResolver.hydrate(json);
     }
 
-    private newRouteNode(path: string): RouteNode {
-        return {
-            path: path,
-            files: new Set<string>(),
-            hasPage: false,
-            children: new Map<string, RouteNode>()
-        };
+    private getClosestPagePropPath(routePath: string) {
+        // normalize path
+        if (routePath.endsWith("/")) {
+            routePath = routePath.substring(0, routePath.length - 1);
+        }
+        const segments = routePath.split("/");
+        let endIndex = segments.length;
+        do {
+            const filePath = `${segments.slice(0, endIndex).join("/")}/${PAGE_FILE}`;
+            if (this.pagePropsSet.has(filePath)) {
+                return filePath;
+            }
+            endIndex--;
+        } while (endIndex > 0);
+        
+        return null;
+    }
+
+    private getPagePaths() {
+        return searchFiles(["pages/**/!(_page.yml)"])
+            .map(d => `/${d}`);
+    }
+
+    private getPagePropPaths() {
+        return searchFiles(["pages/**/_page.yml"])
+            .map(d => `/${d}`);
+    }
+
+    private initFileSystemRouter() {
+        this.pagePaths = this.getPagePaths();
+        this.pageUrlToFileMap = new Map<string, string>();
+        for (const filePath of this.pagePaths) {
+            const pageUrl = inferUrl(filePath);
+            if (this.pageUrlToFileMap.has(pageUrl)) {
+                throw new Error(`Duplicate url ${pageUrl}`);
+            }
+            this.pageUrlToFileMap.set(pageUrl, filePath);
+        }
+        this.pagePropsSet = new Set(this.getPagePropPaths());
     }
 }

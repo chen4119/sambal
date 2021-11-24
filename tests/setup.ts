@@ -3,20 +3,6 @@ import Router from "../src/Router";
 import UriResolver from "../src/UriResolver";
 import { CACHE_FOLDER, Collection } from "../src/helpers/constant";
 
-const imageTransforms = [
-    {
-        include: "data/images/**/*",
-        width: 500,
-        encodingFormat: "image/webp",
-        thumbnails: [
-            {
-                suffix: "50",
-                height: 50
-            }
-        ]
-    }
-];
-
 const collections: Collection[] = [
     {
         uri: "/collections/tags",
@@ -74,7 +60,7 @@ const customResolver = {
 
 export async function init() {
     const baseUrl = "https://example.com";
-    const media = new Media(baseUrl, CACHE_FOLDER, imageTransforms);
+    const media = new Media(baseUrl, CACHE_FOLDER);
     const uriResolver = new UriResolver(collections, media);
     const router = new Router(uriResolver);
 
@@ -82,8 +68,6 @@ export async function init() {
         resolveUri: customResolver.resolveUri,
         clearCache: () => {}
     });
-    
-    await router.collectRoutes();
 
     return {
         uriResolver,

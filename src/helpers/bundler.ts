@@ -43,12 +43,12 @@ const webpackConfig = {
             },
             {
                 test: /\.(png|svg|jpg|jpeg|gif|webp)$/i,
-                type: 'asset/resource',
+                type: 'asset',
             },
             {
                 // Apply rule for fonts files
-                test: /\.(svg|woff|woff2|ttf|otf|eot)$/,
-                type: "asset/inline"
+                test: /\.(woff|woff2|ttf|otf|eot)$/,
+                type: "asset"
             },
         ]
     }

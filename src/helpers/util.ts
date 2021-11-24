@@ -3,19 +3,19 @@ import path from "path";
 import { isAbsUri } from "sambal-jsonld";
 import shelljs from "shelljs";
 
-export function isObjectLiteral(obj) {
+export function isObjectLiteral(obj: unknown) {
     return obj !== null && typeof(obj) === "object" && Object.getPrototypeOf(obj) === Object.prototype;
 }
 
-export function isJsDate(value) {
+export function isJsDate(value: any) {
     return typeof(value) === "object" && Object.getPrototypeOf(value) === Date.prototype;
 }
 
-export function deepClone(obj: any) {
+export function deepClone(obj: any): any {
     if (Array.isArray(obj)) {
         return obj.map(d => deepClone(d));
     } else if (isObjectLiteral(obj)) {
-        const newObj = {};
+        const newObj: any = {};
         for (const fieldName of Object.keys(obj)) {
             const value = obj[fieldName];
             newObj[fieldName] = deepClone(value);
@@ -123,6 +123,8 @@ export function getMimeType(ext: string) {
         case "woff":
         case "woff2":
             return `font/${ext}`;
+        case "jpg":
+            return "image/jpeg";
         case "jpeg":
         case "webp":
         case "gif":
@@ -131,7 +133,7 @@ export function getMimeType(ext: string) {
         case "svg":
             return "image/svg+xml";
         default:
-            throw new Error(`Unrecognized mime type ${ext}`);
+            return null;
     }
 }
 
@@ -143,7 +145,7 @@ export function safeParseJson(jsonStr: string) {
     }
 }
 
-export function formatSize(size) {
+export function formatSize(size: number) {
     const base = Math.floor( Math.log(size) / Math.log(1024) );
     return `${Math.floor(size / Math.pow(1024, base))} ${['B', 'kB', 'MB', 'GB', 'TB'][base]}`;
 }

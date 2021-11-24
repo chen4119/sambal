@@ -2,13 +2,14 @@ import express from "express";
 // import { Watching } from "webpack";
 import webpackDevMiddleware from "webpack-dev-middleware";
 import Renderer from "./Renderer";
-import { THEME_PUBLIC_PATH, DEV_PUBLIC_PATH } from "./helpers/constant";
+import { DEV_PUBLIC_PATH, THEME_PREFIX } from "./helpers/constant";
 import { log } from "./helpers/log";
 import Router from "./Router";
 import UriResolver from "./UriResolver";
 import Media from "./Media";
 import { Server, OPEN } from "ws";
 import { FSWatcher } from "chokidar";
+import { getAbsFilePath, getFileExt, getMimeType, readFileAsBuffer } from "./helpers/util";
 
 const WEBSOCKET_ADDR = "ws://localhost:3001/";
 const CMD_REFRESH = "refresh";
@@ -21,6 +22,7 @@ export default class DevServer {
     // private watchEntryFile: Watching;
     
     constructor(
+        // TODO: No need this?
         private uriResolver: UriResolver,
         private media: Media,
         private router: Router,
@@ -33,11 +35,11 @@ export default class DevServer {
             this.refreshBrowser();
         });
 
-        this.renderer.watchForEntryChange((isError) => {
+        await this.renderer.watchForEntryChange((isError, entry) => {
             log.info("sambal.entry.js compiled");
             if (!isError && !this.expressApp) {
                 this.startWebSocket();
-                this.startDevServer();
+                this.startDevServer(Boolean(entry));
             } else {
                 this.refreshBrowser();
             }
@@ -63,10 +65,12 @@ export default class DevServer {
         });
     }
     
-    private startDevServer() {
+    private startDevServer(isWatchBrowserBundle: boolean) {
         this.expressApp = express();
-        this.addBrowserBundleMiddleware();
-        this.expressApp.get(`${THEME_PUBLIC_PATH}/*`, this.getThemeFile.bind(this));
+        if (isWatchBrowserBundle) {
+            this.addBrowserBundleMiddleware();
+        }
+        this.expressApp.get(`/${THEME_PREFIX}/*`, this.getLocalFile.bind(this));
         this.expressApp.get("*", this.route.bind(this));
         this.server = this.expressApp.listen(this.port, () => {
             log.info(`Dev server started on port ${this.port}`);
@@ -105,11 +109,12 @@ export default class DevServer {
         this.refreshBrowser();
     }
 
-    private async getThemeFile(req, res) {
+    
+    private async getLocalFile(req, res) {
         try {
-            const file = await this.renderer.getThemeFile(req.path.substring(THEME_PUBLIC_PATH.length));
-            res.set("Content-Type", file.mime);
-            res.send(file.data);
+            const file = await readFileAsBuffer(getAbsFilePath(req.path));
+            res.set("Content-Type", getMimeType(getFileExt(req.path)));
+            res.send(file);
         } catch (e) {
             log.error(e);
             res.status(404).end();
@@ -132,11 +137,13 @@ export default class DevServer {
                 return;
             }
             
+            await this.getLocalFile(req, res);
+            /*
             try {
                 res.send(await this.uriResolver.resolveUri(req.path));
             } catch (e) {
                 res.status(404).end();
-            }
+            }*/
         } catch(e) {
             const html = await this.renderer.renderErrorPage(e);
             res.send(this.addBrowserSyncScript(html));
