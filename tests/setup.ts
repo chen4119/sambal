@@ -58,9 +58,9 @@ const customResolver = {
     }
 }
 
-export async function init() {
+export async function init(outputPath?: string) {
     const baseUrl = "https://example.com";
-    const media = new Media(baseUrl, CACHE_FOLDER);
+    const media = new Media(baseUrl, outputPath ? outputPath : CACHE_FOLDER);
     const uriResolver = new UriResolver(collections, media);
     const router = new Router(uriResolver);
 

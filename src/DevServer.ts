@@ -1,8 +1,6 @@
 import express from "express";
-// import { Watching } from "webpack";
-import webpackDevMiddleware from "webpack-dev-middleware";
 import Renderer from "./Renderer";
-import { DEV_PUBLIC_PATH, THEME_PREFIX } from "./helpers/constant";
+import { DEVSERVER_BROWSER } from "./helpers/constant";
 import { log } from "./helpers/log";
 import Router from "./Router";
 import UriResolver from "./UriResolver";
@@ -19,7 +17,6 @@ export default class DevServer {
     private server;
     private webSocketServer: Server;
     private watcher: FSWatcher;
-    // private watchEntryFile: Watching;
     
     constructor(
         // TODO: No need this?
@@ -35,19 +32,17 @@ export default class DevServer {
             this.refreshBrowser();
         });
 
-        await this.renderer.watchForEntryChange((isError, entry) => {
-            log.info("sambal.entry.js compiled");
-            if (!isError && !this.expressApp) {
-                this.startWebSocket();
-                this.startDevServer(Boolean(entry));
-            } else {
-                this.refreshBrowser();
-            }
+        await this.renderer.devInit((urls) => {
+            this.refreshBrowser(urls);
         });
+
+        this.startWebSocket();
+        this.startDevServer();
     }
 
     async stop() {
         await this.watcher.close();
+        await this.renderer.stop();
         return new Promise<void>((resolve, reject) => {
             let numClosed = 2;
             this.server.close(() => {
@@ -65,12 +60,9 @@ export default class DevServer {
         });
     }
     
-    private startDevServer(isWatchBrowserBundle: boolean) {
+    private startDevServer() {
         this.expressApp = express();
-        if (isWatchBrowserBundle) {
-            this.addBrowserBundleMiddleware();
-        }
-        this.expressApp.get(`/${THEME_PREFIX}/*`, this.getLocalFile.bind(this));
+        this.expressApp.get(`/${DEVSERVER_BROWSER}/*`, this.getLocalFile.bind(this));
         this.expressApp.get("*", this.route.bind(this));
         this.server = this.expressApp.listen(this.port, () => {
             log.info(`Dev server started on port ${this.port}`);
@@ -83,7 +75,7 @@ export default class DevServer {
         });
     }
 
-    private refreshBrowser() {
+    private refreshBrowser(urls?: string[]) {
         if (this.webSocketServer) {
             this.webSocketServer.clients.forEach(client => {
                 if (client.readyState === OPEN) {
@@ -92,23 +84,6 @@ export default class DevServer {
             });
         }
     }
-
-    private addBrowserBundleMiddleware() {
-        const compiler = this.renderer.watchForBrowserBundleChange(this.onBrowserBundleChanged.bind(this));
-        if (compiler) {
-            const middleware = webpackDevMiddleware(
-                compiler, {
-                    publicPath: DEV_PUBLIC_PATH
-                });
-            this.expressApp.use(middleware);
-        }
-    }
-
-    private onBrowserBundleChanged(isError, entry) {
-        log.info("Browser bundle compiled");
-        this.refreshBrowser();
-    }
-
     
     private async getLocalFile(req, res) {
         try {

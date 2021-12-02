@@ -1,30 +1,18 @@
 import ReactSerializer from "./ui/ReactSerializer";
-import WebpackListenerPlugin from "./WebpackListenerPlugin";
-import { replaceScriptSrc } from "./helpers/html";
 import {
-    bundleSambalFile,
-    watchSambalFile,
-    bundleBrowserPackage,
-    getDevServerBrowserCompiler
-} from "./helpers/bundler";
-import {
-    deepClone,
     getAbsFilePath,
     isObjectLiteral
 } from "./helpers/util";
 import {
-    CACHE_FOLDER,
     SAMBAL_ENTRY_FILE,
-    DEV_PUBLIC_PATH,
     Theme,
-    OnBundleChanged,
     IHtmlSerializer,
     WebPage
 } from "./helpers/constant";
-import { serializeJsonLd, renderSocialMediaMetaTags } from "./helpers/seo";
+import Bundler from "./Bundler";
+import Html from "./Html";
 import { log } from "./helpers/log";
 import { template } from "./ui/template";
-import { SCHEMA_CONTEXT } from "sambal-jsonld";
 import { join } from "path";
 
 type UI = {
@@ -32,20 +20,23 @@ type UI = {
         page: unknown,
         options?: unknown
     }) => Promise<unknown>,
-    renderComponent: (props: {
-        mainEntity: unknown,
-        options?: unknown
-    }) => Promise<unknown>,
-    defaultOptions?: object,
-    browserBundle?: {
-        entry: unknown
-    }
+    defaultOptions?: object
 }
+
+type Asset = {
+    entry: string,
+    onPages: Set<string>
+}
+
+type DevServerChangeHandler = (urls: string[]) => void;
 
 export default class Renderer {
     private serializer: IHtmlSerializer;
     private renderer: UI;
-    private browserBundleEntry: object;
+    private bundler: Bundler;
+    private rootDir: string;
+    private assets: Map<string, Asset>;
+    private devServerChangeHandler: DevServerChangeHandler;
 
     constructor(
         private baseUrl: string,
@@ -53,11 +44,14 @@ export default class Renderer {
         private entryFile: string,
         private theme: string | Theme) {
         this.serializer = new ReactSerializer();
+        this.assets = new Map<string, Asset>();
+        this.rootDir = "."; // default to project root folder
     }
 
     async bundle() {
         let uiEntryFile = this.entryFile;
         let themeFolder;
+        // Theme has precedence over entry file
         if (this.theme) {
             if (typeof(this.theme) === "string") {
                 themeFolder = this.theme;
@@ -66,62 +60,43 @@ export default class Renderer {
                 themeFolder = this.theme.name;
                 uiEntryFile = getAbsFilePath(`${this.theme.name}/${SAMBAL_ENTRY_FILE}`);
             }
+            this.rootDir = themeFolder;
         }
         log.info("Bundling sambal.entry.js...");
-        await bundleSambalFile(uiEntryFile, getAbsFilePath(`${CACHE_FOLDER}/output`));
-        this.renderer = require(getAbsFilePath(`${CACHE_FOLDER}/output/${SAMBAL_ENTRY_FILE}`));
-        if (this.renderer.browserBundle) {
-            log.info("Bundling browser bundle...");
-            const webpackEntry = deepClone(this.renderer.browserBundle)
-            if (themeFolder) {
-                this.updateThemeBrowserBundlePath(themeFolder, webpackEntry);
-            }
-            this.browserBundleEntry = await bundleBrowserPackage(
-                webpackEntry,
-                getAbsFilePath(this.publicPath)
-            );
-        }
+        const moduleEntry = await Bundler.bundleSambalFile(uiEntryFile);
+        this.renderer = require(moduleEntry);
         if (!this.renderer) {
             throw new Error("No html renderer available.  Implement sambal.entry.js or specify a theme in sambal.site.js");
         }
     }
 
-    private updateThemeBrowserBundlePath(themeFolder: string, bundle: any) {
-        if (bundle && bundle.entry) {
-            for (const key of Object.keys(bundle.entry)) {
-                bundle.entry[key] = join(themeFolder, bundle.entry[key]);
-            }
-        }
-    }
-
-    async watchForEntryChange(onChange: OnBundleChanged) {
-        if (this.entryFile) {
-            return watchSambalFile(this.entryFile, (isError, entry) => {
-                if (!isError) {
-                    this.renderer = require(getAbsFilePath(`${CACHE_FOLDER}/watch/${entry.main}`));
-                    onChange(isError, entry);
-                }
-            });
-        } else if (this.theme){
-            // bundle theme entry file
+    async devInit(onChangeHandler: DevServerChangeHandler) {
+        this.devServerChangeHandler = onChangeHandler;
+        // bundler initialized only in dev mode
+        this.bundler = new Bundler(this.onAssetChanged);
+        // Theme has precedence over entry file
+        if (this.theme) {
+            // bundle theme entry file, no need to watch
             await this.bundle();
+        } else if (this.entryFile) {
+            const moduleEntry = await this.bundler.watchSambalFile(this.entryFile);
+            this.renderer = require(moduleEntry);
         }
-        onChange(false, null);
-        return null;
+        
+        if (!this.renderer) {
+            throw new Error("No html renderer available.  Implement sambal.entry.js or specify a theme in sambal.site.js");
+        }
     }
 
-    // Only called if using project sambal.entry.js not theme
-    watchForBrowserBundleChange(onChange: OnBundleChanged) {
-        if (this.renderer && this.renderer.browserBundle) {
-            // override public path to path used by dev server
-            this.publicPath = DEV_PUBLIC_PATH;
-            const listener = new WebpackListenerPlugin((isError, entry) => {
-                this.browserBundleEntry = entry;
-                onChange(isError, entry);
-            });
-            return getDevServerBrowserCompiler(this.renderer.browserBundle, listener);
+    async stop() {
+        this.bundler.stop();
+    }
+
+    private onAssetChanged(uri: string, entry: string) {
+        if (this.assets.has(uri)) {
+            this.assets.get(uri).entry = entry;
+            this.devServerChangeHandler([...this.assets.get(uri).onPages.values()]);
         }
-        return null;
     }
 
     async renderPage(page: WebPage) {
@@ -141,7 +116,7 @@ export default class Renderer {
                 const html = typeof(renderResult) === "string" ? 
                     renderResult :
                     this.serializer.toHtml(renderResult);
-                return await this.postProcessHtml(page, html, this.browserBundleEntry);
+                return await this.postProcessHtml(page, html);
             }
             return await this.renderErrorPage("Nothing rendered");
         } catch (e) {
@@ -166,68 +141,48 @@ export default class Renderer {
         `;
     }
 
-    private async postProcessHtml(page: WebPage, html: string, bundle: object) {
-        let hasJsonLd = false;
-        let hasSocialMediaMeta = false;
-        let updatedHtml = await replaceScriptSrc(html, (name, attribs) => {
-            if (name === "script" && attribs.type === "application/ld+json") {
-                hasJsonLd = true;
-            } else if (name === "meta" && this.isSocialMediaMeta(attribs.name)) {
-                hasSocialMediaMeta = true;
+    private async postProcessHtml(page: WebPage, html: string) {
+        const htmlPage = new Html(html);
+        for (const src of htmlPage.jsSources) {
+            const entry = await this.bundleJs(src, page.url);
+            htmlPage.replaceJsScriptSrc(src, entry);
+        }
+
+        htmlPage.addSchemaJsonLd(page.mainEntity);
+        htmlPage.addMetaTags(this.baseUrl, page);
+        return htmlPage.serialize();
+    }
+
+    private async bundleJs(jsPath: string, pageUrl: string) {
+        const resolvedPath = join(this.rootDir, jsPath);
+        let entry;
+        
+        // If this.bundler inited, means dev mode
+        if (this.bundler) {
+            entry = await this.bundler.watchBrowserBundle(resolvedPath, this.publicPath);
+        } else {
+            if (this.assets.has(resolvedPath)) {
+                entry = this.assets.get(resolvedPath).entry;
+            } else {
+                entry = await Bundler.bundleBrowserPackage(resolvedPath, this.publicPath);
             }
+        }
 
-            if (bundle && name === "script" && attribs.src) {
-                let realSrc = attribs.src;
-                for (const entryName of Object.keys(bundle)) {
-                    if (attribs.src === entryName) {
-                        realSrc = `${this.publicPath}/${bundle[entryName]}`;
-                        break;
-                    }
-                }
-                return {
-                    ...attribs,
-                    src: realSrc
-                };
-            }
-            return attribs;
-        });
-        if (!hasSocialMediaMeta && page.mainEntity) {
-            updatedHtml = await this.addSocialMediaMeta(updatedHtml, page);
-        }
-        if (!hasJsonLd && page.mainEntity) {
-            updatedHtml = this.addJsonLdScript(updatedHtml, page.mainEntity);
-        }
-        return updatedHtml;
+        this.addToAssets(resolvedPath, entry, pageUrl);
+        return entry;
     }
 
-    private isSocialMediaMeta(name: string) {
-        return name && (name.startsWith("og:") || name.startsWith("twitter:"));
-    }
-
-    private async addSocialMediaMeta(html: string, page: WebPage) {
-        const metaTags = await renderSocialMediaMetaTags(this.baseUrl, page);
-
-        const index = html.indexOf("<head>");
-        if (index >= 0) {
-            return html.substring(0, index + 6) + metaTags + html.substring(index + 6);
+    private addToAssets(assetUri: string, assetEntry: string, pageUrl: string) {
+        if (this.assets.has(assetUri)) {
+            const asset = this.assets.get(assetUri);
+            asset.entry = assetEntry;
+            asset.onPages.add(pageUrl);
+        } else {
+            this.assets.set(assetUri, {
+                entry: assetEntry,
+                onPages: new Set([pageUrl])
+            });
         }
-        return html;
-    }
-
-    private addJsonLdScript(html: string, mainEntity: any) {
-        const jsonLdScript = `
-        <script type="application/ld+json">
-            ${serializeJsonLd({
-                "@context": SCHEMA_CONTEXT,
-                ...mainEntity
-            })}
-        </script>`;
-
-        const index = html.indexOf("</head>");
-        if (index >= 0) {
-            return html.substring(0, index) + jsonLdScript + html.substring(index);
-        }
-        return html;
     }
 
     private getDefaultOptions(renderer: UI) {

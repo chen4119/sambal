@@ -145,6 +145,7 @@ export default class Media {
         if (this.publishedMediaMap.has(imageJsonLd.contentUrl)) {
             sharpOutputInfo = this.publishedMediaMap.get(imageJsonLd.contentUrl);
         } else {
+            this.logTransformation(imageJsonLd.contentUrl, transform);
             output = await this.sharpTransform(imageBuf, transform);
             sharpOutputInfo = output.info;
         }
@@ -155,8 +156,26 @@ export default class Media {
         return output;
     }
 
+    private logTransformation(imageUri: string, transform?: SharpTransform) {
+        if (!transform) {
+            return;
+        }
+        const settings = [];
+        if (transform.width) {
+            settings.push(`width:${transform.width}`);
+        }
+        if (transform.height) {
+            settings.push(`height:${transform.height}`);
+        }
+        if (transform.encodingFormat) {
+            settings.push(`format:${transform.encodingFormat}`);
+        }
+        log.info(`Transforming image ${imageUri} -> ${settings.join(", ")}`);
+    }
+
     private async writeImage(contentUrl: string, info: OutputInfo, imageBuf: Buffer) {
         this.publishedMediaMap.set(contentUrl, info);
+        console.log("Writing image " + `${this.outputFolder}${contentUrl}`);
         await writeBuffer(`${this.outputFolder}${contentUrl}`, imageBuf);
     }
     

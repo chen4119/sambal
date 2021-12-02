@@ -3,7 +3,7 @@ import axios, { AxiosResponse } from "axios";
 import Renderer from "../src/Renderer";
 import { init, wait } from "./setup";
 import DevServer from "../src/DevServer";
-import { PAGES_FOLDER, THEME_PREFIX } from "../src/helpers/constant";
+import { PAGES_FOLDER, DEVSERVER_BROWSER } from "../src/helpers/constant";
 import { writeText, getAbsFilePath } from "../src/helpers/util";
 
 const originalTestBlog = `
@@ -33,7 +33,7 @@ describe("DevServer", () => {
     beforeAll(async () => {
         await writeText(testFile, originalTestBlog);
         const classes = await init();
-        renderer = new Renderer(baseUrl, THEME_PREFIX, null, "mock-theme");
+        renderer = new Renderer(baseUrl, DEVSERVER_BROWSER, null, "mock-theme");
         server = new DevServer(classes.uriResolver, classes.media, classes.router, renderer, 3000);
         await server.start();
     });
@@ -45,11 +45,8 @@ describe("DevServer", () => {
 
     it('render html', async () => {
         const response = await axios.get("http://localhost:3000");
-        expect(response.data).toMatchSnapshot();
-    });
-
-    it('get client bundle', async () => {
-        const response = await axios.get("http://localhost:3000/.sambal/theme/client.8eddd7c976d49f038992.js");
+        const result = await axios.get("http://localhost:3000/.sambal/_dev_server_/browser/main.47d0e86dd346cb1ef81b.js");
+        expect(result.status).toBe(200);
         expect(response.data).toMatchSnapshot();
     });
 

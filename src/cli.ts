@@ -6,10 +6,10 @@ import {
     SAMBAL_SITE_FILE,
     CACHE_FOLDER,
     PAGES_FOLDER,
-    THEME_PREFIX
+    DEVSERVER_BROWSER
 } from "./helpers/constant";
 import { getAbsFilePath, writeText, normalizeUri } from "./helpers/util";
-import { bundleSambalFile } from "./helpers/bundler";
+import Bundler from "./Bundler";
 import Renderer from "./Renderer";
 import SiteGenerator from "./SiteGenerator";
 import DevServer from "./DevServer";
@@ -36,8 +36,8 @@ let theme = null;
 async function initSite(outputFolder: string) {
     if (shelljs.test('-f', siteFile)) {
         log.info("Bundling sambal.site.js...");
-        await bundleSambalFile(siteFile, getAbsFilePath(`${CACHE_FOLDER}/output`));
-        const module = require(getAbsFilePath(`${CACHE_FOLDER}/output/${SAMBAL_SITE_FILE}`));
+        const moduleEntry = await Bundler.bundleSambalFile(siteFile);
+        const module = require(moduleEntry);
 
         if (!module.siteConfig) {
             throw new Error("Required siteConfig object not exported from sambal.site.js");
@@ -96,7 +96,7 @@ async function serve() {
     try {
         const init = await initSite(CACHE_FOLDER);
 
-        const renderer = new Renderer(baseUrl, THEME_PREFIX, entryFile, theme);
+        const renderer = new Renderer(baseUrl, DEVSERVER_BROWSER, entryFile, theme);
 
         const server = new DevServer(init.uriResolver, init.media, init.router, renderer, 3000);
         await server.start();
@@ -109,7 +109,7 @@ async function build() {
     log.info("Cleaning cache and public folder");
     clean(`./${OUTPUT_FOLDER}`);
     clean(`./${CACHE_FOLDER}`);
-    const publicPath = `${OUTPUT_FOLDER}/js`;
+    const publicPath = `/js`;
     
     try {
         const init = await initSite(OUTPUT_FOLDER);

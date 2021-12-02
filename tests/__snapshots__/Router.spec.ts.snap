@@ -39,7 +39,7 @@ Object {
   },
   "mainEntity": Object {
     "@type": "SoftwareSourceCode",
-    "description": "A linked data static site generator",
+    "description": "Some description about Sambal",
     "headline": "A linked data static site generator",
     "name": "Sambal",
     "text": "<need to <> escape>",

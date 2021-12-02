@@ -1,0 +1,66 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Html addMetaTags add canonical url, title and description 1`] = `
+"
+                <html>
+                    <head>
+                        
+                    <link rel=\\"canonical\\" href=\\"https://example.com/article\\"><meta name=\\"og:url\\" content=\\"https://example.com/article\\"><title>Title of my article</title><meta name=\\"twitter:title\\" content=\\"Title of my article\\"><meta name=\\"og:title\\" content=\\"Title of my article\\"><meta name=\\"description\\" content=\\"Description about my article\\"><meta name=\\"twitter:description\\" content=\\"Description about my article\\"><meta name=\\"og:description\\" content=\\"Description about my article\\"></head>
+                    <body>
+                        <h1>hello world</h1>
+                    </body>
+                </html>
+            "
+`;
+
+exports[`Html addSchemaJsonLd add ld+jsonld script 1`] = `
+"
+                <html>
+                    <head>
+                        <script src=\\"/theme/index.js\\"></script>
+                    <script type=\\"application/ld+json\\">{
+    &quot;@context&quot;: &quot;https://schema.org&quot;,
+    &quot;@type&quot;: &quot;BlogPosting&quot;,
+    &quot;name&quot;: &quot;John Smith &lt;h1&gt;Random html&lt;/h1&gt;&quot;,
+    &quot;familyName&quot;: &quot;Smith&quot;,
+    &quot;givenName&quot;: &quot;John&quot;
+}</script></head>
+                    <body>
+                        <h1>hello world</h1>
+                    </body>
+                </html>
+            "
+`;
+
+exports[`Html addSchemaJsonLd replace existing ld+jsonld script 1`] = `
+"
+                <html>
+                    <head>
+                        <script type=\\"application/ld+json\\">{
+    &quot;@context&quot;: &quot;https://schema.org&quot;,
+    &quot;@type&quot;: &quot;BlogPosting&quot;,
+    &quot;name&quot;: &quot;John Smith &lt;h1&gt;Random html&lt;/h1&gt;&quot;,
+    &quot;familyName&quot;: &quot;Smith&quot;,
+    &quot;givenName&quot;: &quot;John&quot;
+}</script>
+                    </head>
+                    <body>
+                        <h1>hello world</h1>
+                    </body>
+                </html>
+            "
+`;
+
+exports[`Html replaceJsScriptSrc 1`] = `
+"
+            <html>
+                <head>
+                    <script src=\\"/theme/changed.js\\"></script>
+                </head>
+                <body>
+                    <h1>hello world</h1>
+                    <script src=\\"index2.js\\"></script>
+                </body>
+            </html>
+        "
+`;

@@ -3,11 +3,11 @@ import Renderer from "./Renderer";
 import prettier from "prettier";
 import { writeText, getFileExt, isObjectLiteral } from "./helpers/util";
 import { inferUrl } from "./helpers/data";
-import { serializeJsonLd } from "./helpers/seo";
 import { log } from "./helpers/log";
 import { OUTPUT_FOLDER, PAGES_FOLDER } from "./helpers/constant";
 import Router from "./Router";
 import UriResolver from "./UriResolver";
+import Html from "./Html";
 import { template } from "./ui/template";
 import {
     JSONLD_ID,
@@ -54,6 +54,7 @@ export default class SiteGenerator {
     }
 
     async buildJsonLds() {
+        // referencedJsonLds only include local files
         for (const uri of this.uriResolver.referencedJsonLds) {
             let jsonld = await this.uriResolver.resolveUri(uri);
             if (!isJsonLdRef(jsonld)) {
@@ -69,7 +70,7 @@ export default class SiteGenerator {
                 this.updateRef(jsonld);
                 await writeText(
                     `./${OUTPUT_FOLDER}${jsonld[JSONLD_ID]}`,
-                    serializeJsonLd(jsonld, false)
+                    Html.serializeJsonLd(jsonld)
                 );
             }
         }
@@ -84,7 +85,8 @@ export default class SiteGenerator {
             const url = inferUrl(uri);
             return url === "/" ? `/${JSONLD_FILENAME}` : `${url}/${JSONLD_FILENAME}`;
         }
-        return `${uri}/${JSONLD_FILENAME}`;
+        // appending .schema or folder name won't collide with file name
+        return `${uri}.schema/${JSONLD_FILENAME}`;
     }
 
     private updateRef(jsonld: any) {

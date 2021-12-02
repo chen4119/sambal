@@ -50,7 +50,8 @@ export const PAGE_FILE = "_page.yml";
 export const LOCALHOST = "localhost";
 export const FILE_PROTOCOL = "file:";
 
-// for DevServer
-export const THEME_PREFIX = `${CACHE_FOLDER}/theme`;
-export const DEV_PUBLIC_PATH = "/_sambal";
+// output
+export const OUTPUT_SAMBAL = `${CACHE_FOLDER}/_sambal_`;
+export const DEVSERVER_BROWSER = `${CACHE_FOLDER}/_dev_server_/browser`;
+export const DEVSERVER_SAMBAL = `${CACHE_FOLDER}/_dev_server_/_sambal_`;
 

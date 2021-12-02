@@ -3,31 +3,13 @@
 exports[`Renderer render using mock-theme 1`] = `
 "
         <html>
-            <head>
-            
-        <link rel=\\"canonical\\" href=\\"https://example.com/dummy\\" />
-        <title>John Smith</title>
-    
-            
-        <meta name=\\"twitter:card\\" content=\\"summary\\" />
-        <meta name=\\"twitter:title\\" content=\\"John Smith\\" />
-        
-    
-            
-        <meta name=\\"og:url\\" content=\\"https://example.com/dummy\\" />
-        <meta name=\\"og:title\\" content=\\"John Smith\\" />
-        
-    
-         
-                <script src=\\"public/js/client.8eddd7c976d49f038992.js\\"></script>
-            
-        <script type=\\"application/ld+json\\">
-            {
-    \\"@context\\": \\"https://schema.org\\",
-    \\"@type\\": \\"Person\\",
-    \\"name\\": \\"John Smith\\"
-}
-        </script></head>
+            <head> 
+                <script src=\\"/js/main.25ed36bf086801ea2884.js\\"></script>
+            <script type=\\"application/ld+json\\">{
+    &quot;@context&quot;: &quot;https://schema.org&quot;,
+    &quot;@type&quot;: &quot;Person&quot;,
+    &quot;name&quot;: &quot;John Smith&quot;
+}</script><link rel=\\"canonical\\" href=\\"https://example.com/dummy\\"><meta name=\\"og:url\\" content=\\"https://example.com/dummy\\"><title>John Smith</title><meta name=\\"twitter:title\\" content=\\"John Smith\\"><meta name=\\"og:title\\" content=\\"John Smith\\"></head>
             <body>
                 <h1>Hello from mock theme</h1>
                 <p>test1</p>
