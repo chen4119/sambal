@@ -1,13 +1,18 @@
 import webpack, { Configuration, Watching } from "webpack";
+import postcss, { ProcessOptions } from "postcss";
+import chokidar, { FSWatcher } from "chokidar";
+import { postcssPlugin } from "./helpers/postcss";
+import atImport from "postcss-import";
+import cssnano from "cssnano";
 import path from "path";
+import { readFileSync } from "fs";
 import nodeExternals from "webpack-node-externals";
 import {
-    CACHE_FOLDER,
     OUTPUT_SAMBAL,
     DEVSERVER_SAMBAL
 } from "./helpers/constant";
 import { log } from "./helpers/log";
-import { getAbsFilePath } from "./helpers/util";
+import { getAbsFilePath, writeText, hashContent } from "./helpers/util";
 
 const outputConfig = {
     library: {
@@ -57,7 +62,8 @@ const webpackConfig = {
 };
 
 type Watcher = {
-    watching: Watching,
+    chokidarWatch?: FSWatcher,
+    webpackWatch?: Watching,
     entry: string
 }
 
@@ -89,7 +95,8 @@ export default class Bundler {
                 if (result.error) {
                     reject(result.error);
                 } else {
-                    resolve(`${outputPath}/${result.entry.main}`);
+                    resolve(path.join(outputPath, result.entry.main));
+                    // resolve(`${outputPath}/${result.entry.main}`);
                 }
             });
         });
@@ -114,15 +121,90 @@ export default class Bundler {
                 if (result.error) {
                     reject(result.error);
                 } else {
-                    resolve(`${outputPath}/${result.entry.main}`);
+                    resolve(path.join(outputPath, result.entry.main));
+                    // resolve(`${outputPath}/${result.entry.main}`);
                 }
             });
         });
     }
 
+    static async bundleStyle(assetMap: Map<string, string>, style: string, outputPath: string) {
+        const options: ProcessOptions = {
+            from: "./index.css", // dummy file for path resolution only
+            to: outputPath
+        };
+        
+        const result = await Bundler.bundleCss(assetMap, style, options);
+        return result.css;
+    }
+
+    static async bundleCssFile(assetMap: Map<string, string>, filePath: string, outputPath: string) {
+        const result = await Bundler.bundleCssFileHelper(assetMap, filePath, outputPath);
+        return result.entry;
+    }
+
+    async watchCssFile(assetMap: Map<string, string>, filePath: string, outputPath: string) {
+        if (this.browserBundleMap.has(filePath)) {
+            return this.browserBundleMap.get(filePath).entry;
+        }
+        const result = await Bundler.bundleCssFileHelper(assetMap, filePath, outputPath);
+        const dependencies = result.result.messages
+            .filter(d => d.type === "dependency")
+            .map(d => d.file);
+        const watcher = chokidar.watch([getAbsFilePath(filePath), ...dependencies]);
+        watcher.on("ready", () => {
+            watcher.on("change", async () => {
+                const result = await Bundler.bundleCssFileHelper(assetMap, filePath, outputPath);
+                const entry = path.join(outputPath, result.entry);
+                this.browserBundleMap.get(filePath).entry = entry;
+                this.broadcastAssetChangedEvent(filePath, entry);
+            });
+        });
+        const entry = path.join(outputPath, result.entry);
+        this.browserBundleMap.set(filePath, {
+            chokidarWatch: watcher,
+            entry
+        });
+        
+        return entry;
+    }
+
+    private static async bundleCssFileHelper(assetMap: Map<string, string>, filePath: string, outputPath: string) {
+        const options: ProcessOptions = {
+            from: filePath,
+            to: outputPath
+        };
+        
+        const originalCss = readFileSync(getAbsFilePath(filePath), "utf-8");
+        const result = await Bundler.bundleCss(assetMap, originalCss, options);
+
+        const hash = hashContent(result.css);
+        const destFilename = `${path.basename(filePath, path.extname(filePath))}.${hash}${path.extname(filePath)}`;
+        const entry = path.join(path.dirname(filePath), destFilename);
+        await writeText(getAbsFilePath(path.join(outputPath, entry)), result.css);
+        return {
+            result,
+            entry
+        };
+    }
+
+    private static async bundleCss(assetMap: Map<string, string>, originalCss: string, options: ProcessOptions) {
+        const result = await postcss([
+            atImport(),
+            postcssPlugin(assetMap),
+            // cssnano({preset: 'default'}) as AcceptedPlugin
+        ]).process(originalCss, options);
+        return result;
+    }
+
     stop() {
         for (const bundle of this.browserBundleMap.values()) {
-            bundle.watching.close(() => {});
+            if (bundle.webpackWatch) {
+                bundle.webpackWatch.close(() => {});
+            }
+            if (bundle.chokidarWatch) {
+                bundle.chokidarWatch.close();
+            }
         }
     }
 
@@ -171,14 +253,15 @@ export default class Bundler {
                     poll: 1000
                 }, (err, stats) => {
                     const result = Bundler.parseStats(err, stats);
-                    const entry = `${outputPath}/${result.entry.main}`;
+                    const entry = path.join(outputPath, result.entry.main);
+                    // const entry = `${outputPath}/${result.entry.main}`;
                     if (!isPromiseResolved) {
                         isPromiseResolved = true;
                         if (result.error) {
                             reject(result.error);
                         } else {
                             this.browserBundleMap.set(filePath, {
-                                watching,
+                                webpackWatch: watching,
                                 entry
                             });
                             resolve(entry);
@@ -200,7 +283,7 @@ export default class Bundler {
         }
     }
 
-    static parseBundleFilename(stats) {
+    private static parseBundleFilename(stats) {
         const entries: any = {};
         for (const key of Object.keys(stats.entrypoints)) {
             const mainAsset = stats.entrypoints[key].assets[0];
@@ -209,7 +292,7 @@ export default class Bundler {
         return entries;
     }
 
-    static parseStats(err, stats): {error: any, entry: any} {
+    private static parseStats(err, stats): {error: any, entry: any} {
         const info = stats.toJson();
         const entry = Bundler.parseBundleFilename(info);
         let error;

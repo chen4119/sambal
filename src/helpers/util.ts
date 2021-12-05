@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { isAbsUri } from "sambal-jsonld";
 import shelljs from "shelljs";
 
@@ -23,6 +24,12 @@ export function deepClone(obj: any): any {
         return newObj;
     }
     return obj;
+}
+
+export function hashContent(content: string | Buffer) {
+    const md5 = crypto.createHash("sha1");
+    md5.update(content);
+    return md5.digest('hex');
 }
 
 export function normalizeUri(uri: string) {

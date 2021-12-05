@@ -1,4 +1,3 @@
-import ReactSerializer from "./ui/ReactSerializer";
 import {
     getAbsFilePath,
     isObjectLiteral
@@ -6,7 +5,6 @@ import {
 import {
     SAMBAL_ENTRY_FILE,
     Theme,
-    IHtmlSerializer,
     WebPage
 } from "./helpers/constant";
 import Bundler from "./Bundler";
@@ -19,7 +17,7 @@ type UI = {
     renderPage: (props: {
         page: unknown,
         options?: unknown
-    }) => Promise<unknown>,
+    }) => Promise<string>,
     defaultOptions?: object
 }
 
@@ -31,7 +29,6 @@ type Asset = {
 type DevServerChangeHandler = (urls: string[]) => void;
 
 export default class Renderer {
-    private serializer: IHtmlSerializer;
     private renderer: UI;
     private bundler: Bundler;
     private rootDir: string;
@@ -43,7 +40,6 @@ export default class Renderer {
         private publicPath: string,
         private entryFile: string,
         private theme: string | Theme) {
-        this.serializer = new ReactSerializer();
         this.assets = new Map<string, Asset>();
         this.rootDir = "."; // default to project root folder
     }
@@ -101,21 +97,17 @@ export default class Renderer {
 
     async renderPage(page: WebPage) {
         try {
-            let renderResult;
             const options = {
                 ...this.getDefaultOptions(this.renderer),
                 ...isObjectLiteral(this.theme) ? (this.theme as Theme).options : {}
             };
             
-            renderResult = await this.renderer.renderPage({ 
+            const html = await this.renderer.renderPage({ 
                 page: page,
                 options: options
             });
 
-            if (renderResult) {
-                const html = typeof(renderResult) === "string" ? 
-                    renderResult :
-                    this.serializer.toHtml(renderResult);
+            if (html) {
                 return await this.postProcessHtml(page, html);
             }
             return await this.renderErrorPage("Nothing rendered");

@@ -231,6 +231,7 @@ export default class Html {
     // TODO: imageObj can be a string of urls
     private getImageUrl(baseUrl: string, imageObj: any) {
         // contentUrl will always be relative url
+        // TODO: use path.join
         return `${baseUrl}${imageObj.contentUrl}`;
     }
     
