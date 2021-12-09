@@ -28,6 +28,23 @@ describe("Html", () => {
         expect(instance.jsSources).toStrictEqual(["/theme/index.js", "index2.js"]);
     });
 
+    it("get styleSheets", () => {
+        const html = `
+            <html>
+                <head>
+                    <link rel="stylesheet" href="styles.css">
+                </head>
+                <body>
+                    <h1>hello world</h1>
+                    <script src="index2.js"></script>
+                </body>
+            </html>
+        `;
+
+        const instance = new Html(html);
+        expect(instance.styleSheets).toStrictEqual(["styles.css"]);
+    });
+
     it("replaceJsScriptSrc", () => {
         const html = `
             <html>
@@ -86,6 +103,41 @@ describe("Html", () => {
         });  
     });
     
+    describe("bundleStyles", () => {
+        it("replace with updated styles", async () => {
+            const originalCss = `
+                h1 {
+                    color: red;
+                }
+            `;
+
+            const updatedCss = `
+                h1 {
+                    color: green;
+                }
+            `;
+
+            const html = `
+                <html>
+                    <head>
+                        <script src="/theme/index.js"></script>
+                    </head>
+                    <body>
+                        <style>${originalCss}</style>
+                        <h1>hello world</h1>
+                    </body>
+                </html>
+            `;
+
+            const instance = new Html(html);
+            await instance.bundleStyles(async (css) => {
+                expect(css).toBe(originalCss);
+                return updatedCss;
+            });
+            expect(instance.serialize()).toMatchSnapshot();
+        });
+    });
+
     describe("addMetaTags", () => {
         const baseUrl = "https://example.com";
         const article = {

@@ -5,7 +5,8 @@ import {
 import {
     SAMBAL_ENTRY_FILE,
     Theme,
-    WebPage
+    WebPage,
+    JS_FOLDER
 } from "./helpers/constant";
 import Bundler from "./Bundler";
 import Html from "./Html";
@@ -33,6 +34,8 @@ export default class Renderer {
     private bundler: Bundler;
     private rootDir: string;
     private assets: Map<string, Asset>;
+    // Map css source url() to dest url()
+    private cssAssetMap: Map<string, string>;
     private devServerChangeHandler: DevServerChangeHandler;
 
     constructor(
@@ -41,6 +44,7 @@ export default class Renderer {
         private entryFile: string,
         private theme: string | Theme) {
         this.assets = new Map<string, Asset>();
+        this.cssAssetMap = new Map<string, string>();
         this.rootDir = "."; // default to project root folder
     }
 
@@ -69,7 +73,7 @@ export default class Renderer {
     async devInit(onChangeHandler: DevServerChangeHandler) {
         this.devServerChangeHandler = onChangeHandler;
         // bundler initialized only in dev mode
-        this.bundler = new Bundler(this.onAssetChanged);
+        this.bundler = new Bundler(this.onAssetChanged.bind(this));
         // Theme has precedence over entry file
         if (this.theme) {
             // bundle theme entry file, no need to watch
@@ -117,6 +121,12 @@ export default class Renderer {
     }
 
     async renderErrorPage(e) {
+        const renderError = (error) => {
+            return template`
+                <h1>${error.message}</h1>
+                <p>${error.toString()}</p>
+            `;
+        };
         return await template`
             <html>
                 <head>
@@ -126,8 +136,9 @@ export default class Renderer {
                     <base href="/">
                 </head>
                 <body>
-                    <h1>Error</h1>
-                    ${e}
+                    ${Array.isArray(e) ?
+                        e.map(error => renderError(error)) :
+                        renderError(e)}
                 </body>
             </html>
         `;
@@ -139,24 +150,33 @@ export default class Renderer {
             const entry = await this.bundleJs(src, page.url);
             htmlPage.replaceJsScriptSrc(src, entry);
         }
-
+        for (const src of htmlPage.styleSheets) {
+            const entry = await this.bundleCss(src, page.url);
+            htmlPage.replaceStyleSheetSrc(src, entry);
+        }
+        await htmlPage.bundleStyles(this.bundleStyle);
         htmlPage.addSchemaJsonLd(page.mainEntity);
         htmlPage.addMetaTags(this.baseUrl, page);
         return htmlPage.serialize();
     }
 
-    private async bundleJs(jsPath: string, pageUrl: string) {
-        const resolvedPath = join(this.rootDir, jsPath);
+    private async bundleStyle(css: string) {
+        return await Bundler.bundleStyle(this.cssAssetMap, css, this.publicPath);
+    }
+
+    private async bundleCss(cssPath: string, pageUrl: string) {
+        const resolvedPath = this.resolvePath(cssPath);
         let entry;
         
         // If this.bundler inited, means dev mode
         if (this.bundler) {
-            entry = await this.bundler.watchBrowserBundle(resolvedPath, this.publicPath);
+            entry = await this.bundler.watchCssFile(this.cssAssetMap, resolvedPath, this.publicPath);
         } else {
             if (this.assets.has(resolvedPath)) {
                 entry = this.assets.get(resolvedPath).entry;
             } else {
-                entry = await Bundler.bundleBrowserPackage(resolvedPath, this.publicPath);
+                entry = await Bundler.bundleCssFile(this.cssAssetMap, resolvedPath, this.publicPath);
+                entry = entry.substring(this.publicPath.length);
             }
         }
 
@@ -164,6 +184,36 @@ export default class Renderer {
         return entry;
     }
 
+    private async bundleJs(jsPath: string, pageUrl: string) {
+        const resolvedPath = this.resolvePath(jsPath);
+        let entry;
+        
+        // If this.bundler inited, means dev mode
+        if (this.bundler) {
+            entry = await this.bundler.watchBrowserBundle(resolvedPath, this.getJsOutputPath());
+        } else {
+            if (this.assets.has(resolvedPath)) {
+                entry = this.assets.get(resolvedPath).entry;
+            } else {
+                entry = await Bundler.bundleBrowserPackage(resolvedPath, this.getJsOutputPath());
+                entry = entry.substring(this.publicPath.length);
+            }
+        }
+
+        this.addToAssets(resolvedPath, entry, pageUrl);
+        return entry;
+    }
+
+    private getJsOutputPath() {
+        return `${this.publicPath}/${JS_FOLDER}`;
+    }
+
+    private resolvePath(filePath: string) {
+        if (filePath.indexOf("node_modules/") >= 0) {
+            return filePath;
+        }
+        return join(this.rootDir, filePath);
+    }
     private addToAssets(assetUri: string, assetEntry: string, pageUrl: string) {
         if (this.assets.has(assetUri)) {
             const asset = this.assets.get(assetUri);

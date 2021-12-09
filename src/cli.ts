@@ -109,12 +109,11 @@ async function build() {
     log.info("Cleaning cache and public folder");
     clean(`./${OUTPUT_FOLDER}`);
     clean(`./${CACHE_FOLDER}`);
-    const publicPath = `/js`;
     
     try {
         const init = await initSite(OUTPUT_FOLDER);
 
-        const renderer = new Renderer(baseUrl, publicPath, entryFile, theme);
+        const renderer = new Renderer(baseUrl, OUTPUT_FOLDER, entryFile, theme);
         await renderer.bundle();
 
         const builder = new SiteGenerator(baseUrl, init.uriResolver, init.router, renderer);

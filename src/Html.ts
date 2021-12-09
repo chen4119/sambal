@@ -6,8 +6,8 @@ import {
     getAttributeValue,
     getElementsByTagName,
     prependChild,
-    removeElement,
-    replaceElement
+    replaceElement,
+    textContent
 } from "domutils";
 import { WebPage } from "./helpers/constant";
 import { isSchemaType, SCHEMA_CONTEXT, JSONLD_TYPE } from "sambal-jsonld";
@@ -26,6 +26,8 @@ export default class Html {
     private dom: Document;
     // map script src to element
     private jsScriptMap: Map<string, Element>;
+    private cssLinkMap: Map<string, Element>;
+    private styleTags: Element[];
     private jsonldElement: Element;
     private headElement: Element;
 
@@ -33,6 +35,7 @@ export default class Html {
     constructor(html: string) {
         this.dom = parseDocument(html);
         this.jsScriptMap = new Map<string, Element>();
+        this.cssLinkMap = new Map<string, Element>();
         const headNode = getElementsByTagName("head", this.dom);
         if (headNode.length === 0) {
             this.headElement = new Element("head", {});
@@ -40,8 +43,18 @@ export default class Html {
         } else {
             this.headElement = headNode[0];
         }
-        const scriptNodes = getElementsByTagName("script", this.dom, true);
 
+        this.styleTags = getElementsByTagName("style", this.dom, true);
+        const linkNodes = getElementsByTagName("link", this.dom, true);
+        for (const node of linkNodes) {
+            const src = getAttributeValue(node, "href");
+            const type = getAttributeValue(node, "rel");
+            if (type && type.toLowerCase() === "stylesheet") {
+                this.cssLinkMap.set(src, node);
+            }
+        }
+
+        const scriptNodes = getElementsByTagName("script", this.dom, true);
         for (const node of scriptNodes) {
             const src = getAttributeValue(node, "src");
             const type = getAttributeValue(node, "type");
@@ -60,13 +73,6 @@ export default class Html {
             {type: JSON_LD_TYPE},
             Html.serializeJsonLd(mainEntity)
         );
-        /*
-        if (this.jsonldElement) {
-            removeElement(this.jsonldElement);
-        }
-        const text = new Text(Html.serializeJsonLd(mainEntity));
-        this.jsonldElement = new Element("script", {type: JSON_LD_TYPE}, [text]);
-        appendChild(this.headElement, this.jsonldElement);*/
     }
 
     static serializeJsonLd(mainEntity: any) {
@@ -101,6 +107,22 @@ export default class Html {
         return [...this.jsScriptMap.keys()];
     }
 
+    get styleSheets(): string[] {
+        return [...this.cssLinkMap.keys()];
+    }
+
+    async bundleStyles(handler:(css: string) => Promise<string>) {
+        for (const styleElement of this.styleTags) {
+            const resultCss = await handler(textContent(styleElement));
+            const newElement = new Element(
+                "style",
+                {},
+                [new Text(resultCss)]
+            );
+            replaceElement(styleElement, newElement);
+        }
+    }
+
     serialize() {
         return render(this.dom);
     }
@@ -108,6 +130,12 @@ export default class Html {
     replaceJsScriptSrc(oldSrc: string, newSrc: string) {
         if (this.jsScriptMap.has(oldSrc)) {
             this.jsScriptMap.get(oldSrc).attribs.src = newSrc;
+        }
+    }
+
+    replaceStyleSheetSrc(oldSrc: string, newSrc: string) {
+        if (this.cssLinkMap.has(oldSrc)) {
+            this.cssLinkMap.get(oldSrc).attribs.href = newSrc;
         }
     }
 

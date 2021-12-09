@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Bundler bundleStyle 1`] = `
+"
+            h1 {
+                background-image: url('data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg');
+            }
+            h2 {
+                background-image: url('data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg');
+            }
+        "
+`;

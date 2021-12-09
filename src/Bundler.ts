@@ -96,7 +96,6 @@ export default class Bundler {
                     reject(result.error);
                 } else {
                     resolve(path.join(outputPath, result.entry.main));
-                    // resolve(`${outputPath}/${result.entry.main}`);
                 }
             });
         });
@@ -112,7 +111,7 @@ export default class Bundler {
                     ...outputConfig,
                     filename: "[name].[contenthash].js",
                     // Hardcoded output public path
-                    path: path.resolve(process.cwd(), `public/${outputPath}`)
+                    path: path.resolve(process.cwd(), outputPath)
                 }
             };
             const compiler = webpack(config);
@@ -122,7 +121,6 @@ export default class Bundler {
                     reject(result.error);
                 } else {
                     resolve(path.join(outputPath, result.entry.main));
-                    // resolve(`${outputPath}/${result.entry.main}`);
                 }
             });
         });
@@ -180,8 +178,8 @@ export default class Bundler {
 
         const hash = hashContent(result.css);
         const destFilename = `${path.basename(filePath, path.extname(filePath))}.${hash}${path.extname(filePath)}`;
-        const entry = path.join(path.dirname(filePath), destFilename);
-        await writeText(getAbsFilePath(path.join(outputPath, entry)), result.css);
+        const entry = path.join(outputPath, path.dirname(filePath), destFilename);
+        await writeText(getAbsFilePath(entry), result.css);
         return {
             result,
             entry
@@ -226,7 +224,6 @@ export default class Bundler {
     }
 
     async watchBrowserBundle(filePath: string, outputPath: string) {
-        // const outputPath = path.join(`/${CACHE_FOLDER}/_dev_server_`, filePath);
         const config: Configuration = {
             ...webpackConfig,
             entry: filePath,

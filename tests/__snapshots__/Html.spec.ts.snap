@@ -51,6 +51,24 @@ exports[`Html addSchemaJsonLd replace existing ld+jsonld script 1`] = `
             "
 `;
 
+exports[`Html bundleStyles replace with updated styles 1`] = `
+"
+                <html>
+                    <head>
+                        <script src=\\"/theme/index.js\\"></script>
+                    </head>
+                    <body>
+                        <style>
+                h1 {
+                    color: green;
+                }
+            </style>
+                        <h1>hello world</h1>
+                    </body>
+                </html>
+            "
+`;
+
 exports[`Html replaceJsScriptSrc 1`] = `
 "
             <html>

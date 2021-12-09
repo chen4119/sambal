@@ -9,20 +9,23 @@ describe("Bundler", () => {
         assetMap = new Map<string, string>();
     });
 
+    afterEach(async () => {
+        shelljs.rm("-rf", OUTPUT_FOLDER);
+    });
     
     it('bundleCssFile', async () => {
         await Bundler.bundleCssFile(assetMap, "css/index.css", OUTPUT_FOLDER);
 
         const absImagePath = "/Users/chen4119/Documents/dev/sambal/data/images/image2.jpg";
-        expect(assetMap.get(absImagePath)).toBe("data/images/image2.9af4e4192b910e72f3ae07dcdbacc34f4c6985cf.jpg");
+        expect(assetMap.get(absImagePath)).toBe("data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg");
 
-        const destCssFile = `${OUTPUT_FOLDER}/css/index.b344f0da1a8be14152867c308e96aa5ce4028e5f.css`;
-        const destImageFile = `${OUTPUT_FOLDER}/data/images/image2.9af4e4192b910e72f3ae07dcdbacc34f4c6985cf.jpg`;
+        const destCssFile = `${OUTPUT_FOLDER}/css/index.c9sdsI7cdvYi3CkYsj61P6lcyjo.css`;
+        const destImageFile = `${OUTPUT_FOLDER}/data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg`;
         expect(shelljs.test('-f', destCssFile)).toBeTruthy();
         expect(shelljs.test('-f', destImageFile)).toBeTruthy();
     });
 
-    /*
+
     it('bundleStyle', async () => {
         const css = `
             h1 {
@@ -33,7 +36,7 @@ describe("Bundler", () => {
             }
         `;
         const resultCss = await Bundler.bundleStyle(assetMap, css, OUTPUT_FOLDER);
-        console.log(resultCss);
-    });*/
+        expect(resultCss).toMatchSnapshot();
+    });
 
 });

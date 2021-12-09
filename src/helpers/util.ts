@@ -27,9 +27,11 @@ export function deepClone(obj: any): any {
 }
 
 export function hashContent(content: string | Buffer) {
-    const md5 = crypto.createHash("sha1");
-    md5.update(content);
-    return md5.digest('hex');
+    const algo = crypto.createHash("sha1");
+    algo.update(content);
+    const base64 = algo.digest('base64');
+    // make it url safe
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 export function normalizeUri(uri: string) {

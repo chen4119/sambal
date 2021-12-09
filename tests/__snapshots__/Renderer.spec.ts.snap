@@ -3,8 +3,11 @@
 exports[`Renderer render using mock-theme 1`] = `
 "
         <html>
-            <head> 
-                <script src=\\"/js/main.25ed36bf086801ea2884.js\\"></script>
+            <head>
+                <script src=\\"/js/main.7052bf0ac25de26ce68e.js\\"></script>
+                <script src=\\"/js/main.cafe30ab643e2cd37880.js\\"></script>
+                <link rel=\\"stylesheet\\" href=\\"/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
+                <link rel=\\"stylesheet\\" href=\\"/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
             <script type=\\"application/ld+json\\">{
     &quot;@context&quot;: &quot;https://schema.org&quot;,
     &quot;@type&quot;: &quot;Person&quot;,

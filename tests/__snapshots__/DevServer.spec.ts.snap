@@ -3,8 +3,11 @@
 exports[`DevServer refresh data on file change 1`] = `
 "
         <html>
-            <head> 
-                <script src=\\".sambal/_dev_server_/browser/main.47d0e86dd346cb1ef81b.js\\"></script>
+            <head>
+                <script src=\\".sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
+                <script src=\\".sambal/_dev_server_/browser/js/main.8da7d838f93899a5fa3f.js\\"></script>
+                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
+                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
             <script type=\\"application/ld+json\\">{
     &quot;@context&quot;: &quot;https://schema.org&quot;,
     &quot;@type&quot;: &quot;BlogPosting&quot;,
@@ -46,8 +49,11 @@ exports[`DevServer refresh data on file change 1`] = `
 exports[`DevServer render html 1`] = `
 "
         <html>
-            <head> 
-                <script src=\\".sambal/_dev_server_/browser/main.47d0e86dd346cb1ef81b.js\\"></script>
+            <head>
+                <script src=\\".sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
+                <script src=\\".sambal/_dev_server_/browser/js/main.8da7d838f93899a5fa3f.js\\"></script>
+                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
+                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
             <script type=\\"application/ld+json\\">{
     &quot;@context&quot;: &quot;https://schema.org&quot;,
     &quot;@type&quot;: &quot;SoftwareSourceCode&quot;,

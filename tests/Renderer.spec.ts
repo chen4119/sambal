@@ -4,11 +4,10 @@ import { OUTPUT_FOLDER } from "../src/helpers/constant";
 
 describe("Renderer", () => {
     const baseUrl = "https://example.com";
-    const publicPath = `/js`;
     let renderer: Renderer;
 
     beforeEach(async () => {
-        renderer = new Renderer(baseUrl, publicPath, null, "mock-theme");
+        renderer = new Renderer(baseUrl, OUTPUT_FOLDER, null, "mock-theme");
         await renderer.bundle();
     });
 

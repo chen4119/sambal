@@ -1,91 +1,76 @@
 
 export function initSambalEntry(): string {
     return`
-import React from "react";
-import { isSchemaType } from "sambal";
+    import { template, isSchemaType } from "sambal";
 
-export function renderPage({ page, options }) {
-    return (
-        <html>
-            <Head/>
-            <body>
-                {isSchemaType(page.mainEntity, "article") ?
-                    <BlogPost 
-                        mainEntity={page.mainEntity}
-                    /> :
-                    <Landing 
-                        mainEntity={page.mainEntity}
-                        options={options}
-                    />}
-            </body>
-        </html>
-    );
-}
-
-const Head = () => (
-    <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-        <meta httpEquiv="X-UA-Compatible" content="ie=edge"/>
-        <script src="myBundle"></script>
-    </head>
-);
-
-const BlogPost = ({ mainEntity }) => {
-    return (
-        <div>
-            <h1>{mainEntity.headline}</h1>
-            <b>Auther: {mainEntity.author.name}</b>
-            <br/>
-            <b>Tags: {mainEntity.keywords.join(", ")}</b>
-            <p>{mainEntity.text}</p>
-            {mainEntity.image &&
-                <img src={mainEntity.image.contentUrl}/>}
-            {mainEntity.image && mainEntity.image.thumbnail &&
-                <img src={mainEntity.image.thumbnail[0].contentUrl}/>}
-        </div>
-    );
-};
-
-const LinkList = ({ list }) => (
-    <ul>
-        {list.map(item => (
-                <li key={item.url}>
-                    <a href={item.url}>{item.headline}</a>
-                </li>
-        ))}
-    </ul>
-);
-
-const Landing = ({ mainEntity, options }) => {
-    return (
-        <div>
-            <h1>{mainEntity.headline}</h1>
-            <p>{mainEntity.description}</p>
-            <b>My blogposts</b>
-            <LinkList 
-                list={mainEntity.allPosts}
-            />
-            <b>Blogposts tagged with "webdev"</b>
-            <LinkList 
-                list={mainEntity.postsByTag}
-            />
-            <b>Default options:</b>
-            <p>Google Analytics Id {options.googleAnalyticsId}</p>
-        </div>
-    );
-};
-
-// User defined options
-export const defaultOptions = {
-    googleAnalyticsId: "UA-123"
-};
-
-export const browserBundle = {
-    entry: {
-        myBundle: "./js/bundle.js"
+    export function renderPage({ page, options }) {
+        return template\`
+            <html>
+                <head>
+                    <meta charSet="UTF-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+                    <meta httpEquiv="X-UA-Compatible" content="ie=edge"/>
+                </head>
+                <body>
+                    \${isSchemaType(page.mainEntity, "article") ? 
+                        renderBlogPost({ mainEntity: page.mainEntity }) : 
+                        renderLanding({ mainEntity: page.mainEntity, options: options })}
+                </body>
+            </html>
+        \`;
     }
-};
+    
+    
+    const renderBlogPost = ({ mainEntity }) => {
+        console.log(mainEntity.image);
+        return template\`
+            <div>
+                <h1>\${mainEntity.headline}</h1>
+                <b>Auther: \${mainEntity.author.name}</b>
+                <br/>
+                <b>Tags: \${mainEntity.keywords.join(", ")}</b>
+                <p>\${mainEntity.text}</p>
+                \${mainEntity.image ?
+                    \`<img src="\${mainEntity.image.contentUrl}"/>\` : null}
+                \${mainEntity.image && mainEntity.image.thumbnail ?
+                    \`<img src="\${mainEntity.image.thumbnail[0].contentUrl}"/>\` : null}
+            </div>
+        \`;
+    };
+    
+    const renderList = ({ list }) => {
+    
+        return template\`
+            <ul>
+                \${list.map(item => \`
+                    <li>
+                        <a href="\${item.url}">\${item.headline}</a>
+                    </li>
+                \`)}
+            </ul>
+        \`;
+    };
+    
+    const renderLanding = ({ mainEntity, options }) => {
+        return template\`
+            <div>
+                <h1>\${mainEntity.headline}</h1>
+                <p>\${mainEntity.description}</p>
+                <b>My blogposts</b>
+                \${renderList({list: mainEntity.allPosts})}
+                <b>Blogposts tagged with "webdev"</b>
+                \${renderList({list: mainEntity.postsByTag})}
+                <b>Default options:</b>
+                <p>Google Analytics Id \${options.googleAnalyticsId}</p>
+            </div>
+        \`;
+    };
+    
+    // User defined options
+    export const defaultOptions = {
+        googleAnalyticsId: "UA-123"
+    };
+    
 `.trim();
 }
 
@@ -111,20 +96,6 @@ export const siteConfig = {
                     tag: tag
                 }));
             }
-        }
-    ],
-    imageTransforms: [
-        {
-            include: ["https://picsum.photos/200/300.jpg"],
-            // convert image to webp
-            encodingFormat: "image/webp",
-            // generate thumbnail with width=50px
-            thumbnails: [
-                {
-                    suffix: "50",
-                    width: 50
-                }
-            ]
         }
     ],
     resolvers: [
@@ -177,7 +148,7 @@ description: First blog generated by Sambal
 author:
     "@id": ${authorIRI}
 image:
-    "@id": https://picsum.photos/200/300.jpg
+    "@id": https://picsum.photos/200/300.jpg?output=webp&thumbnails=100w,50w
 dateCreated: 2002-07-01
 keywords: ["semantic", "json-ld"]
 ---
