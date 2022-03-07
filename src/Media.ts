@@ -175,7 +175,7 @@ export default class Media {
 
     private async writeImage(contentUrl: string, info: OutputInfo, imageBuf: Buffer) {
         this.publishedMediaMap.set(contentUrl, info);
-        console.log("Writing image " + `${this.outputFolder}${contentUrl}`);
+        log.info("Writing image " + `${this.outputFolder}${contentUrl}`);
         await writeBuffer(`${this.outputFolder}${contentUrl}`, imageBuf);
     }
     

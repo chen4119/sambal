@@ -12,7 +12,6 @@ import Bundler from "./Bundler";
 import Html from "./Html";
 import { log } from "./helpers/log";
 import { template } from "./ui/template";
-import { join } from "path";
 
 type UI = {
     renderPage: (props: {
@@ -148,19 +147,23 @@ export default class Renderer {
         const htmlPage = new Html(html);
         for (const src of htmlPage.jsSources) {
             const entry = await this.bundleJs(src, page.url);
-            htmlPage.replaceJsScriptSrc(src, entry);
+            htmlPage.replaceJsScriptSrc(src, this.relativeToRoot(entry));
         }
         for (const src of htmlPage.styleSheets) {
             const entry = await this.bundleCss(src, page.url);
-            htmlPage.replaceStyleSheetSrc(src, entry);
+            htmlPage.replaceStyleSheetSrc(src, this.relativeToRoot(entry));
         }
-        await htmlPage.bundleStyles(this.bundleStyle);
+        await htmlPage.bundleStyles(this.bundleInlineStyle);
         htmlPage.addSchemaJsonLd(page.mainEntity);
         htmlPage.addMetaTags(this.baseUrl, page);
         return htmlPage.serialize();
     }
 
-    private async bundleStyle(css: string) {
+    private relativeToRoot(path: string) {
+        return path.startsWith("/") ? path : `/${path}`;
+    }
+
+    private async bundleInlineStyle(css: string) {
         return await Bundler.bundleStyle(this.cssAssetMap, css, this.publicPath);
     }
 
@@ -212,8 +215,9 @@ export default class Renderer {
         if (filePath.indexOf("node_modules/") >= 0) {
             return filePath;
         }
-        return join(this.rootDir, filePath);
+        return `${this.rootDir}/${filePath}`;
     }
+
     private addToAssets(assetUri: string, assetEntry: string, pageUrl: string) {
         if (this.assets.has(assetUri)) {
             const asset = this.assets.get(assetUri);

@@ -1,7 +1,7 @@
 import Bundler from "../src/Bundler";
 import shelljs from "shelljs";
 import { OUTPUT_FOLDER } from "../src/helpers/constant";
-
+import { getAbsFilePath } from "../src/helpers/util";
 
 describe("Bundler", () => {
     let assetMap: Map<string, string>;
@@ -16,7 +16,7 @@ describe("Bundler", () => {
     it('bundleCssFile', async () => {
         await Bundler.bundleCssFile(assetMap, "css/index.css", OUTPUT_FOLDER);
 
-        const absImagePath = "/Users/chen4119/Documents/dev/sambal/data/images/image2.jpg";
+        const absImagePath = getAbsFilePath("data/images/image2.jpg");
         expect(assetMap.get(absImagePath)).toBe("data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg");
 
         const destCssFile = `${OUTPUT_FOLDER}/css/index.c9sdsI7cdvYi3CkYsj61P6lcyjo.css`;

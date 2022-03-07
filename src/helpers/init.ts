@@ -10,6 +10,8 @@ export function initSambalEntry(): string {
                     <meta charSet="UTF-8" />
                     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
                     <meta httpEquiv="X-UA-Compatible" content="ie=edge"/>
+                    <link rel="stylesheet" href="css/style.css">
+                    <script type="text/javascript" src="js/bundle.js"></script>
                 </head>
                 <body>
                     \${isSchemaType(page.mainEntity, "article") ? 
@@ -22,7 +24,6 @@ export function initSambalEntry(): string {
     
     
     const renderBlogPost = ({ mainEntity }) => {
-        console.log(mainEntity.image);
         return template\`
             <div>
                 <h1>\${mainEntity.headline}</h1>
@@ -125,7 +126,11 @@ h1 {
 
 export function initBundle(cssPath: string): string {
     return`
-import "${cssPath}";
+function helloWorld() {
+    console.log("hello world");
+}
+
+helloWorld();
 `.trim();
 }
 

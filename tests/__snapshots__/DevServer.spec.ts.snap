@@ -4,16 +4,16 @@ exports[`DevServer refresh data on file change 1`] = `
 "
         <html>
             <head>
-                <script src=\\".sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
-                <script src=\\".sambal/_dev_server_/browser/js/main.8da7d838f93899a5fa3f.js\\"></script>
-                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
-                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
+                <script src=\\"/.sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
+                <script src=\\"/.sambal/_dev_server_/browser/js/main.30891eb7b1e55e4467c9.js\\"></script>
+                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
+                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
             <script type=\\"application/ld+json\\">{
-    &quot;@context&quot;: &quot;https://schema.org&quot;,
-    &quot;@type&quot;: &quot;BlogPosting&quot;,
-    &quot;headline&quot;: &quot;Test blog changed!&quot;,
-    &quot;text&quot;: &quot;\\\\n\\\\nHello world3\\\\n&quot;,
-    &quot;encodingFormat&quot;: &quot;text/markdown&quot;
+    \\"@context\\": \\"https://schema.org\\",
+    \\"@type\\": \\"BlogPosting\\",
+    \\"headline\\": \\"Test blog changed!\\",
+    \\"text\\": \\"\\\\n\\\\nHello world3\\\\n\\",
+    \\"encodingFormat\\": \\"text/markdown\\"
 }</script><link rel=\\"canonical\\" href=\\"https://example.com/testblog\\"><meta name=\\"og:url\\" content=\\"https://example.com/testblog\\"><title>Test blog changed!</title><meta name=\\"twitter:title\\" content=\\"Test blog changed!\\"><meta name=\\"og:title\\" content=\\"Test blog changed!\\"></head>
             <body>
                 <h1>Hello from mock theme</h1>
@@ -50,17 +50,17 @@ exports[`DevServer render html 1`] = `
 "
         <html>
             <head>
-                <script src=\\".sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
-                <script src=\\".sambal/_dev_server_/browser/js/main.8da7d838f93899a5fa3f.js\\"></script>
-                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
-                <link rel=\\"stylesheet\\" href=\\".sambal/_dev_server_/browser/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
+                <script src=\\"/.sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
+                <script src=\\"/.sambal/_dev_server_/browser/js/main.30891eb7b1e55e4467c9.js\\"></script>
+                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
+                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
             <script type=\\"application/ld+json\\">{
-    &quot;@context&quot;: &quot;https://schema.org&quot;,
-    &quot;@type&quot;: &quot;SoftwareSourceCode&quot;,
-    &quot;name&quot;: &quot;Sambal&quot;,
-    &quot;headline&quot;: &quot;A linked data static site generator&quot;,
-    &quot;description&quot;: &quot;Some description about Sambal&quot;,
-    &quot;text&quot;: &quot;&lt;need to &lt;&gt; escape&gt;&quot;
+    \\"@context\\": \\"https://schema.org\\",
+    \\"@type\\": \\"SoftwareSourceCode\\",
+    \\"name\\": \\"Sambal\\",
+    \\"headline\\": \\"A linked data static site generator\\",
+    \\"description\\": \\"Some description about Sambal\\",
+    \\"text\\": \\"&lt;need to &lt;&gt; escape&gt;\\"
 }</script><link rel=\\"canonical\\" href=\\"https://example.com/\\"><meta name=\\"og:url\\" content=\\"https://example.com/\\"><title>A linked data static site generator</title><meta name=\\"twitter:title\\" content=\\"A linked data static site generator\\"><meta name=\\"og:title\\" content=\\"A linked data static site generator\\"><meta name=\\"description\\" content=\\"Some description about Sambal\\"><meta name=\\"twitter:description\\" content=\\"Some description about Sambal\\"><meta name=\\"og:description\\" content=\\"Some description about Sambal\\"></head>
             <body>
                 <h1>Hello from mock theme</h1>

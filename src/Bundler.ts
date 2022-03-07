@@ -158,13 +158,13 @@ export default class Bundler {
                 this.broadcastAssetChangedEvent(filePath, entry);
             });
         });
-        const entry = path.join(outputPath, result.entry);
+        // const entry = path.join(outputPath, result.entry);
         this.browserBundleMap.set(filePath, {
             chokidarWatch: watcher,
-            entry
+            entry: result.entry
         });
         
-        return entry;
+        return result.entry;
     }
 
     private static async bundleCssFileHelper(assetMap: Map<string, string>, filePath: string, outputPath: string) {
@@ -251,7 +251,6 @@ export default class Bundler {
                 }, (err, stats) => {
                     const result = Bundler.parseStats(err, stats);
                     const entry = path.join(outputPath, result.entry.main);
-                    // const entry = `${outputPath}/${result.entry.main}`;
                     if (!isPromiseResolved) {
                         isPromiseResolved = true;
                         if (result.error) {

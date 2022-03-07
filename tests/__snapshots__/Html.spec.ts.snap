@@ -19,11 +19,11 @@ exports[`Html addSchemaJsonLd add ld+jsonld script 1`] = `
                     <head>
                         <script src=\\"/theme/index.js\\"></script>
                     <script type=\\"application/ld+json\\">{
-    &quot;@context&quot;: &quot;https://schema.org&quot;,
-    &quot;@type&quot;: &quot;BlogPosting&quot;,
-    &quot;name&quot;: &quot;John Smith &lt;h1&gt;Random html&lt;/h1&gt;&quot;,
-    &quot;familyName&quot;: &quot;Smith&quot;,
-    &quot;givenName&quot;: &quot;John&quot;
+    \\"@context\\": \\"https://schema.org\\",
+    \\"@type\\": \\"BlogPosting\\",
+    \\"name\\": \\"John Smith &lt;h1&gt;Random html&lt;/h1&gt;\\",
+    \\"familyName\\": \\"Smith\\",
+    \\"givenName\\": \\"John\\"
 }</script></head>
                     <body>
                         <h1>hello world</h1>
@@ -37,11 +37,11 @@ exports[`Html addSchemaJsonLd replace existing ld+jsonld script 1`] = `
                 <html>
                     <head>
                         <script type=\\"application/ld+json\\">{
-    &quot;@context&quot;: &quot;https://schema.org&quot;,
-    &quot;@type&quot;: &quot;BlogPosting&quot;,
-    &quot;name&quot;: &quot;John Smith &lt;h1&gt;Random html&lt;/h1&gt;&quot;,
-    &quot;familyName&quot;: &quot;Smith&quot;,
-    &quot;givenName&quot;: &quot;John&quot;
+    \\"@context\\": \\"https://schema.org\\",
+    \\"@type\\": \\"BlogPosting\\",
+    \\"name\\": \\"John Smith &lt;h1&gt;Random html&lt;/h1&gt;\\",
+    \\"familyName\\": \\"Smith\\",
+    \\"givenName\\": \\"John\\"
 }</script>
                     </head>
                     <body>

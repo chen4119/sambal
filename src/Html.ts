@@ -83,9 +83,9 @@ export default class Html {
         return JSON.stringify(
             // isMinimize ? this.minimizeEntity(mainEntityWithContext) : mainEntityWithContext,
             mainEntityWithContext, 
-            null, 4);
-            // .replace(/</g, "&lt;")
-            // .replace(/>/g, "&gt;");
+            null, 4)
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
     }
 
     /*
@@ -228,9 +228,11 @@ export default class Html {
         prepend: boolean = false) {
         const newElement = new Element(
             tagName,
-            attributes,
-            textContent ? [new Text(textContent)] : []
+            attributes
         );
+        if (textContent) {
+            appendChild(newElement, new Text(textContent))
+        }
         if (oldElement) {
             replaceElement(oldElement, newElement);
         } else {
