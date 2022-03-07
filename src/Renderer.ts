@@ -153,7 +153,7 @@ export default class Renderer {
             const entry = await this.bundleCss(src, page.url);
             htmlPage.replaceStyleSheetSrc(src, this.relativeToRoot(entry));
         }
-        await htmlPage.bundleStyles(this.bundleInlineStyle);
+        await htmlPage.bundleStyles(this.bundleInlineStyle.bind(this));
         htmlPage.addSchemaJsonLd(page.mainEntity);
         htmlPage.addMetaTags(this.baseUrl, page);
         return htmlPage.serialize();

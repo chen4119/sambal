@@ -8,6 +8,12 @@ exports[`Renderer render using mock-theme 1`] = `
                 <script src=\\"/js/main.aa4bac5091606d7c3286.js\\"></script>
                 <link rel=\\"stylesheet\\" href=\\"/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
                 <link rel=\\"stylesheet\\" href=\\"/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
+                <style>
+                    pre[class*=&quot;language-&quot;] {
+                        margin-top: 24px;
+                        margin-bottom: 24px;
+                    }
+                </style>
             <script type=\\"application/ld+json\\">{
     \\"@context\\": \\"https://schema.org\\",
     \\"@type\\": \\"Person\\",

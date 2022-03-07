@@ -8,6 +8,12 @@ exports[`DevServer refresh data on file change 1`] = `
                 <script src=\\"/.sambal/_dev_server_/browser/js/main.30891eb7b1e55e4467c9.js\\"></script>
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
+                <style>
+                    pre[class*=&quot;language-&quot;] {
+                        margin-top: 24px;
+                        margin-bottom: 24px;
+                    }
+                </style>
             <script type=\\"application/ld+json\\">{
     \\"@context\\": \\"https://schema.org\\",
     \\"@type\\": \\"BlogPosting\\",
@@ -54,6 +60,12 @@ exports[`DevServer render html 1`] = `
                 <script src=\\"/.sambal/_dev_server_/browser/js/main.30891eb7b1e55e4467c9.js\\"></script>
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
+                <style>
+                    pre[class*=&quot;language-&quot;] {
+                        margin-top: 24px;
+                        margin-bottom: 24px;
+                    }
+                </style>
             <script type=\\"application/ld+json\\">{
     \\"@context\\": \\"https://schema.org\\",
     \\"@type\\": \\"SoftwareSourceCode\\",
