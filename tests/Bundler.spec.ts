@@ -17,7 +17,7 @@ describe("Bundler", () => {
         await Bundler.bundleCssFile(assetMap, "css/index.css", OUTPUT_FOLDER);
 
         const absImagePath = getAbsFilePath("data/images/image2.jpg");
-        expect(assetMap.get(absImagePath)).toBe("data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg");
+        expect(assetMap.get(absImagePath)).toBe("../data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg");
 
         const destCssFile = `${OUTPUT_FOLDER}/css/index.c9sdsI7cdvYi3CkYsj61P6lcyjo.css`;
         const destImageFile = `${OUTPUT_FOLDER}/data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg`;

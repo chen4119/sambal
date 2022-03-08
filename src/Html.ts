@@ -114,11 +114,8 @@ export default class Html {
     async bundleStyles(handler:(css: string) => Promise<string>) {
         for (const styleElement of this.styleTags) {
             const resultCss = await handler(textContent(styleElement));
-            const newElement = new Element(
-                "style",
-                {},
-                [new Text(resultCss)]
-            );
+            const newElement = new Element("style", {});
+            appendChild(newElement, new Text(resultCss))
             replaceElement(styleElement, newElement);
         }
     }

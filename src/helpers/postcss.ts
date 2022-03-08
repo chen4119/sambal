@@ -25,7 +25,7 @@ export function postcssPlugin(assetMap: Map<string, string>): AcceptedPlugin {
                         const absDestFile = getAbsFilePath(join(result.opts.to, destFile));
                         shelljs.mkdir("-p", dirname(absDestFile));
                         writeFileSync(absDestFile, content);
-                        assetMap.set(sourceFile, destFile);
+                        assetMap.set(sourceFile, join(dirname(filePath), destFilename));
                     }
                     return `url('${assetMap.get(sourceFile)}')`;
                 });

@@ -12,6 +12,7 @@ import Bundler from "./Bundler";
 import Html from "./Html";
 import { log } from "./helpers/log";
 import { template } from "./ui/template";
+import { isAbsUri } from "sambal-jsonld";
 
 type UI = {
     renderPage: (props: {
@@ -146,12 +147,16 @@ export default class Renderer {
     private async postProcessHtml(page: WebPage, html: string) {
         const htmlPage = new Html(html);
         for (const src of htmlPage.jsSources) {
-            const entry = await this.bundleJs(src, page.url);
-            htmlPage.replaceJsScriptSrc(src, this.relativeToRoot(entry));
+            if (!isAbsUri(src)) {
+                const entry = await this.bundleJs(src, page.url);
+                htmlPage.replaceJsScriptSrc(src, this.relativeToRoot(entry));
+            }
         }
         for (const src of htmlPage.styleSheets) {
-            const entry = await this.bundleCss(src, page.url);
-            htmlPage.replaceStyleSheetSrc(src, this.relativeToRoot(entry));
+            if (!isAbsUri(src)) {
+                const entry = await this.bundleCss(src, page.url);
+                htmlPage.replaceStyleSheetSrc(src, this.relativeToRoot(entry));
+            }
         }
         await htmlPage.bundleStyles(this.bundleInlineStyle.bind(this));
         htmlPage.addSchemaJsonLd(page.mainEntity);

@@ -52,6 +52,7 @@ describe("DevServer", () => {
         expect(response.data).toMatchSnapshot();
     });
 
+    /*
     it('refresh data on file change', async () => {
         let response = await axios.get("http://localhost:3000/testblog");
         await writeText(testFile, modifiedTestBlog);
@@ -73,6 +74,6 @@ describe("DevServer", () => {
         expect(response.status).toBe(200);
         response = await axios.get("http://localhost:3000/data/images/image2-50w.webp");
         expect(response.status).toBe(200);
-    });
+    });*/
 
 });

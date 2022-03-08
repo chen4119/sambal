@@ -9,9 +9,21 @@ exports[`DevServer refresh data on file change 1`] = `
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
                 <style>
-                    pre[class*=&quot;language-&quot;] {
+                    pre[class*=\\"language-\\"] {
                         margin-top: 24px;
                         margin-bottom: 24px;
+                    }
+
+                    .MuiButton-iconSizeSmall > *:first-child {
+                        font-size: 18px;
+                    }
+
+                    .MuiTypography-body2 {
+                        font-size: 0.875rem;
+                        font-family: \\"Roboto\\", \\"Helvetica\\", \\"Arial\\", sans-serif;
+                        font-weight: 400;
+                        line-height: 1.43;
+                        letter-spacing: 0.01071em;
                     }
                 </style>
             <script type=\\"application/ld+json\\">{
@@ -61,9 +73,21 @@ exports[`DevServer render html 1`] = `
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
                 <style>
-                    pre[class*=&quot;language-&quot;] {
+                    pre[class*=\\"language-\\"] {
                         margin-top: 24px;
                         margin-bottom: 24px;
+                    }
+
+                    .MuiButton-iconSizeSmall > *:first-child {
+                        font-size: 18px;
+                    }
+
+                    .MuiTypography-body2 {
+                        font-size: 0.875rem;
+                        font-family: \\"Roboto\\", \\"Helvetica\\", \\"Arial\\", sans-serif;
+                        font-weight: 400;
+                        line-height: 1.43;
+                        letter-spacing: 0.01071em;
                     }
                 </style>
             <script type=\\"application/ld+json\\">{

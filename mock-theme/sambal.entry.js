@@ -13,6 +13,18 @@ export function renderPage({ page, options }) {
                         margin-top: 24px;
                         margin-bottom: 24px;
                     }
+
+                    .MuiButton-iconSizeSmall > *:first-child {
+                        font-size: 18px;
+                    }
+
+                    .MuiTypography-body2 {
+                        font-size: 0.875rem;
+                        font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+                        font-weight: 400;
+                        line-height: 1.43;
+                        letter-spacing: 0.01071em;
+                    }
                 </style>
             </head>
             <body>

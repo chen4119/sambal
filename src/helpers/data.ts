@@ -71,10 +71,14 @@ export async function loadLocalFile(src: string) {
 }
 
 export async function loadRemoteFile(src: string) {
-    const response = parseAxiosResponse(await axios.get(src, {
-        responseType: 'arraybuffer'
-      }));
-    return parseContent(response.data, response.supportedType);
+    try {
+        const response = parseAxiosResponse(await axios.get(src, {
+            responseType: 'arraybuffer'
+        }));
+        return parseContent(response.data, response.supportedType);
+    } catch (e) {
+        throw `Unable to fetch ${src}. code: ${(e as any).response.status}`;
+    }
 }
 
 function parseAxiosResponse(response: AxiosResponse<any>): {data: any, supportedType: SUPPORTED_CONTENT_TYPE} {
