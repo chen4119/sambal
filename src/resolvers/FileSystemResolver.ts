@@ -29,8 +29,4 @@ export default class FileSystemResolver implements IResolver {
     clearCache() {
         this.objectCache.clear();
     }
-
-    get referencedJsonLds() {
-        return Array.from(this.objectCache.keys());
-    }
 }

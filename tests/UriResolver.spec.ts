@@ -43,6 +43,12 @@ describe("UriResolver", () => {
         expect(shelljs.test('-f', `${CACHE_FOLDER}/data/images/image2.jpg`)).toBeTruthy();
     });
 
+    it('get image2 yml', async () => {
+        const result = await uriResolver.resolveUri("/data/images/image2.yml");
+        expect(result).toMatchSnapshot();
+        expect(shelljs.test('-f', `${CACHE_FOLDER}/data/images/image2.webp`)).toBeTruthy();
+    });
+
     it('get background', async () => {
         const result = await uriResolver.resolveUri("/data/background.yml");
         expect(result).toMatchSnapshot();

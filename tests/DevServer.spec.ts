@@ -34,7 +34,7 @@ describe("DevServer", () => {
         await writeText(testFile, originalTestBlog);
         const classes = await init();
         renderer = new Renderer(baseUrl, DEVSERVER_BROWSER, null, "mock-theme");
-        server = new DevServer(classes.uriResolver, classes.media, classes.router, renderer, 3000);
+        server = new DevServer(classes.media, classes.router, renderer, 3000);
         await server.start();
     });
 

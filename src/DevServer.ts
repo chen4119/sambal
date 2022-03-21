@@ -3,7 +3,6 @@ import Renderer from "./Renderer";
 import { DEVSERVER_BROWSER } from "./helpers/constant";
 import { log } from "./helpers/log";
 import Router from "./Router";
-import UriResolver from "./UriResolver";
 import Media from "./Media";
 import { Server, OPEN } from "ws";
 import { FSWatcher } from "chokidar";
@@ -19,8 +18,6 @@ export default class DevServer {
     private watcher: FSWatcher;
     
     constructor(
-        // TODO: No need this?
-        private uriResolver: UriResolver,
         private media: Media,
         private router: Router,
         private renderer: Renderer,
@@ -113,12 +110,6 @@ export default class DevServer {
             }
             
             await this.getLocalFile(req, res);
-            /*
-            try {
-                res.send(await this.uriResolver.resolveUri(req.path));
-            } catch (e) {
-                res.status(404).end();
-            }*/
         } catch(e) {
             const html = await this.renderer.renderErrorPage(e);
             res.send(this.addBrowserSyncScript(html));

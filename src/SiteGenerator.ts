@@ -54,17 +54,21 @@ export default class SiteGenerator {
     }
 
     async buildJsonLds() {
-        // referencedJsonLds only include local files
-        for (const uri of this.uriResolver.referencedJsonLds) {
-            let jsonld = await this.uriResolver.resolveUri(uri);
+        for (const uri of this.uriResolver.jsonLds.keys()) {
+            let jsonld = this.uriResolver.jsonLds.get(uri);
+            let uriPath = uri;
+            if (uri.indexOf("?") > 0) {
+                uriPath = uri.substring(0, uri.indexOf("?"));
+            }
+            // let jsonld = await this.uriResolver.resolveUri(uri);
             if (!isJsonLdRef(jsonld)) {
                 jsonld = {
-                    [JSONLD_ID]: this.getJsonLdId(uri),
+                    [JSONLD_ID]: this.getJsonLdId(uriPath),
                     [JSONLD_CONTEXT]: {
                         "@vocab": `${SCHEMA_CONTEXT}/`,
                         "@base": this.baseUrl
                     },
-                    url: inferUrl(uri),
+                    url: inferUrl(uriPath),
                     ...jsonld
                 };
                 this.updateRef(jsonld);

@@ -98,7 +98,7 @@ async function serve() {
 
         const renderer = new Renderer(baseUrl, DEVSERVER_BROWSER, entryFile, theme);
 
-        const server = new DevServer(init.uriResolver, init.media, init.router, renderer, 3000);
+        const server = new DevServer(init.media, init.router, renderer, 3000);
         await server.start();
     } catch(e) {
         log.error(e);

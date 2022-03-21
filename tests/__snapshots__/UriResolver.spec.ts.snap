@@ -141,6 +141,20 @@ Object {
 }
 `;
 
+exports[`UriResolver get image2 yml 1`] = `
+Object {
+  "@type": "ImageObject",
+  "contentSize": "18 kB",
+  "contentUrl": "/data/images/image2.webp",
+  "encodingFormat": "image/webp",
+  "height": 200,
+  "representativeOfPage": true,
+  "thumbnail": Array [],
+  "url": "https://example.com/data/images/image2.webp",
+  "width": 300,
+}
+`;
+
 exports[`UriResolver get johnsmith 1`] = `
 Object {
   "@type": "Person",

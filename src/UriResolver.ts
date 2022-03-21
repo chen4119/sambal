@@ -34,6 +34,7 @@ export default class UriResolver {
     private fsResolver: FileSystemResolver;
     private httpResolver: HttpResolver;
     private collectionResolver: CollectionResolver;
+    private jsonLdToSerialize: Map<string, any>;
     private resolvers: {
         matcher: UriMatcher,
         resolver: IResolver
@@ -44,6 +45,7 @@ export default class UriResolver {
         private media: Media
     ) {
         // this.blankNodeIndex = 1;
+        this.jsonLdToSerialize = new Map<string, any>();
         this.fsResolver = new FileSystemResolver();
         this.httpResolver = new HttpResolver();
         this.collectionResolver = new CollectionResolver(collections, this);
@@ -76,16 +78,20 @@ export default class UriResolver {
         }
     }
 
-    get referencedJsonLds() {
-        return this.fsResolver.referencedJsonLds;
+    get jsonLds() {
+        return this.jsonLdToSerialize;
     }
-
+    
     async resolveUri(uriStr: string) {
         const uriObj: URI = this.toUri(uriStr)
 
         let data;
+        let isCollectionUri = false;
         for (const instance of this.resolvers) {
             if (this.isMatch(instance.matcher, uriObj)) {
+                if (instance.resolver === this.collectionResolver) {
+                    isCollectionUri = true;
+                }
                 data = await instance.resolver.resolveUri(uriObj);
                 break;
             }
@@ -104,6 +110,12 @@ export default class UriResolver {
                 ...await this.media.toImageObject(this.toUri(data.contentUrl), image)
             };
         }
+
+        if (uriObj.protocol === FILE_PROTOCOL && !isCollectionUri) {
+            const fullUri = (uriObj.query && [...uriObj.query.keys()].length > 0) ? `${uriObj.path}?${uriObj.query.toString()}` : uriObj.path;
+            this.jsonLdToSerialize.set(fullUri, data);
+        }
+
         return data;
     }
 

@@ -65,11 +65,11 @@ export default class Media {
             encodingFormat: getMimeType(params.get("output")),
             thumbnails: this.parseThumbnails(params.get("thumbnails"))
         };
-        return this.isValidSharpTransform(transform) && transform.thumbnails.length > 0 ? 
+        return this.isValidSharpTransform(transform) || transform.thumbnails.length > 0 ? 
             transform : null;
     }
 
-    private isValidSharpTransform(transform: SharpTransform): transform is SharpTransform {
+    private isValidSharpTransform(transform: SharpTransform): Boolean {
         return Boolean(transform.width) || 
             Boolean(transform.height) ||
             Boolean(transform.encodingFormat);
@@ -182,7 +182,7 @@ export default class Media {
     private async sharpTransform(imageBuf: Buffer, transform?: SharpTransform): Promise<{info: OutputInfo, buffer: Buffer}> {
         return new Promise(async (resolve, reject) => {
             try {
-                const instance = sharp(imageBuf);
+                let instance = sharp(imageBuf);
                 if (transform) {
                     if (transform.width || transform.height) {
                         const options: any = {};
@@ -195,7 +195,7 @@ export default class Media {
                         instance.resize(options);
                     }
                     if (transform.encodingFormat) {
-                        this.transformImage(instance, transform.encodingFormat);
+                        instance = this.transformImage(instance, transform.encodingFormat);
                     }
                 }
 
