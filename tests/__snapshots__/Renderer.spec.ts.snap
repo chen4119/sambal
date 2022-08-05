@@ -4,10 +4,10 @@ exports[`Renderer render using mock-theme 1`] = `
 "
         <html>
             <head>
-                <script src=\\"/js/main.7052bf0ac25de26ce68e.js\\"></script>
-                <script src=\\"/js/main.aa4bac5091606d7c3286.js\\"></script>
+                <script src=\\"/js/main.0d726c438a42ab31ee6a.js\\"></script>
+                <script src=\\"/js/main.be371fa42f4cbc2af400.js\\"></script>
                 <link rel=\\"stylesheet\\" href=\\"/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
-                <link rel=\\"stylesheet\\" href=\\"/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
+                <link rel=\\"stylesheet\\" href=\\"/node_modules/@fontsource/roboto/300.OsgV_Yxu11meFqqeCbKETOC-a4Y.css\\">
                 <style>
                     pre[class*=\\"language-\\"] {
                         margin-top: 24px;

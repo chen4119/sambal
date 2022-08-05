@@ -19,7 +19,7 @@ describe("Bundler", () => {
         const absImagePath = getAbsFilePath("data/images/image2.jpg");
         expect(assetMap.get(absImagePath)).toBe("../data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg");
 
-        const destCssFile = `${OUTPUT_FOLDER}/css/index.c9sdsI7cdvYi3CkYsj61P6lcyjo.css`;
+        const destCssFile = `${OUTPUT_FOLDER}/css/index.HDCqbY7enZFwew6BNc5SH-zZ_Zo.css`;
         const destImageFile = `${OUTPUT_FOLDER}/data/images/image2.mvTkGSuRDnLzrgfc26zDT0xphc8.jpg`;
         expect(shelljs.test('-f', destCssFile)).toBeTruthy();
         expect(shelljs.test('-f', destImageFile)).toBeTruthy();

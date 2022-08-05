@@ -1,77 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`DevServer refresh data on file change 1`] = `
-"
-        <html>
-            <head>
-                <script src=\\"/.sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
-                <script src=\\"/.sambal/_dev_server_/browser/js/main.30891eb7b1e55e4467c9.js\\"></script>
-                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
-                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
-                <style>
-                    pre[class*=\\"language-\\"] {
-                        margin-top: 24px;
-                        margin-bottom: 24px;
-                    }
-
-                    .MuiButton-iconSizeSmall > *:first-child {
-                        font-size: 18px;
-                    }
-
-                    .MuiTypography-body2 {
-                        font-size: 0.875rem;
-                        font-family: \\"Roboto\\", \\"Helvetica\\", \\"Arial\\", sans-serif;
-                        font-weight: 400;
-                        line-height: 1.43;
-                        letter-spacing: 0.01071em;
-                    }
-                </style>
-            <script type=\\"application/ld+json\\">{
-    \\"@context\\": \\"https://schema.org\\",
-    \\"@type\\": \\"BlogPosting\\",
-    \\"headline\\": \\"Test blog changed!\\",
-    \\"text\\": \\"\\\\n\\\\nHello world3\\\\n\\",
-    \\"encodingFormat\\": \\"text/markdown\\"
-}</script><link rel=\\"canonical\\" href=\\"https://example.com/testblog\\"><meta name=\\"og:url\\" content=\\"https://example.com/testblog\\"><title>Test blog changed!</title><meta name=\\"twitter:title\\" content=\\"Test blog changed!\\"><meta name=\\"og:title\\" content=\\"Test blog changed!\\"></head>
-            <body>
-                <h1>Hello from mock theme</h1>
-                <p>test1</p>
-            
-        <script>
-            function openSocket() {
-                const sambalws = new WebSocket(\\"ws://localhost:3001/\\");
-                sambalws.onopen = function() {
-                    console.log('Sambal dev server connected');
-                };
-                
-                sambalws.onmessage = function(e) {
-                    if (e.data === \\"refresh\\") {
-                        console.log('Reloading...');
-                        window.location.reload();
-                    }
-                }
-    
-                sambalws.onclose = function(e) {
-                    console.log(\\"Sambal dev server disconnected\\");
-                    setTimeout(() => {
-                        openSocket();
-                    }, 2000);
-                };
-            }
-            openSocket();
-        </script></body>
-        </html>
-    "
-`;
-
 exports[`DevServer render html 1`] = `
 "
         <html>
             <head>
-                <script src=\\"/.sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js\\"></script>
-                <script src=\\"/.sambal/_dev_server_/browser/js/main.30891eb7b1e55e4467c9.js\\"></script>
+                <script src=\\"/.sambal/_dev_server_/browser/js/main.293fadc7a9afe94294c6.js\\"></script>
+                <script src=\\"/.sambal/_dev_server_/browser/js/main.8da7d838f93899a5fa3f.js\\"></script>
                 <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css\\">
-                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.fc7jZ3ovBRwuUs8Nzx6S0gvHi0k.css\\">
+                <link rel=\\"stylesheet\\" href=\\"/.sambal/_dev_server_/browser/node_modules/@fontsource/roboto/300.OsgV_Yxu11meFqqeCbKETOC-a4Y.css\\">
                 <style>
                     pre[class*=\\"language-\\"] {
                         margin-top: 24px;

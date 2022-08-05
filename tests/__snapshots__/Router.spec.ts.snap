@@ -67,11 +67,11 @@ Object {
     "headline": "My first blog",
     "image": Object {
       "@type": "ImageObject",
-      "contentSize": "2 kB",
-      "contentUrl": "https://via.placeholder.com/300",
+      "contentSize": "1 kB",
+      "contentUrl": "https://dummyimage.com/300",
       "encodingFormat": "image/png",
       "height": 300,
-      "url": "https://via.placeholder.com/300",
+      "url": "https://dummyimage.com/300",
       "width": 300,
     },
     "keywords": Array [
@@ -112,11 +112,11 @@ Object {
     "headline": "My first blog",
     "image": Object {
       "@type": "ImageObject",
-      "contentSize": "2 kB",
-      "contentUrl": "https://via.placeholder.com/300",
+      "contentSize": "1 kB",
+      "contentUrl": "https://dummyimage.com/300",
       "encodingFormat": "image/png",
       "height": 300,
-      "url": "https://via.placeholder.com/300",
+      "url": "https://dummyimage.com/300",
       "width": 300,
     },
     "keywords": Array [

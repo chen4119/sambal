@@ -45,7 +45,7 @@ describe("DevServer", () => {
 
     it('render html', async () => {
         const response = await axios.get("http://localhost:3000");
-        let result = await axios.get("http://localhost:3000/.sambal/_dev_server_/browser/js/main.25e4a7fdcefda83afee3.js");
+        let result = await axios.get("http://localhost:3000/.sambal/_dev_server_/browser/js/main.293fadc7a9afe94294c6.js");
         expect(result.status).toBe(200);
         result = await axios.get("http://localhost:3000/.sambal/_dev_server_/browser/mock-theme/theme.Lpjvzyneslx4vFRCS_x-VHb_rf0.css");
         expect(result.status).toBe(200);
